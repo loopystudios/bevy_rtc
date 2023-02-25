@@ -1,0 +1,11 @@
+[package]
+name = "silk-server"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies]
+silk-common = { path = "../silk-common" }
+anyhow = { workspace = true }
+serde = { workspace = true }
+bincode = { workspace = true }
