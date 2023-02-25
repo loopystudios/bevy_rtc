@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "silk-server",
+    "silk-signaller",
     "silk-client",
     "silk-common"
 ]

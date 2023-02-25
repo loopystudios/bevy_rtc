@@ -1,5 +1,5 @@
 [package]
-name = "silk-server"
+name = "silk-signaller"
 version = "0.1.0"
 edition = "2021"
 
