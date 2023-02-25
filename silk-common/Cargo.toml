@@ -3,8 +3,13 @@ name = "silk-common"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name= "test"
+path = "src/main.rs"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 anyhow = "1.0"
 serde = "1.0"
 bincode = "1.3"
+log = { version = "0.4", default-features = false }
