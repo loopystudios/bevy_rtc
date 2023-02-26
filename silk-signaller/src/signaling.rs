@@ -199,6 +199,7 @@ async fn handle_ws(
                     }
                 }
             }
+            state.host.take();
         } else if let Some(removed_peer) = state.remove_client(&uuid) {
             // Host must exist
             // Tell host about disconnected clent
