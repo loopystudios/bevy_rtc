@@ -27,7 +27,7 @@ async fn main() {
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
                 .unwrap_or_else(|_| {
-                    "matchbox_server=info,tower_http=debug".into()
+                    "info,matchbox_server=info,tower_http=debug".into()
                 }),
         )
         .with(

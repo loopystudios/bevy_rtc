@@ -76,6 +76,7 @@ async fn handle_ws(
 
     // The state machine for the data channel established for this websocket.
     while let Some(request) = ws_receiver.next().await {
+        // Parse the message
         let request = match parse_request(request) {
             Ok(request) => request,
             Err(ClientRequestError::Axum(e)) => {
@@ -101,14 +102,21 @@ async fn handle_ws(
         match request {
             PeerRequest::Uuid(id) => {
                 let mut state = state.lock().await;
-                if !is_host && state.host.is_none() {
-                    error!("client cannot connect until there's a host");
-                    break;
-                }
                 if peer_uuid.is_some() {
                     error!("client set uuid more than once");
                     continue;
                 }
+
+                if !is_host && state.host.is_none() {
+                    error!("client cannot connect until there's a host");
+                    break;
+                }
+                if is_host && state.host.is_some() {
+                    error!("there is already a host");
+                    break;
+                }
+
+                // Add peer
                 peer_uuid.replace(id.clone());
                 state.add_client(Peer {
                     uuid: id.clone(),
