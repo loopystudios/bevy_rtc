@@ -2,7 +2,7 @@ use futures::{select, FutureExt};
 use futures_timer::Delay;
 use log::info;
 use matchbox_socket::WebRtcSocket;
-use std::time::Duration;
+use std::{collections::HashSet, time::Duration};
 
 #[cfg(target_arch = "wasm32")]
 fn main() {
@@ -34,8 +34,15 @@ async fn main() {
     async_main().await
 }
 
+struct Clients {
+    clients: HashSet<String>,
+}
+
 async fn async_main() {
     info!("Connecting to matchbox");
+    let mut server_state = Clients {
+        clients: HashSet::new(),
+    };
     let (mut socket, loop_fut) =
         WebRtcSocket::new_unreliable("ws://localhost:3536/Host");
 
@@ -47,11 +54,15 @@ async fn async_main() {
     let timeout = Delay::new(Duration::from_millis(100));
     futures::pin_mut!(timeout);
 
+    let broadcast_every = Delay::new(Duration::from_millis(5000));
+    futures::pin_mut!(broadcast_every);
+
     loop {
         for peer in socket.accept_new_connections() {
             info!("Found a peer {:?}", peer);
             let packet = "hello client!".as_bytes().to_vec().into_boxed_slice();
-            socket.send(packet, peer);
+            socket.send(packet, peer.clone());
+            server_state.clients.insert(peer);
         }
 
         for (peer, packet) in socket.receive() {
@@ -64,11 +75,27 @@ async fn async_main() {
         let disconnected_peers = socket.disconnected_peers();
         if !disconnected_peers.is_empty() {
             info!("Disconnected peers: {:?}", disconnected_peers);
+            for disconnected_peer in disconnected_peers {
+                server_state.clients.remove(&disconnected_peer);
+            }
         }
 
         select! {
+            _ = (&mut broadcast_every).fuse() => {
+                if !server_state.clients.is_empty() {
+                    info!("sending propoganda");
+                    for client in server_state.clients.iter() {
+                        let packet = format!("Server reporting {} clients", server_state.clients.len())
+                            .as_bytes().to_vec().into_boxed_slice();
+                        socket.send(packet, client);
+                    }
+                }
+
+                broadcast_every.reset(Duration::from_millis(5000));
+            }
+
             _ = (&mut timeout).fuse() => {
-                timeout.reset(Duration::from_millis(100));
+                timeout.reset(Duration::from_millis(5000));
             }
 
             _ = &mut loop_fut => {
