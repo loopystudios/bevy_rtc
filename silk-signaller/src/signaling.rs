@@ -7,7 +7,7 @@ use axum::{
     extract::{
         connect_info::ConnectInfo,
         ws::{Message, WebSocket, WebSocketUpgrade},
-        State,
+        Path, State,
     },
     response::IntoResponse,
     Error,
@@ -18,9 +18,10 @@ use tokio::sync::mpsc;
 use tokio_stream::wrappers::UnboundedReceiverStream;
 use tracing::{error, info, warn};
 
-#[derive(serde::Deserialize, serde::Serialize)]
-pub(crate) struct QueryParam {
-    next: Option<usize>,
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+pub(crate) enum ClientType {
+    Client,
+    Host,
 }
 
 /// The handler for the HTTP request to upgrade to WebSockets.
@@ -28,13 +29,17 @@ pub(crate) struct QueryParam {
 /// address of the client.
 pub(crate) async fn ws_handler(
     ws: WebSocketUpgrade,
+    Path(client_type): Path<ClientType>,
     State(state): State<Arc<Mutex<ServerState>>>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
 ) -> impl IntoResponse {
     info!("`{addr}` connected.");
+    info!("client type: {:?}", client_type);
+
+    let is_host = matches!(client_type, ClientType::Host);
 
     // Finalize the upgrade process by returning upgrade callback to client
-    ws.on_upgrade(move |websocket| handle_ws(websocket, state))
+    ws.on_upgrade(move |websocket| handle_ws(websocket, state, is_host))
 }
 
 fn parse_request(
@@ -60,7 +65,11 @@ fn spawn_sender_task(
 }
 
 /// One of these handlers is spawned for every web socket.
-async fn handle_ws(websocket: WebSocket, state: Arc<Mutex<ServerState>>) {
+async fn handle_ws(
+    websocket: WebSocket,
+    state: Arc<Mutex<ServerState>>,
+    is_host: bool,
+) {
     let (ws_sender, mut ws_receiver) = websocket.split();
     let sender = spawn_sender_task(ws_sender);
     let mut peer_uuid = None;
@@ -91,30 +100,41 @@ async fn handle_ws(websocket: WebSocket, state: Arc<Mutex<ServerState>>) {
 
         match request {
             PeerRequest::Uuid(id) => {
+                let mut state = state.lock().await;
+                if !is_host && state.host.is_none() {
+                    error!("client cannot connect until there's a host");
+                    break;
+                }
                 if peer_uuid.is_some() {
                     error!("client set uuid more than once");
                     continue;
                 }
-
                 peer_uuid.replace(id.clone());
-                let mut state = state.lock().await;
-                let peers = state.add_client(Peer {
+                state.add_client(Peer {
                     uuid: id.clone(),
                     sender: sender.clone(),
                 });
 
-                let peer_event =
-                    PeerEvent::<serde_json::Value>::NewPeer(id.clone());
-                let event_text = serde_json::to_string(&peer_event)
-                    .expect("error serializing message");
-                let event = Message::Text(event_text.clone());
+                if is_host {
+                    // Set host
+                    state.host.replace(Peer {
+                        uuid: id.clone(),
+                        sender: sender.clone(),
+                    });
+                    info!("SET HOST: {id}");
+                } else {
+                    // Set client
+                    let peer_event =
+                        PeerEvent::<serde_json::Value>::NewPeer(id.clone());
+                    let event_text = serde_json::to_string(&peer_event)
+                        .expect("error serializing message");
+                    let event = Message::Text(event_text.clone());
 
-                for peer_id in peers {
-                    // Tell everyone about this new peer
-                    if let Err(e) = state.try_send(&peer_id, event.clone()) {
-                        error!("error sending to {peer_id}: {e:?}");
+                    // Tell host about this new client
+                    if let Err(e) = state.try_send_to_host(event.clone()) {
+                        error!("error sending peer {id} to host: {e:?}");
                     } else {
-                        info!("{:?} -> {:?}", peer_id, event_text);
+                        info!("{:?} -> {:?}", id, event_text);
                     }
                 }
             }
@@ -147,18 +167,49 @@ async fn handle_ws(websocket: WebSocket, state: Arc<Mutex<ServerState>>) {
     if let Some(uuid) = peer_uuid {
         info!("Removing peer: {:?}", uuid);
         let mut state = state.lock().await;
-        if let Some(removed_peer) = state.remove_client(&uuid) {
-            // Tell each connected peer about the disconnected peer.
-            let peer_event =
-                PeerEvent::<serde_json::Value>::PeerLeft(removed_peer.uuid);
+
+        if state.host.as_ref().is_some_and(|host| host.uuid == uuid) {
+            // Tell each connected peer about the disconnected host.
+            let peer_event = PeerEvent::<serde_json::Value>::PeerLeft(
+                state.host.as_ref().unwrap().uuid.clone(),
+            );
             let event = Message::Text(
                 serde_json::to_string(&peer_event)
                     .expect("error serializing message"),
             );
-            for peer_id in state.clients.keys() {
+            for peer_id in state
+                .clients
+                .keys()
+                .filter(|id| id != &&state.host.as_ref().unwrap().uuid)
+            {
                 match state.try_send(peer_id, event.clone()) {
-                    Ok(()) => info!("Sent peer remove to: {:?}", peer_id),
-                    Err(e) => error!("Failure sending peer remove: {e:?}"),
+                    Ok(()) => {
+                        info!("Sent host peer remove to: {:?}", peer_id)
+                    }
+                    Err(e) => {
+                        error!("Failure sending peer remove: {e:?}")
+                    }
+                }
+            }
+        } else if let Some(removed_peer) = state.remove_client(&uuid) {
+            // Host must exist
+            // Tell host about disconnected clent
+            let peer_event = PeerEvent::<serde_json::Value>::PeerLeft(
+                removed_peer.uuid.clone(),
+            );
+            let event = Message::Text(
+                serde_json::to_string(&peer_event)
+                    .expect("error serializing message"),
+            );
+            match state.try_send_to_host(event) {
+                Ok(()) => {
+                    info!(
+                        "Notified host of peer remove: {:?}",
+                        &removed_peer.uuid
+                    )
+                }
+                Err(e) => {
+                    error!("Failure sending peer remove to host: {e:?}")
                 }
             }
         }

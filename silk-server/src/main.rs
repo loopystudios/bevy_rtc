@@ -37,9 +37,9 @@ async fn main() {
 async fn async_main() {
     info!("Connecting to matchbox");
     let (mut socket, loop_fut) =
-        WebRtcSocket::new_unreliable("ws://localhost:3536/Client");
+        WebRtcSocket::new_unreliable("ws://localhost:3536/Host");
 
-    info!("my id is {:?}", socket.id());
+    info!("my server id is {:?}", socket.id());
 
     let loop_fut = loop_fut.fuse();
     futures::pin_mut!(loop_fut);
@@ -50,7 +50,7 @@ async fn async_main() {
     loop {
         for peer in socket.accept_new_connections() {
             info!("Found a peer {:?}", peer);
-            let packet = "hello server!".as_bytes().to_vec().into_boxed_slice();
+            let packet = "hello client!".as_bytes().to_vec().into_boxed_slice();
             socket.send(packet, peer);
         }
 

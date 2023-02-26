@@ -7,6 +7,7 @@ use std::collections::HashMap;
 
 #[derive(Default, Debug, Clone)]
 pub(crate) struct ServerState {
+    pub host: Option<Peer>,
     pub clients: HashMap<PeerId, Peer>,
 }
 
@@ -32,6 +33,22 @@ impl ServerState {
         message: Message,
     ) -> Result<(), ServerError> {
         let peer = self.clients.get(id);
+        let peer = match peer {
+            Some(peer) => peer,
+            None => {
+                return Err(ServerError::UnknownPeer);
+            }
+        };
+
+        peer.sender.send(Ok(message)).map_err(ServerError::from)
+    }
+
+    /// Send a message to a client without blocking.
+    pub fn try_send_to_host(
+        &self,
+        message: Message,
+    ) -> Result<(), ServerError> {
+        let peer = self.host.as_ref();
         let peer = match peer {
             Some(peer) => peer,
             None => {

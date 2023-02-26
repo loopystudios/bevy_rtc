@@ -1,3 +1,4 @@
+#![feature(is_some_and)]
 use crate::{signaling::ws_handler, state::ServerState};
 use axum::{http::StatusCode, response::IntoResponse, routing::get, Router};
 mod glue;
@@ -41,7 +42,7 @@ async fn main() {
     let server_state =
         Arc::new(futures::lock::Mutex::new(ServerState::default()));
     let app = Router::new()
-        .route("/", get(ws_handler))
+        .route("/:client_type", get(ws_handler))
         .layer(
             // Allow requests from anywhere - Not ideal for production!
             CorsLayer::new()
