@@ -95,7 +95,7 @@ async fn async_main() {
             }
 
             _ = (&mut timeout).fuse() => {
-                timeout.reset(Duration::from_millis(5000));
+                timeout.reset(Duration::from_millis(100));
             }
 
             _ = &mut loop_fut => {
