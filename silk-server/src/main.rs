@@ -84,8 +84,8 @@ async fn async_main() {
             _ = (&mut broadcast_every).fuse() => {
                 if !server_state.clients.is_empty() {
                     info!("sending propoganda");
-                    for (i, client) in server_state.clients.iter().enumerate() {
-                        let packet = format!("Hello peer {}, the server has {} clients", i + 1, server_state.clients.len())
+                    for client in server_state.clients.iter() {
+                        let packet = format!("Hello {}, the server has {} clients", client, server_state.clients.len())
                             .as_bytes().to_vec().into_boxed_slice();
                         socket.send(packet, client);
                     }
