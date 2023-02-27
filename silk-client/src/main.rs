@@ -1,6 +1,6 @@
 use futures::{select, FutureExt};
 use futures_timer::Delay;
-use log::{error, info};
+use log::info;
 use matchbox_socket::WebRtcSocket;
 use std::{
     sync::atomic::{AtomicBool, Ordering},
