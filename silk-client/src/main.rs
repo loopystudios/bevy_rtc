@@ -1,8 +1,11 @@
 use futures::{select, FutureExt};
 use futures_timer::Delay;
-use log::info;
+use log::{error, info};
 use matchbox_socket::WebRtcSocket;
-use std::time::Duration;
+use std::{
+    sync::atomic::{AtomicBool, Ordering},
+    time::Duration,
+};
 
 #[cfg(target_arch = "wasm32")]
 fn main() {
@@ -39,6 +42,7 @@ async fn async_main() {
     let (mut socket, loop_fut) =
         WebRtcSocket::new_unreliable("ws://localhost:3536/Client");
 
+    let connected = AtomicBool::new(false);
     info!("my id is {:?}", socket.id());
 
     let loop_fut = loop_fut.fuse();
@@ -48,10 +52,23 @@ async fn async_main() {
     futures::pin_mut!(timeout);
 
     loop {
-        for peer in socket.accept_new_connections() {
-            info!("Found a peer {:?}", peer);
-            let packet = "hello server!".as_bytes().to_vec().into_boxed_slice();
-            socket.send(packet, peer);
+        if !connected.load(Ordering::Acquire) {
+            let peers = socket.accept_new_connections();
+            if let Some(host) = peers.first() {
+                let packet =
+                    "hello server!".as_bytes().to_vec().into_boxed_slice();
+                socket.send(packet, host);
+                connected.store(true, Ordering::Release);
+            }
+        }
+
+        if connected.load(Ordering::Acquire) {
+            let peers = socket.disconnected_peers();
+            if peers.first().is_some() {
+                info!("Host disconnected!");
+                connected.store(false, Ordering::Release);
+                break;
+            }
         }
 
         for (peer, packet) in socket.receive() {
@@ -60,10 +77,6 @@ async fn async_main() {
                 peer,
                 String::from_utf8_lossy(&packet)
             );
-        }
-        let disconnected_peers = socket.disconnected_peers();
-        if !disconnected_peers.is_empty() {
-            info!("Disconnected peers: {:?}", disconnected_peers);
         }
 
         select! {
@@ -76,6 +89,4 @@ async fn async_main() {
             }
         }
     }
-
-    info!("Done");
 }
