@@ -7,6 +7,7 @@ members = [
 ]
 
 [workspace.dependencies]
+matchbox_socket = { git = "https://github.com/johanhelsing/matchbox", rev = "14b05df" }
 anyhow = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 bincode = "1.3"

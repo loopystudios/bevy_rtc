@@ -44,10 +44,10 @@ pub(crate) async fn ws_handler(
 
 fn parse_request(
     request: Result<Message, Error>,
-) -> Result<PeerRequest<serde_json::Value>, ClientRequestError> {
+) -> Result<PeerRequest, ClientRequestError> {
     let request = request?;
 
-    let request: PeerRequest<serde_json::Value> = match request {
+    let request: PeerRequest = match request {
         Message::Text(text) => serde_json::from_str(&text)?,
         Message::Close(_) => return Err(ClientRequestError::Close),
         _ => return Err(ClientRequestError::UnsupportedType),
@@ -72,7 +72,66 @@ async fn handle_ws(
 ) {
     let (ws_sender, mut ws_receiver) = websocket.split();
     let sender = spawn_sender_task(ws_sender);
-    let mut peer_uuid = None;
+
+    // Ensure host setup
+    {
+        let state = state.lock().await;
+        if !is_host && state.host.is_none() {
+            error!("client cannot connect until there's a host");
+            return;
+        }
+        if is_host && state.host.is_some() {
+            error!("there is already a host");
+            return;
+        }
+    }
+
+    // Generate a UUID for the user
+    let peer_uuid = uuid::Uuid::new_v4().to_string();
+    {
+        let mut state = state.lock().await;
+        state.add_client(Peer {
+            uuid: peer_uuid.clone(),
+            sender: sender.clone(),
+        });
+
+        let event_text =
+            serde_json::to_string(&PeerEvent::IdAssigned(peer_uuid.clone()))
+                .expect("error serializing message");
+        let event = Message::Text(event_text.clone());
+
+        if let Err(e) = state.try_send(&peer_uuid, event) {
+            error!("error sending to {peer_uuid}: {e:?}");
+            return;
+        } else {
+            info!("{peer_uuid} -> {event_text}");
+        };
+
+        // TODO: Shouldn't we wait for a "ready" signal or something here?
+
+        if is_host {
+            // Set host
+            state.host.replace(Peer {
+                uuid: peer_uuid.clone(),
+                sender: sender.clone(),
+            });
+            info!("SET HOST: {peer_uuid}");
+        } else {
+            // Set client
+            let peer_event = PeerEvent::NewPeer(peer_uuid.clone());
+            let event_text = serde_json::to_string(&peer_event)
+                .expect("error serializing message");
+            let event = Message::Text(event_text.clone());
+
+            // Tell host about this new client
+            if let Err(e) = state.try_send_to_host(event.clone()) {
+                error!("error sending peer {peer_uuid} to host: {e:?}");
+                return;
+            } else {
+                info!("{peer_uuid} -> {event_text}");
+            }
+        }
+    }
 
     // The state machine for the data channel established for this websocket.
     while let Some(request) = ws_receiver.next().await {
@@ -82,9 +141,7 @@ async fn handle_ws(
             Err(ClientRequestError::Axum(e)) => {
                 // Most likely a ConnectionReset or similar.
                 error!("Axum error while receiving request: {:?}", e);
-                if let Some(ref peer_uuid) = peer_uuid {
-                    warn!("Severing connection with {peer_uuid}")
-                }
+                warn!("Severing connection with {peer_uuid}");
                 break; // give up on this peer.
             }
             Err(ClientRequestError::Close) => {
@@ -97,129 +154,77 @@ async fn handle_ws(
             }
         };
 
-        info!("{:?} <- {:?}", peer_uuid, request);
-
+        // Handle the message
+        info!("{peer_uuid} <- {request:?}");
         match request {
-            PeerRequest::Uuid(id) => {
-                let mut state = state.lock().await;
-                if peer_uuid.is_some() {
-                    error!("client set uuid more than once");
-                    continue;
-                }
-
-                if !is_host && state.host.is_none() {
-                    error!("client cannot connect until there's a host");
-                    break;
-                }
-                if is_host && state.host.is_some() {
-                    error!("there is already a host");
-                    break;
-                }
-
-                // Add peer
-                peer_uuid.replace(id.clone());
-                state.add_client(Peer {
-                    uuid: id.clone(),
-                    sender: sender.clone(),
-                });
-
-                if is_host {
-                    // Set host
-                    state.host.replace(Peer {
-                        uuid: id.clone(),
-                        sender: sender.clone(),
-                    });
-                    info!("SET HOST: {id}");
-                } else {
-                    // Set client
-                    let peer_event =
-                        PeerEvent::<serde_json::Value>::NewPeer(id.clone());
-                    let event_text = serde_json::to_string(&peer_event)
-                        .expect("error serializing message");
-                    let event = Message::Text(event_text.clone());
-
-                    // Tell host about this new client
-                    if let Err(e) = state.try_send_to_host(event.clone()) {
-                        error!("error sending peer {id} to host: {e:?}");
-                    } else {
-                        info!("{:?} -> {:?}", id, event_text);
-                    }
-                }
-            }
             PeerRequest::Signal { receiver, data } => {
-                let sender = match peer_uuid.clone() {
-                    Some(sender) => sender,
-                    None => {
-                        error!("client is trying signal before sending uuid");
-                        continue;
-                    }
-                };
                 let event = Message::Text(
-                    serde_json::to_string(&PeerEvent::Signal { sender, data })
-                        .expect("error serializing message"),
+                    serde_json::to_string(&PeerEvent::Signal {
+                        sender: peer_uuid.clone(),
+                        data,
+                    })
+                    .expect("error serializing message"),
                 );
                 let state = state.lock().await;
                 if let Some(peer) = state.clients.get(&receiver) {
                     if let Err(e) = peer.sender.send(Ok(event)) {
-                        error!("error sending: {:?}", e);
+                        error!("error sending: {e:?}");
                     }
                 } else {
                     warn!("peer not found ({receiver}), ignoring signal");
                 }
             }
-            PeerRequest::KeepAlive => {}
+            PeerRequest::KeepAlive => {
+                // Do nothing. KeepAlive packets are used to protect against
+                // users' browsers disconnecting idle websocket connections.
+            }
         }
     }
 
     // Peer disconnected or otherwise ended communication.
-    if let Some(uuid) = peer_uuid {
-        info!("Removing peer: {:?}", uuid);
-        let mut state = state.lock().await;
+    info!("Removing peer: {:?}", peer_uuid);
+    let mut state = state.lock().await;
 
-        if state.host.as_ref().is_some_and(|host| host.uuid == uuid) {
-            // Tell each connected peer about the disconnected host.
-            let peer_event = PeerEvent::<serde_json::Value>::PeerLeft(
-                state.host.as_ref().unwrap().uuid.clone(),
-            );
-            let event = Message::Text(
-                serde_json::to_string(&peer_event)
-                    .expect("error serializing message"),
-            );
-            for peer_id in state
-                .clients
-                .keys()
-                .filter(|id| id != &&state.host.as_ref().unwrap().uuid)
-            {
-                match state.try_send(peer_id, event.clone()) {
-                    Ok(()) => {
-                        info!("Sent host peer remove to: {:?}", peer_id)
-                    }
-                    Err(e) => {
-                        error!("Failure sending peer remove: {e:?}")
-                    }
-                }
-            }
-            state.host.take();
-        } else if let Some(removed_peer) = state.remove_client(&uuid) {
-            // Host must exist
-            // Tell host about disconnected clent
-            let peer_event = PeerEvent::<serde_json::Value>::PeerLeft(
-                removed_peer.uuid.clone(),
-            );
-            let event = Message::Text(
-                serde_json::to_string(&peer_event)
-                    .expect("error serializing message"),
-            );
-            match state.try_send_to_host(event) {
+    if state
+        .host
+        .as_ref()
+        .is_some_and(|host| host.uuid == peer_uuid)
+    {
+        // Tell each connected peer about the disconnected host.
+        let peer_event =
+            PeerEvent::PeerLeft(state.host.as_ref().unwrap().uuid.clone());
+        let event = Message::Text(
+            serde_json::to_string(&peer_event)
+                .expect("error serializing message"),
+        );
+        for peer_id in state
+            .clients
+            .keys()
+            .filter(|id| id != &&state.host.as_ref().unwrap().uuid)
+        {
+            match state.try_send(peer_id, event.clone()) {
                 Ok(()) => {
-                    info!(
-                        "Notified host of peer remove: {:?}",
-                        &removed_peer.uuid
-                    )
+                    info!("Sent host peer remove to: {peer_id:?}")
                 }
                 Err(e) => {
-                    error!("Failure sending peer remove to host: {e:?}")
+                    error!("Failure sending host peer remove to {peer_id:?}: {e:?}")
                 }
+            }
+        }
+        state.host.take();
+    } else if let Some(removed_peer) = state.remove_client(&peer_uuid) {
+        // Tell host about disconnected clent
+        let peer_event = PeerEvent::PeerLeft(removed_peer.uuid.clone());
+        let event = Message::Text(
+            serde_json::to_string(&peer_event)
+                .expect("error serializing message"),
+        );
+        match state.try_send_to_host(event) {
+            Ok(()) => {
+                info!("Notified host of peer remove: {:?}", &removed_peer.uuid)
+            }
+            Err(e) => {
+                error!("Failure sending peer remove to host: {e:?}")
             }
         }
     }

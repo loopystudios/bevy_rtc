@@ -1,7 +1,7 @@
 use futures::{select, FutureExt};
 use futures_timer::Delay;
 use log::{info, warn};
-use matchbox_socket::WebRtcSocket;
+use matchbox_socket::{PeerState, WebRtcSocket};
 use std::{collections::HashSet, time::Duration};
 
 #[tokio::main]
@@ -45,17 +45,20 @@ async fn async_main() {
     futures::pin_mut!(broadcast_every);
 
     'tick: loop {
-        // Check for new peers
-        for peer in socket.accept_new_connections() {
-            info!("Found a peer {:?}", peer);
-            let packet = "hello client!".as_bytes().to_vec().into_boxed_slice();
-            socket.send(packet, peer.clone());
-            server_state.clients.insert(peer);
-        }
-        // Check for peer disconnects
-        for peer in socket.disconnected_peers() {
-            info!("Disconnected peer: {:?}", peer);
-            server_state.clients.remove(&peer);
+        for (peer, state) in socket.update_peers() {
+            match state {
+                PeerState::Connected => {
+                    info!("Found a peer {:?}", peer);
+                    let packet =
+                        "hello client!".as_bytes().to_vec().into_boxed_slice();
+                    socket.send(packet, peer.clone());
+                    server_state.clients.insert(peer);
+                }
+                PeerState::Disconnected => {
+                    info!("Disconnected peer: {:?}", peer);
+                    server_state.clients.remove(&peer);
+                }
+            }
         }
 
         // Check for new messages

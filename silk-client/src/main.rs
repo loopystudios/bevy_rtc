@@ -1,7 +1,7 @@
 use futures::{select, FutureExt};
 use futures_timer::Delay;
-use log::info;
-use matchbox_socket::WebRtcSocket;
+use log::{error, info};
+use matchbox_socket::{PeerState, WebRtcSocket};
 use std::{
     sync::atomic::{AtomicBool, Ordering},
     time::Duration,
@@ -49,23 +49,28 @@ async fn async_main() {
     let timeout = Delay::new(Duration::from_millis(100));
     futures::pin_mut!(timeout);
 
-    loop {
-        if !connected.load(Ordering::Acquire) {
-            let peers = socket.accept_new_connections();
-            if let Some(host) = peers.first() {
-                let packet =
-                    "hello server!".as_bytes().to_vec().into_boxed_slice();
-                socket.send(packet, host);
-                connected.store(true, Ordering::Release);
-            }
-        }
-
-        if connected.load(Ordering::Acquire) {
-            let peers = socket.disconnected_peers();
-            if peers.first().is_some() {
-                info!("Host disconnected!");
-                connected.store(false, Ordering::Release);
-                break;
+    'client: loop {
+        for (peer, state) in socket.update_peers() {
+            match state {
+                PeerState::Connected => {
+                    if !connected.load(Ordering::Acquire) {
+                        let packet = "hello server!"
+                            .as_bytes()
+                            .to_vec()
+                            .into_boxed_slice();
+                        socket.send(packet, peer);
+                        connected.store(true, Ordering::Release);
+                    } else {
+                        error!("socket already connected to a host");
+                    }
+                }
+                PeerState::Disconnected => {
+                    if connected.load(Ordering::Acquire) {
+                        info!("Host disconnected!");
+                        connected.store(false, Ordering::Release);
+                        break 'client;
+                    }
+                }
             }
         }
 
@@ -83,7 +88,7 @@ async fn async_main() {
             }
 
             _ = &mut loop_fut => {
-                break;
+                break 'client;
             }
         }
     }
