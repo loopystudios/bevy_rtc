@@ -1,6 +1,6 @@
 use axum::{extract::ws::Message, Error};
-pub type PeerId = String;
 
+pub type PeerId = String;
 #[derive(Debug, Clone)]
 pub(crate) struct Peer {
     pub uuid: PeerId,
