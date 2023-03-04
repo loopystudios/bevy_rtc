@@ -210,19 +210,25 @@ async fn handle_ws(
             }
         }
         state.host.take();
+        info!("HOST UNSET");
     } else if let Some(removed_peer) = state.remove_client(&peer_uuid) {
-        // Tell host about disconnected clent
-        let peer_event = PeerEvent::PeerLeft(removed_peer.uuid.clone());
-        let event = Message::Text(
-            serde_json::to_string(&peer_event)
-                .expect("error serializing message"),
-        );
-        match state.try_send_to_host(event) {
-            Ok(()) => {
-                info!("Notified host of peer remove: {:?}", &removed_peer.uuid)
-            }
-            Err(e) => {
-                error!("Failure sending peer remove to host: {e:?}")
+        if state.host.is_some() {
+            // Tell host about disconnected clent
+            let peer_event = PeerEvent::PeerLeft(removed_peer.uuid.clone());
+            let event = Message::Text(
+                serde_json::to_string(&peer_event)
+                    .expect("error serializing message"),
+            );
+            match state.try_send_to_host(event) {
+                Ok(()) => {
+                    info!(
+                        "Notified host of peer remove: {:?}",
+                        &removed_peer.uuid
+                    )
+                }
+                Err(e) => {
+                    error!("Failure sending peer remove to host: {e:?}")
+                }
             }
         }
     }

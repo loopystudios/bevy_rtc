@@ -95,7 +95,7 @@ async fn async_main() {
                 for client in server_state.clients.iter() {
                     let packet = format!("Hello {}, the server has {} clients", client, server_state.clients.len())
                         .as_bytes().to_vec().into_boxed_slice();
-                    socket.send_on_channel(packet, client, 0);
+                    socket.send_on_channel(packet, client, 1);
                 }
                 broadcast_every.reset(Duration::from_millis(5000));
             }
