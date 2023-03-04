@@ -38,7 +38,7 @@ async fn async_main() {
     let config = WebRtcSocketConfig {
         room_url: "ws://localhost:3536/Host".to_string(),
         ice_server: RtcIceServerConfig::default(),
-        channels: vec![ChannelConfig::reliable(), ChannelConfig::unreliable()],
+        channels: vec![ChannelConfig::unreliable(), ChannelConfig::reliable()],
         attempts: Some(3),
     };
     let (mut socket, loop_fut) = WebRtcSocket::new_with_config(config);
@@ -70,7 +70,7 @@ async fn async_main() {
         }
 
         // Check for new messages
-        for (peer, packet) in socket.receive() {
+        for (peer, packet) in socket.receive_on_channel(1) {
             info!(
                 "Received from {:?}: {:?}",
                 peer,
