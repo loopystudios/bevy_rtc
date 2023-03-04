@@ -90,12 +90,11 @@ fn on_connected(mut commands: Commands) {
 
 fn poll_socket(
     mut app_state: ResMut<State<AppState>>,
-    socket: Option<ResMut<SocketResource>>,
+    mut socket_res: Option<ResMut<SocketResource>>,
 ) {
-    if let Some(mut socket) = socket {
-        let socket = socket.0.as_mut().unwrap();
-
-        // Process event queue that came through the socket receiver to ensure
+    if let Some(socket) = socket_res.as_mut().and_then(|s| s.0.as_mut()) {
+        // Process event queue that came through the socket receiver to
+        // ensure
         socket.update_peers();
         // Count connected peers
         let connected_peers = socket.connected_peers().count();
