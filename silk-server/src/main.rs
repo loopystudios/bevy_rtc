@@ -1,6 +1,6 @@
 use futures::{select, FutureExt};
 use futures_timer::Delay;
-use log::{info, warn};
+use log::{debug, info, warn};
 use matchbox_socket::{
     ChannelConfig, PeerState, RtcIceServerConfig, WebRtcSocket,
     WebRtcSocketConfig,
@@ -59,7 +59,7 @@ async fn async_main() {
                     info!("Found a peer {:?}", peer);
                     let packet =
                         "hello client!".as_bytes().to_vec().into_boxed_slice();
-                    socket.send(packet, peer.clone());
+                    socket.send_on_channel(packet, peer.clone(), 1);
                     server_state.clients.insert(peer);
                 }
                 PeerState::Disconnected => {
@@ -76,6 +76,12 @@ async fn async_main() {
                 peer,
                 String::from_utf8_lossy(&packet)
             );
+            for client in server_state.clients.iter() {
+                if *client != peer {
+                    info!("forwarding to {client}");
+                    socket.send_on_channel(packet.clone(), client, 1);
+                }
+            }
         }
 
         select! {

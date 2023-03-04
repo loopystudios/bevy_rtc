@@ -101,7 +101,7 @@ async fn async_main() {
             }
         }
 
-        for (peer, packet) in socket.receive() {
+        for (peer, packet) in socket.receive_on_channel(1) {
             info!(
                 "Received from {:?}: {:?}",
                 peer,
