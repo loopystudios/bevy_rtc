@@ -8,6 +8,6 @@ name = "game"
 path = "src/main.rs"
 
 [dependencies]
-bevy = "0.9.1"
+bevy = "0.9"
 matchbox_socket = { workspace = true }
 silk-common = { path = "../silk-common" }

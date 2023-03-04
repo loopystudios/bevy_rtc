@@ -1,4 +1,6 @@
-use bevy::{log::LogPlugin, prelude::*, tasks::IoTaskPool};
+use bevy::{
+    log::LogPlugin, prelude::*, tasks::IoTaskPool, time::FixedTimestep,
+};
 use matchbox_socket::WebRtcSocket;
 use silk_common::SocketConfig;
 
@@ -28,9 +30,13 @@ fn main() {
     )
     .add_state(AppState::Connecting)
     .add_system_set(
-        SystemSet::on_enter(AppState::Connecting)
-            .with_system(on_connecting)
-            .with_system(start_matchbox_socket),
+        // Attempt to reconnect every 5 seconds
+        SystemSet::new()
+            .with_system(connect_socket)
+            .with_run_criteria(FixedTimestep::step(5.0)),
+    )
+    .add_system_set(
+        SystemSet::on_enter(AppState::Connecting).with_system(on_connecting),
     )
     .add_system_set(
         SystemSet::on_update(AppState::Connecting).with_system(poll_socket),
@@ -50,19 +56,28 @@ fn setup_cam(mut commands: Commands) {
 }
 
 #[derive(Default, Resource)]
-struct SocketResource(Option<WebRtcSocket>);
+struct SocketResource(pub Option<WebRtcSocket>);
 
-fn start_matchbox_socket(mut commands: Commands) {
-    let config = SocketConfig::LocalClient { port: 3536 }.get();
-    info!("connecting to matchbox server");
-    let (socket, message_loop) = WebRtcSocket::new_with_config(config);
+fn connect_socket(
+    mut commands: Commands,
+    socket_res: Option<ResMut<SocketResource>>,
+    app_state: ResMut<State<AppState>>,
+) {
+    if let AppState::Connecting = app_state.current() {
+        if let Some(mut socket_res) = socket_res {
+            socket_res.0.take();
+        }
+        let config = SocketConfig::LocalClient { port: 3536 }.get();
+        info!("connecting to matchbox server");
+        let (socket, message_loop) = WebRtcSocket::new_with_config(config);
 
-    // The message loop needs to be awaited, or nothing will happen.
-    // We do this here using bevy's task system.
-    let task_pool = IoTaskPool::get();
-    task_pool.spawn(message_loop).detach();
+        // The message loop needs to be awaited, or nothing will happen.
+        // We do this here using bevy's task system.
+        let task_pool = IoTaskPool::get();
+        task_pool.spawn(message_loop).detach();
 
-    commands.insert_resource(SocketResource(Some(socket)));
+        commands.insert_resource(SocketResource(Some(socket)));
+    }
 }
 
 fn on_connecting(mut commands: Commands) {
@@ -75,31 +90,34 @@ fn on_connected(mut commands: Commands) {
 
 fn poll_socket(
     mut app_state: ResMut<State<AppState>>,
-    mut socket: ResMut<SocketResource>,
+    socket: Option<ResMut<SocketResource>>,
 ) {
-    let socket = socket.0.as_mut().unwrap();
-    // Process event queue that came through the socket receiver to ensure
-    socket.update_peers();
-    // Count connected peers
-    let connected_peers = socket.connected_peers().count();
+    if let Some(mut socket) = socket {
+        let socket = socket.0.as_mut().unwrap();
 
-    if connected_peers == 0 {
-        // Not connected!
-        if let AppState::InGame = app_state.current() {
-            warn!("DISCONNECTED!!!");
-            app_state.set(AppState::Connecting).expect(
-                "Tried to go back to connecting while already connecting",
-            );
-        }
-    } else {
-        // Host connected!
-        if let AppState::Connecting = app_state.current() {
-            for peer in socket.connected_peers() {
-                info!("I am connected to {peer}");
+        // Process event queue that came through the socket receiver to ensure
+        socket.update_peers();
+        // Count connected peers
+        let connected_peers = socket.connected_peers().count();
+
+        if connected_peers == 0 {
+            // Not connected!
+            if let AppState::InGame = app_state.current() {
+                warn!("DISCONNECTED!!!");
+                app_state.set(AppState::Connecting).expect(
+                    "Tried to go back to connecting while already connecting",
+                );
             }
-            app_state
-                .set(AppState::InGame)
-                .expect("Tried to go in-game while already in-game");
+        } else {
+            // Host connected!
+            if let AppState::Connecting = app_state.current() {
+                for peer in socket.connected_peers() {
+                    info!("I am connected to {peer}");
+                }
+                app_state
+                    .set(AppState::InGame)
+                    .expect("Tried to go in-game while already in-game");
+            }
         }
     }
 }
