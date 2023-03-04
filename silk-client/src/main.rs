@@ -2,10 +2,7 @@
 use futures::{select, FutureExt};
 use futures_timer::Delay;
 use log::{debug, error, info};
-use matchbox_socket::{
-    ChannelConfig, PeerState, RtcIceServerConfig, WebRtcSocket,
-    WebRtcSocketConfig,
-};
+use matchbox_socket::{PeerState, WebRtcSocket};
 use silk_common::SocketConfig;
 use std::{
     sync::{
