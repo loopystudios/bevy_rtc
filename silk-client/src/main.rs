@@ -6,6 +6,7 @@ use matchbox_socket::{
     ChannelConfig, PeerState, RtcIceServerConfig, WebRtcSocket,
     WebRtcSocketConfig,
 };
+use silk_common::SocketConfig;
 use std::{
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -47,12 +48,7 @@ async fn main() {
 
 async fn async_main() {
     info!("Connecting to matchbox");
-    let config = WebRtcSocketConfig {
-        room_url: "ws://localhost:3536/Client".to_string(),
-        ice_server: RtcIceServerConfig::default(),
-        channels: vec![ChannelConfig::unreliable(), ChannelConfig::reliable()],
-        attempts: Some(3),
-    };
+    let config = SocketConfig::LocalClient { port: 3536 }.get();
     let (mut socket, loop_fut) = WebRtcSocket::new_with_config(config);
 
     let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel();
@@ -101,7 +97,9 @@ async fn async_main() {
             }
         }
 
-        for (peer, packet) in socket.receive_on_channel(1) {
+        for (peer, packet) in
+            socket.receive_on_channel(SocketConfig::RELIABLE_CHANNEL_INDEX)
+        {
             info!(
                 "Received from {:?}: {:?}",
                 peer,
@@ -114,7 +112,11 @@ async fn async_main() {
                 debug!("sending: {line}");
                 let packet = line.as_bytes().to_vec().into_boxed_slice();
                 let host_peer_id = host_peer_id.as_ref().unwrap();
-                socket.send_on_channel(packet, host_peer_id, 1);
+                socket.send_on_channel(
+                    packet,
+                    host_peer_id,
+                    SocketConfig::RELIABLE_CHANNEL_INDEX,
+                );
             }
         }
 
