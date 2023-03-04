@@ -1,7 +1,10 @@
 use futures::{select, FutureExt};
 use futures_timer::Delay;
 use log::{info, warn};
-use matchbox_socket::{PeerState, WebRtcSocket};
+use matchbox_socket::{
+    ChannelConfig, PeerState, RtcIceServerConfig, WebRtcSocket,
+    WebRtcSocketConfig,
+};
 use std::{collections::HashSet, time::Duration};
 
 #[tokio::main]
@@ -32,8 +35,13 @@ async fn async_main() {
     let mut server_state = Clients {
         clients: HashSet::new(),
     };
-    let (mut socket, loop_fut) =
-        WebRtcSocket::new_unreliable("ws://localhost:3536/Host");
+    let config = WebRtcSocketConfig {
+        room_url: "ws://localhost:3536/Host".to_string(),
+        ice_server: RtcIceServerConfig::default(),
+        channels: vec![ChannelConfig::reliable(), ChannelConfig::unreliable()],
+        attempts: Some(3),
+    };
+    let (mut socket, loop_fut) = WebRtcSocket::new_with_config(config);
 
     let loop_fut = loop_fut.fuse();
     futures::pin_mut!(loop_fut);
@@ -81,7 +89,7 @@ async fn async_main() {
                 for client in server_state.clients.iter() {
                     let packet = format!("Hello {}, the server has {} clients", client, server_state.clients.len())
                         .as_bytes().to_vec().into_boxed_slice();
-                    socket.send(packet, client);
+                    socket.send_on_channel(packet, client, 0);
                 }
                 broadcast_every.reset(Duration::from_millis(5000));
             }

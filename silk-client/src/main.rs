@@ -41,7 +41,6 @@ async fn async_main() {
         WebRtcSocket::new_unreliable("ws://localhost:3536/Client");
 
     let connected = AtomicBool::new(false);
-    info!("my id is {:?}", socket.id());
 
     let loop_fut = loop_fut.fuse();
     futures::pin_mut!(loop_fut);
