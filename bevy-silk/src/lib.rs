@@ -1,32 +1,23 @@
-use std::net::IpAddr;
-
 use bevy::{prelude::*, tasks::IoTaskPool};
-use events::SocketEvent;
+use events::SilkSocketEvent;
 use matchbox_socket::{WebRtcSocket, WebRtcSocketConfig};
-use silk_common::SocketConfig;
-mod events;
+use silk_common::SilkSocketConfig;
+pub mod events;
 
 pub struct SilkClientPlugin {
-    config: WebRtcSocketConfig,
-}
-
-impl SilkClientPlugin {
-    fn new(silk_config: SocketConfig) -> Self {
-        Self {
-            config: silk_config.get(),
-        }
-    }
+    pub config: SilkSocketConfig,
 }
 
 impl Plugin for SilkClientPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(SocketResource {
             id: None,
-            config: self.config.clone(),
+            config: self.config.get(),
             socket: None,
         })
         .add_startup_system(init_socket)
-        .add_system(poll_socket);
+        .add_event::<SilkSocketEvent>()
+        .add_system(event_writer);
     }
 }
 
@@ -51,9 +42,9 @@ fn init_socket(mut socket_res: ResMut<SocketResource>) {
     socket_res.as_mut().socket.replace(socket);
 }
 
-fn poll_socket(
+fn event_writer(
     mut socket_res: ResMut<SocketResource>,
-    mut event_wtr: EventWriter<SocketEvent>,
+    mut event_wtr: EventWriter<SilkSocketEvent>,
 ) {
     let socket_res = socket_res.as_mut();
     if let Some(ref mut socket) = socket_res.socket {
@@ -64,23 +55,23 @@ fn poll_socket(
             socket
                 .update_peers()
                 .into_iter()
-                .map(SocketEvent::PeerStateChange),
+                .map(SilkSocketEvent::PeerStateChange),
         );
 
         // Unreliable messages
         event_wtr.send_batch(
             socket
-                .receive_on_channel(SocketConfig::UNRELIABLE_CHANNEL_INDEX)
+                .receive_on_channel(SilkSocketConfig::UNRELIABLE_CHANNEL_INDEX)
                 .into_iter()
-                .map(SocketEvent::Message),
+                .map(SilkSocketEvent::Message),
         );
 
         // Reliable messages
         event_wtr.send_batch(
             socket
-                .receive_on_channel(SocketConfig::RELIABLE_CHANNEL_INDEX)
+                .receive_on_channel(SilkSocketConfig::RELIABLE_CHANNEL_INDEX)
                 .into_iter()
-                .map(SocketEvent::Message),
+                .map(SilkSocketEvent::Message),
         );
 
         // Id changed events
@@ -88,13 +79,13 @@ fn poll_socket(
             Some(id) => {
                 if socket_res.id.is_none() {
                     socket_res.id.replace(id.clone());
-                    event_wtr.send(SocketEvent::IdAssigned(id));
+                    event_wtr.send(SilkSocketEvent::IdAssigned(id));
                 }
             }
             None => {
                 if socket_res.id.is_some() {
                     socket_res.id.as_mut().take();
-                    event_wtr.send(SocketEvent::IdRemoved);
+                    event_wtr.send(SilkSocketEvent::IdRemoved);
                 }
             }
         }

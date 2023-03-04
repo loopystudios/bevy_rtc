@@ -3,7 +3,7 @@ use futures::{select, FutureExt};
 use futures_timer::Delay;
 use log::{debug, error, info};
 use matchbox_socket::{PeerState, WebRtcSocket};
-use silk_common::SocketConfig;
+use silk_common::SilkSocketConfig;
 use std::{
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -45,7 +45,7 @@ async fn main() {
 
 async fn async_main() {
     info!("Connecting to matchbox");
-    let config = SocketConfig::LocalClient { port: 3536 }.get();
+    let config = SilkSocketConfig::LocalClient { port: 3536 }.get();
     let (mut socket, loop_fut) = WebRtcSocket::new_with_config(config);
 
     let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel();
@@ -95,7 +95,7 @@ async fn async_main() {
         }
 
         for (peer, packet) in
-            socket.receive_on_channel(SocketConfig::RELIABLE_CHANNEL_INDEX)
+            socket.receive_on_channel(SilkSocketConfig::RELIABLE_CHANNEL_INDEX)
         {
             info!(
                 "Received from {:?}: {:?}",
@@ -112,7 +112,7 @@ async fn async_main() {
                 socket.send_on_channel(
                     packet,
                     host_peer_id,
-                    SocketConfig::RELIABLE_CHANNEL_INDEX,
+                    SilkSocketConfig::RELIABLE_CHANNEL_INDEX,
                 );
             }
         }

@@ -1,6 +1,6 @@
 use matchbox_socket::PeerState;
 
-pub enum SocketEvent {
+pub enum SilkSocketEvent {
     IdAssigned(String),
     IdRemoved,
     PeerStateChange((String, PeerState)),

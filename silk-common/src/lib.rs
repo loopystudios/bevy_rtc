@@ -4,30 +4,30 @@ use matchbox_socket::{ChannelConfig, RtcIceServerConfig, WebRtcSocketConfig};
 
 pub mod packets;
 
-pub enum SocketConfig {
+pub enum SilkSocketConfig {
     LocalHost { port: u16 },
     LocalClient { port: u16 },
     RemoteHost { ip: IpAddr, port: u16 },
     RemoteClient { ip: String, port: u16 },
 }
 
-impl SocketConfig {
+impl SilkSocketConfig {
     pub const UNRELIABLE_CHANNEL_INDEX: usize = 0;
     pub const RELIABLE_CHANNEL_INDEX: usize = 1;
 
     pub fn get(&self) -> WebRtcSocketConfig {
         WebRtcSocketConfig {
             room_url: match self {
-                SocketConfig::LocalHost { port } => {
+                SilkSocketConfig::LocalHost { port } => {
                     format!("ws://localhost:{port}/Host")
                 }
-                SocketConfig::LocalClient { port } => {
+                SilkSocketConfig::LocalClient { port } => {
                     format!("ws://localhost:{port}/Client")
                 }
-                SocketConfig::RemoteHost { ip, port } => {
+                SilkSocketConfig::RemoteHost { ip, port } => {
                     format!("ws://{ip}:{port}/Host")
                 }
-                SocketConfig::RemoteClient { ip, port } => {
+                SilkSocketConfig::RemoteClient { ip, port } => {
                     format!("ws://{ip}:{port}/Client")
                 }
             },

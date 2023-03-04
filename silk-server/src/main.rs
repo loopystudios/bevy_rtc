@@ -2,7 +2,7 @@ use futures::{select, FutureExt};
 use futures_timer::Delay;
 use log::{info, warn};
 use matchbox_socket::{PeerState, WebRtcSocket};
-use silk_common::SocketConfig;
+use silk_common::SilkSocketConfig;
 use std::{collections::HashSet, time::Duration};
 
 #[tokio::main]
@@ -33,7 +33,7 @@ async fn async_main() {
     let mut server_state = Clients {
         clients: HashSet::new(),
     };
-    let config = silk_common::SocketConfig::LocalHost { port: 3536 }.get();
+    let config = silk_common::SilkSocketConfig::LocalHost { port: 3536 }.get();
     let (mut socket, loop_fut) = WebRtcSocket::new_with_config(config);
 
     let loop_fut = loop_fut.fuse();
@@ -55,7 +55,7 @@ async fn async_main() {
                     socket.send_on_channel(
                         packet,
                         peer.clone(),
-                        SocketConfig::RELIABLE_CHANNEL_INDEX,
+                        SilkSocketConfig::RELIABLE_CHANNEL_INDEX,
                     );
                     server_state.clients.insert(peer);
                 }
@@ -68,7 +68,7 @@ async fn async_main() {
 
         // Check for new messages
         for (peer, packet) in
-            socket.receive_on_channel(SocketConfig::RELIABLE_CHANNEL_INDEX)
+            socket.receive_on_channel(SilkSocketConfig::RELIABLE_CHANNEL_INDEX)
         {
             info!(
                 "Received from {:?}: {:?}",
@@ -81,7 +81,7 @@ async fn async_main() {
                     socket.send_on_channel(
                         packet.clone(),
                         client,
-                        SocketConfig::RELIABLE_CHANNEL_INDEX,
+                        SilkSocketConfig::RELIABLE_CHANNEL_INDEX,
                     );
                 }
             }
@@ -98,7 +98,7 @@ async fn async_main() {
                 for client in server_state.clients.iter() {
                     let packet = format!("Hello {}, the server has {} clients", client, server_state.clients.len())
                         .as_bytes().to_vec().into_boxed_slice();
-                    socket.send_on_channel(packet, client, SocketConfig::RELIABLE_CHANNEL_INDEX);
+                    socket.send_on_channel(packet, client, SilkSocketConfig::RELIABLE_CHANNEL_INDEX);
                 }
                 broadcast_every.reset(Duration::from_millis(5000));
             }
