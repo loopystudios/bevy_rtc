@@ -1,8 +1,8 @@
 use futures::{select, FutureExt};
 use futures_timer::Delay;
 use log::{info, warn};
-use matchbox_socket::{PeerState, WebRtcSocket};
-use silk_common::SilkSocketConfig;
+use matchbox_socket::PeerState;
+use silk_common::{SilkSocket, SilkSocketConfig};
 use std::{collections::HashSet, time::Duration};
 
 #[tokio::main]
@@ -33,8 +33,9 @@ async fn async_main() {
     let mut server_state = Clients {
         clients: HashSet::new(),
     };
-    let config = silk_common::SilkSocketConfig::LocalHost { port: 3536 }.get();
-    let (mut socket, loop_fut) = WebRtcSocket::new_with_config(config);
+    let config = SilkSocketConfig::LocalSignallerAsHost { port: 3536 };
+    let socket = SilkSocket::new(config);
+    let (mut socket, loop_fut) = socket.into_parts();
 
     let loop_fut = loop_fut.fuse();
     futures::pin_mut!(loop_fut);

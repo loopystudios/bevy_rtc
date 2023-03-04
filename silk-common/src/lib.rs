@@ -1,33 +1,55 @@
-use std::net::IpAddr;
-
-use matchbox_socket::{ChannelConfig, RtcIceServerConfig, WebRtcSocketConfig};
+use matchbox_socket::{
+    ChannelConfig, Error, RtcIceServerConfig, WebRtcSocket, WebRtcSocketConfig,
+};
+use std::{future::Future, net::IpAddr, pin::Pin};
 
 pub mod packets;
 
+type MessageLoopFuture =
+    Pin<Box<dyn Future<Output = Result<(), Error>> + Send>>;
+
+pub struct SilkSocket {
+    socket: WebRtcSocket,
+    loop_fut: MessageLoopFuture,
+}
+
+impl SilkSocket {
+    pub fn new(config: SilkSocketConfig) -> Self {
+        let webrtc_config = config.to_matchbox_config();
+        let (socket, loop_fut) = WebRtcSocket::new_with_config(webrtc_config);
+        Self { socket, loop_fut }
+    }
+
+    pub fn into_parts(self) -> (WebRtcSocket, MessageLoopFuture) {
+        (self.socket, self.loop_fut)
+    }
+}
+
+#[derive(Debug, Clone)]
 pub enum SilkSocketConfig {
-    LocalHost { port: u16 },
-    LocalClient { port: u16 },
-    RemoteHost { ip: IpAddr, port: u16 },
-    RemoteClient { ip: String, port: u16 },
+    LocalSignallerAsHost { port: u16 },
+    LocalSignallerAsClient { port: u16 },
+    RemoteSignallerAsHost { ip: IpAddr, port: u16 },
+    RemoteSignallerClient { ip: IpAddr, port: u16 },
 }
 
 impl SilkSocketConfig {
     pub const UNRELIABLE_CHANNEL_INDEX: usize = 0;
     pub const RELIABLE_CHANNEL_INDEX: usize = 1;
 
-    pub fn get(&self) -> WebRtcSocketConfig {
+    pub fn to_matchbox_config(&self) -> WebRtcSocketConfig {
         WebRtcSocketConfig {
             room_url: match self {
-                SilkSocketConfig::LocalHost { port } => {
+                SilkSocketConfig::LocalSignallerAsHost { port } => {
                     format!("ws://localhost:{port}/Host")
                 }
-                SilkSocketConfig::LocalClient { port } => {
+                SilkSocketConfig::LocalSignallerAsClient { port } => {
                     format!("ws://localhost:{port}/Client")
                 }
-                SilkSocketConfig::RemoteHost { ip, port } => {
+                SilkSocketConfig::RemoteSignallerAsHost { ip, port } => {
                     format!("ws://{ip}:{port}/Host")
                 }
-                SilkSocketConfig::RemoteClient { ip, port } => {
+                SilkSocketConfig::RemoteSignallerClient { ip, port } => {
                     format!("ws://{ip}:{port}/Client")
                 }
             },

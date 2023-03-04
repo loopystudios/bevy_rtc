@@ -2,8 +2,8 @@
 use futures::{select, FutureExt};
 use futures_timer::Delay;
 use log::{debug, error, info};
-use matchbox_socket::{PeerState, WebRtcSocket};
-use silk_common::SilkSocketConfig;
+use matchbox_socket::PeerState;
+use silk_common::{SilkSocket, SilkSocketConfig};
 use std::{
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -45,8 +45,9 @@ async fn main() {
 
 async fn async_main() {
     info!("Connecting to matchbox");
-    let config = SilkSocketConfig::LocalClient { port: 3536 }.get();
-    let (mut socket, loop_fut) = WebRtcSocket::new_with_config(config);
+    let config = SilkSocketConfig::LocalSignallerAsClient { port: 3536 };
+    let socket = SilkSocket::new(config);
+    let (mut socket, loop_fut) = socket.into_parts();
 
     let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel();
     thread::spawn({
