@@ -3,8 +3,10 @@ members = [
     "silk-signaller",
     "silk-server",
     "silk-client",
-    "silk-common"
+    "silk-common",
+    "bevy-silk",
 ]
+resolver="2"
 
 [workspace.dependencies]
 matchbox_socket = { git = "https://github.com/johanhelsing/matchbox", rev = "14b05df" }
