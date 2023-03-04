@@ -27,7 +27,7 @@ fn main() {
             }),
     )
     .add_plugin(SilkClientPlugin {
-        config: SilkSocketConfig::LocalClient { port: 3536 },
+        config: SilkSocketConfig::LocalSignallerAsClient { port: 3536 },
     })
     .add_state(AppState::Connecting)
     .add_system(handle_events)
