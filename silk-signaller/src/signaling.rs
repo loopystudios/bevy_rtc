@@ -107,8 +107,6 @@ async fn handle_ws(
             info!("{peer_uuid} -> {event_text}");
         };
 
-        // TODO: Shouldn't we wait for a "ready" signal or something here?
-
         if is_host {
             // Set host
             state.host.replace(Peer {
@@ -124,7 +122,7 @@ async fn handle_ws(
             let event = Message::Text(event_text.clone());
 
             // Tell host about this new client
-            if let Err(e) = state.try_send_to_host(event.clone()) {
+            if let Err(e) = state.try_send_to_host(event) {
                 error!("error sending peer {peer_uuid} to host: {e:?}");
                 return;
             } else {
