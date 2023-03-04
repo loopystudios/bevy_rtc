@@ -63,19 +63,15 @@ fn handle_events(
                 info!("Got ID from signalling server: {id}")
             }
             SilkSocketEvent::IdRemoved => error!("Lost ID"),
-            SilkSocketEvent::PeerStateChange((peer, state)) => {
-                match state {
-                    matchbox_socket::PeerState::Connected => {
-                        // Connected to host
-                        info!("connected to {peer}");
-                        app_state.set(AppState::InGame).unwrap();
-                    }
-                    matchbox_socket::PeerState::Disconnected => {
-                        // Disconnected from host
-                        error!("disconnected from {peer}");
-                        app_state.set(AppState::Connecting).unwrap();
-                    }
-                }
+            SilkSocketEvent::ConnectedToHost(id) => {
+                // Connected to host
+                info!("Connected to host: {id}");
+                app_state.set(AppState::InGame).unwrap();
+            }
+            SilkSocketEvent::DisconnectedFromHost(id) => {
+                // Disconnected from host
+                error!("Disconnected from host: {id}");
+                app_state.set(AppState::Connecting).unwrap();
             }
             SilkSocketEvent::Message((peer, data)) => {
                 info!("message from {peer}: {}", String::from_utf8_lossy(data));

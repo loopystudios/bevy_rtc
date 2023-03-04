@@ -48,15 +48,19 @@ fn event_writer(
 ) {
     let socket_res = socket_res.as_mut();
     if let Some(ref mut socket) = socket_res.socket {
-        // Forward socket events unadulterated as events to Bevy.
+        // Create socket events for Silk
 
-        // Peer connection state updates
-        event_wtr.send_batch(
-            socket
-                .update_peers()
-                .into_iter()
-                .map(SilkSocketEvent::PeerStateChange),
-        );
+        // Connection state updates
+        for (id, state) in socket.update_peers() {
+            match state {
+                matchbox_socket::PeerState::Connected => {
+                    event_wtr.send(SilkSocketEvent::ConnectedToHost(id));
+                }
+                matchbox_socket::PeerState::Disconnected => {
+                    event_wtr.send(SilkSocketEvent::DisconnectedFromHost(id));
+                }
+            }
+        }
 
         // Unreliable messages
         event_wtr.send_batch(
