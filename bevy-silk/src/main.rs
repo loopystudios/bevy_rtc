@@ -1,6 +1,9 @@
+use std::net::{IpAddr, Ipv4Addr};
+
 use bevy::{log::LogPlugin, prelude::*};
-use bevy_silk::{events::SilkSocketEvent, SilkClientPlugin};
-use silk_common::SilkSocketConfig;
+use bevy_silk::{
+    events::SilkSocketEvent, ConnectToRemoteHostEvent, SilkClientPlugin,
+};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 enum AppState {
@@ -26,9 +29,7 @@ fn main() {
                 ..default()
             }),
     )
-    .add_plugin(SilkClientPlugin {
-        config: SilkSocketConfig::LocalSignallerAsClient { port: 3536 },
-    })
+    .add_plugin(SilkClientPlugin)
     .add_state(AppState::Connecting)
     .add_system(handle_events)
     .add_system_set(
@@ -38,11 +39,21 @@ fn main() {
         SystemSet::on_enter(AppState::InGame).with_system(on_connected),
     )
     .add_startup_system(setup_cam)
+    .add_startup_system(setup_networking)
     .run();
 }
 
 fn setup_cam(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
+}
+
+fn setup_networking(mut event_wtr: EventWriter<ConnectToRemoteHostEvent>) {
+    // Send one connect-to-host "request" (bevy event) on startup to the Silk
+    // Client plugin with the desired host description
+    event_wtr.send(ConnectToRemoteHostEvent {
+        ip: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
+        port: 3536,
+    });
 }
 
 fn on_connecting(mut commands: Commands) {
