@@ -5,8 +5,11 @@ use std::{future::Future, net::IpAddr, pin::Pin};
 
 pub mod packets;
 
+#[cfg(not(target_arch = "wasm32"))]
 type MessageLoopFuture =
     Pin<Box<dyn Future<Output = Result<(), Error>> + Send>>;
+#[cfg(target_arch = "wasm32")]
+type MessageLoopFuture = Pin<Box<dyn Future<Output = Result<(), Error>>>>;
 
 pub struct SilkSocket {
     socket: WebRtcSocket,
