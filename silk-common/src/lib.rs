@@ -1,15 +1,10 @@
 use matchbox_socket::{
-    ChannelConfig, Error, RtcIceServerConfig, WebRtcSocket, WebRtcSocketConfig,
+    ChannelConfig, MessageLoopFuture, RtcIceServerConfig, WebRtcSocket,
+    WebRtcSocketConfig,
 };
-use std::{future::Future, net::IpAddr, pin::Pin};
+use std::net::IpAddr;
 
 pub mod packets;
-
-#[cfg(not(target_arch = "wasm32"))]
-type MessageLoopFuture =
-    Pin<Box<dyn Future<Output = Result<(), Error>> + Send>>;
-#[cfg(target_arch = "wasm32")]
-type MessageLoopFuture = Pin<Box<dyn Future<Output = Result<(), Error>>>>;
 
 pub struct SilkSocket {
     socket: WebRtcSocket,
