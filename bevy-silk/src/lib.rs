@@ -132,18 +132,10 @@ fn event_writer(
         );
 
         // Id changed events
-        match socket.id() {
-            Some(id) => {
-                if socket_res.id.is_none() {
-                    socket_res.id.replace(id.clone());
-                    event_wtr.send(SilkSocketEvent::IdAssigned(id));
-                }
-            }
-            None => {
-                if socket_res.id.is_some() {
-                    socket_res.id.as_mut().take();
-                    event_wtr.send(SilkSocketEvent::IdRemoved);
-                }
+        if let Some(id) = socket.id() {
+            if socket_res.id.is_none() {
+                socket_res.id.replace(id.clone());
+                event_wtr.send(SilkSocketEvent::IdAssigned(id));
             }
         }
     }

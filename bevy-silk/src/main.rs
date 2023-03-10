@@ -73,7 +73,6 @@ fn handle_events(
             SilkSocketEvent::IdAssigned(id) => {
                 info!("Got ID from signalling server: {id}")
             }
-            SilkSocketEvent::IdRemoved => error!("Lost ID"),
             SilkSocketEvent::ConnectedToHost(id) => {
                 // Connected to host
                 info!("Connected to host: {id}");
