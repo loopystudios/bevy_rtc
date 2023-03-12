@@ -19,7 +19,7 @@ impl Plugin for SilkClientPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(SocketResource::default())
             .add_state(ConnectionState::Disconnected)
-            .add_event::<ConnectToRemoteHostEvent>()
+            .add_event::<ConnectionRequest>()
             .add_system(event_reader)
             .add_event::<SilkSocketEvent>()
             .add_system(event_writer)
@@ -40,32 +40,46 @@ struct SocketResource {
     pub mb_socket: Option<WebRtcSocket>,
 }
 
-pub struct ConnectToRemoteHostEvent {
-    pub ip: IpAddr,
-    pub port: u16,
+pub enum ConnectionRequest {
+    ConnectToRemoteHost { ip: IpAddr, port: u16 },
+    Disconnect,
 }
 
 fn event_reader(
-    mut event_reader: EventReader<ConnectToRemoteHostEvent>,
+    mut event_reader: EventReader<ConnectionRequest>,
     mut socket_res: ResMut<SocketResource>,
     mut connection_state: ResMut<State<ConnectionState>>,
+    mut event_wtr: EventWriter<SilkSocketEvent>,
 ) {
-    // If disconnected, check if we were requested to reconnect
-    if let ConnectionState::Disconnected = connection_state.current() {
-        if let Some(ev) = event_reader.iter().next() {
-            let silk_socket_config = SilkSocketConfig::RemoteSignallerClient {
-                ip: ev.ip,
-                port: ev.port,
-            };
+    match event_reader.iter().next() {
+        Some(ConnectionRequest::ConnectToRemoteHost { ip, port }) => {
+            if let ConnectionState::Disconnected = connection_state.current() {
+                let silk_socket_config =
+                    SilkSocketConfig::RemoteSignallerClient {
+                        ip: *ip,
+                        port: *port,
+                    };
 
-            info!("set state to Connecting");
-            socket_res.silk_config = Some(silk_socket_config);
-            info!("prev state: {:?}", connection_state);
-            connection_state
-                .overwrite_set(ConnectionState::Connecting)
-                .unwrap();
+                info!("set state to Connecting");
+                socket_res.silk_config = Some(silk_socket_config);
+                info!("prev state: {:?}", connection_state);
+                connection_state
+                    .overwrite_set(ConnectionState::Connecting)
+                    .unwrap();
+            }
         }
-        event_reader.clear();
+        Some(ConnectionRequest::Disconnect) => {
+            if let ConnectionState::Connected = connection_state.current() {
+                info!("set state to Disconnected");
+                socket_res.mb_socket.take();
+                event_wtr.send(SilkSocketEvent::DisconnectedFromHost);
+                info!("prev state: {:?}", connection_state);
+                connection_state
+                    .overwrite_set(ConnectionState::Disconnected)
+                    .unwrap();
+            }
+        }
+        None => {}
     }
 }
 
@@ -110,7 +124,7 @@ fn event_writer(
                     connection_state
                         .set(ConnectionState::Disconnected)
                         .unwrap();
-                    event_wtr.send(SilkSocketEvent::DisconnectedFromHost(id));
+                    event_wtr.send(SilkSocketEvent::DisconnectedFromHost);
                 }
             }
         }

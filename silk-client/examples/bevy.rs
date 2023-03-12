@@ -1,7 +1,7 @@
 use bevy::{log::LogPlugin, prelude::*};
 use bevy_egui::{egui, EguiContext, EguiPlugin};
 use silk_client::{
-    events::SilkSocketEvent, ConnectToRemoteHostEvent, SilkClientPlugin,
+    events::SilkSocketEvent, ConnectionRequest, SilkClientPlugin,
 };
 use std::net::{IpAddr, Ipv4Addr};
 
@@ -70,9 +70,9 @@ fn handle_events(
                 info!("Connected to host: {id}");
                 app_state.set(AppState::InGame).unwrap();
             }
-            SilkSocketEvent::DisconnectedFromHost(id) => {
+            SilkSocketEvent::DisconnectedFromHost => {
                 // Disconnected from host
-                error!("Disconnected from host: {id}");
+                error!("Disconnected from host");
                 app_state.set(AppState::Connecting).unwrap();
             }
             SilkSocketEvent::Message((peer, data)) => {
@@ -84,14 +84,17 @@ fn handle_events(
 
 fn ui_example_system(
     mut egui_context: ResMut<EguiContext>,
-    mut event_wtr: EventWriter<ConnectToRemoteHostEvent>,
+    mut event_wtr: EventWriter<ConnectionRequest>,
 ) {
     egui::Window::new("Hello").show(egui_context.ctx_mut(), |ui| {
         if ui.button("Connect").clicked() {
-            event_wtr.send(ConnectToRemoteHostEvent {
+            event_wtr.send(ConnectionRequest::ConnectToRemoteHost {
                 ip: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
                 port: 3536,
             });
+        }
+        if ui.button("Disconnect").clicked() {
+            event_wtr.send(ConnectionRequest::Disconnect);
         }
     });
 }
