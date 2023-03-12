@@ -1,4 +1,5 @@
 use bevy::{log::LogPlugin, prelude::*};
+use bevy_egui::{egui, EguiContext, EguiPlugin};
 use silk_client::{
     events::SilkSocketEvent, ConnectToRemoteHostEvent, SilkClientPlugin,
 };
@@ -38,21 +39,13 @@ fn main() {
         SystemSet::on_enter(AppState::InGame).with_system(on_connected),
     )
     .add_startup_system(setup_cam)
-    .add_startup_system(setup_networking)
+    .add_plugin(EguiPlugin)
+    .add_system(ui_example_system)
     .run();
 }
 
 fn setup_cam(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
-}
-
-fn setup_networking(mut event_wtr: EventWriter<ConnectToRemoteHostEvent>) {
-    // Send one connect-to-host "request" (bevy event) on startup to the Silk
-    // Client plugin with the desired host description
-    event_wtr.send(ConnectToRemoteHostEvent {
-        ip: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
-        port: 3536,
-    });
 }
 
 fn on_connecting(mut commands: Commands) {
@@ -87,4 +80,18 @@ fn handle_events(
             }
         }
     }
+}
+
+fn ui_example_system(
+    mut egui_context: ResMut<EguiContext>,
+    mut event_wtr: EventWriter<ConnectToRemoteHostEvent>,
+) {
+    egui::Window::new("Hello").show(egui_context.ctx_mut(), |ui| {
+        if ui.button("Connect").clicked() {
+            event_wtr.send(ConnectToRemoteHostEvent {
+                ip: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
+                port: 3536,
+            });
+        }
+    });
 }

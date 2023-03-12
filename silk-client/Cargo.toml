@@ -11,3 +11,6 @@ path = "src/main.rs"
 bevy = { workspace = true }
 matchbox_socket = { workspace = true }
 silk-common = { path = "../silk-common" }
+
+[dev-dependencies]
+bevy_egui = "0.19.0"
