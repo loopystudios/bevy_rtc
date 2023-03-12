@@ -43,42 +43,6 @@ pub mod stages {
 
 impl Plugin for SilkServerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_stage_after(
-            CoreStage::First,
-            stages::READ_SOCKET,
-            SystemStage::parallel().with_run_criteria(
-                FixedTimestep::steps_per_second(self.tick_rate),
-            ),
-        );
-        app.add_stage_after(
-            CoreStage::PreUpdate,
-            stages::PROCESS_INCOMING_EVENTS,
-            SystemStage::parallel().with_run_criteria(
-                FixedTimestep::steps_per_second(self.tick_rate),
-            ),
-        );
-        app.add_stage_after(
-            CoreStage::Update,
-            stages::UPDATE_WORLD_STATE,
-            SystemStage::parallel().with_run_criteria(
-                FixedTimestep::steps_per_second(self.tick_rate),
-            ),
-        );
-        app.add_stage_after(
-            CoreStage::Update,
-            stages::PROCESS_OUTGOING_EVENTS,
-            SystemStage::parallel().with_run_criteria(
-                FixedTimestep::steps_per_second(self.tick_rate),
-            ),
-        );
-        app.add_stage_after(
-            CoreStage::Update,
-            stages::WRITE_SOCKET,
-            SystemStage::parallel().with_run_criteria(
-                FixedTimestep::steps_per_second(self.tick_rate),
-            ),
-        );
-
         let config = match self.remote_signalling_server {
             Some(ip) => SilkSocketConfig::RemoteSignallerAsHost {
                 ip,
@@ -98,12 +62,45 @@ impl Plugin for SilkServerPlugin {
                 id: None,
                 mb_socket: socket,
             })
+            .add_stage_after(
+                CoreStage::First,
+                stages::READ_SOCKET,
+                SystemStage::parallel().with_run_criteria(
+                    FixedTimestep::steps_per_second(self.tick_rate),
+                ),
+            )
+            .add_stage_after(
+                CoreStage::PreUpdate,
+                stages::PROCESS_INCOMING_EVENTS,
+                SystemStage::parallel().with_run_criteria(
+                    FixedTimestep::steps_per_second(self.tick_rate),
+                ),
+            )
+            .add_stage_after(
+                CoreStage::Update,
+                stages::UPDATE_WORLD_STATE,
+                SystemStage::parallel().with_run_criteria(
+                    FixedTimestep::steps_per_second(self.tick_rate),
+                ),
+            )
+            .add_stage_after(
+                CoreStage::Update,
+                stages::PROCESS_OUTGOING_EVENTS,
+                SystemStage::parallel().with_run_criteria(
+                    FixedTimestep::steps_per_second(self.tick_rate),
+                ),
+            )
+            .add_stage_after(
+                CoreStage::Update,
+                stages::WRITE_SOCKET,
+                SystemStage::parallel().with_run_criteria(
+                    FixedTimestep::steps_per_second(self.tick_rate),
+                ),
+            )
             .add_event::<SilkServerEvent>()
             .add_system_to_stage(stages::READ_SOCKET, receive)
             .add_event::<SilkBroadcastEvent>()
             .add_system_to_stage(stages::WRITE_SOCKET, broadcast);
-
-        // TODO: run the "broadcast" function after the receive system
     }
 }
 
