@@ -15,7 +15,7 @@ fn main() {
         .add_plugin(SilkServerPlugin {
             port: 3536,
             tick_rate: 5.0,
-            signalling_server: None,
+            remote_signalling_server: None,
         })
         .add_system_to_stage(
             silk_server::stages::PROCESS_INCOMING_EVENTS,

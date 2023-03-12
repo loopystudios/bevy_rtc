@@ -1,16 +1,15 @@
-use std::net::IpAddr;
-
 use bevy::{prelude::*, tasks::IoTaskPool, time::FixedTimestep};
 use events::{SilkBroadcastEvent, SilkServerEvent};
 use matchbox_socket::{PeerState, WebRtcSocket};
 use silk_common::{SilkSocket, SilkSocketConfig};
 use state::ServerState;
+use std::net::IpAddr;
 pub mod events;
 pub mod state;
 
 pub struct SilkServerPlugin {
     /// Whether the signalling server is local or remote
-    pub signalling_server: Option<IpAddr>,
+    pub remote_signalling_server: Option<IpAddr>,
     /// The port to serve
     pub port: u16,
     /// Hertz for server tickrate, e.g. 30.0 = 30 times per second
@@ -80,7 +79,7 @@ impl Plugin for SilkServerPlugin {
             ),
         );
 
-        let config = match self.signalling_server {
+        let config = match self.remote_signalling_server {
             Some(ip) => SilkSocketConfig::RemoteSignallerAsHost {
                 ip,
                 port: self.port,
