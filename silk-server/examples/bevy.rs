@@ -1,25 +1,23 @@
 use bevy::{log::LogPlugin, prelude::*};
-
-use silk_common::SilkSocketConfig;
 use silk_server::{
     events::{SilkBroadcastEvent, SilkServerEvent},
-    SilkServerPlugin, SocketResource,
+    SilkServerPlugin,
 };
-use std::net::{IpAddr, Ipv4Addr};
 
 fn main() {
     let mut app = App::new();
-    app.add_plugins(DefaultPlugins.set(LogPlugin {
-        filter:
-            "info,wgpu_core=warn,wgpu_hal=warn,matchbox_socket=debug".into(),
-        level: bevy::log::Level::DEBUG,
-    }))
-    .add_plugin(SilkServerPlugin {
-        port: 3536,
-        tick_rate: 5.0,
-    })
-    .add_system(handle_events)
-    .run();
+    app.add_plugins(MinimalPlugins)
+        .add_plugin(LogPlugin {
+            filter: "info,wgpu_core=warn,wgpu_hal=warn,matchbox_socket=debug"
+                .into(),
+            level: bevy::log::Level::DEBUG,
+        })
+        .add_plugin(SilkServerPlugin {
+            port: 3536,
+            tick_rate: 5.0,
+        })
+        .add_system(handle_events)
+        .run();
 }
 
 fn handle_events(
