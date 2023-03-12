@@ -3,7 +3,9 @@ use futures_timer::Delay;
 use log::{info, warn};
 use matchbox_socket::PeerState;
 use silk_common::{SilkSocket, SilkSocketConfig};
-use std::{collections::HashSet, time::Duration};
+use state::ServerState;
+use std::time::Duration;
+mod state;
 
 #[tokio::main]
 async fn main() {
@@ -24,15 +26,9 @@ async fn main() {
     async_main().await
 }
 
-struct Clients {
-    clients: HashSet<String>,
-}
-
 async fn async_main() {
     info!("Connecting to matchbox");
-    let mut server_state = Clients {
-        clients: HashSet::new(),
-    };
+    let mut server_state = ServerState::default();
     let config = SilkSocketConfig::LocalSignallerAsHost { port: 3536 };
     let socket = SilkSocket::new(config);
     let (mut socket, loop_fut) = socket.into_parts();
