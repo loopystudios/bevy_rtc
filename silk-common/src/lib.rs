@@ -60,5 +60,3 @@ impl SilkSocketConfig {
         }
     }
 }
-
-pub type Packet = Box<[u8]>;

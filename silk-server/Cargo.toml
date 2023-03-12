@@ -5,6 +5,7 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
+bevy = { workspace = true }
 matchbox_socket = { workspace = true }
 silk-common = { path = "../silk-common" }
 anyhow = { workspace = true }

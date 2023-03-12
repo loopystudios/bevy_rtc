@@ -1,5 +1,5 @@
-use crate::Packet;
 use log::error;
+use matchbox_socket::Packet;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]

@@ -3,9 +3,8 @@ use futures_timer::Delay;
 use log::{info, warn};
 use matchbox_socket::PeerState;
 use silk_common::{SilkSocket, SilkSocketConfig};
-use state::ServerState;
+use silk_server::state::ServerState;
 use std::time::Duration;
-mod state;
 
 #[tokio::main]
 async fn main() {

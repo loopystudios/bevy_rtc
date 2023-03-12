@@ -1,7 +1,8 @@
-use matchbox_socket::PeerId;
+use bevy::prelude::*;
+use matchbox_socket::{Packet, PeerId};
 use std::collections::HashSet;
 
-#[derive(Debug, Default)]
+#[derive(Resource, Default)]
 pub struct ServerState {
     pub clients: HashSet<PeerId>,
 }
