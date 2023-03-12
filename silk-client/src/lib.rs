@@ -134,13 +134,9 @@ fn event_writer(
             socket
                 .receive_on_channel(SilkSocketConfig::UNRELIABLE_CHANNEL_INDEX)
                 .into_iter()
-                .chain(
-                    socket
-                        .receive_on_channel(
-                            SilkSocketConfig::RELIABLE_CHANNEL_INDEX,
-                        )
-                        .into_iter(),
-                )
+                .chain(socket.receive_on_channel(
+                    SilkSocketConfig::RELIABLE_CHANNEL_INDEX,
+                ))
                 .map(SilkSocketEvent::Message),
         );
 
