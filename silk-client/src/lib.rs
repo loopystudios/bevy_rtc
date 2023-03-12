@@ -129,19 +129,18 @@ fn event_writer(
             }
         }
 
-        // Unreliable messages
+        // Collect Unreliable, Reliable messages
         event_wtr.send_batch(
             socket
                 .receive_on_channel(SilkSocketConfig::UNRELIABLE_CHANNEL_INDEX)
                 .into_iter()
-                .map(SilkSocketEvent::Message),
-        );
-
-        // Reliable messages
-        event_wtr.send_batch(
-            socket
-                .receive_on_channel(SilkSocketConfig::RELIABLE_CHANNEL_INDEX)
-                .into_iter()
+                .chain(
+                    socket
+                        .receive_on_channel(
+                            SilkSocketConfig::RELIABLE_CHANNEL_INDEX,
+                        )
+                        .into_iter(),
+                )
                 .map(SilkSocketEvent::Message),
         );
 
