@@ -1,130 +1,89 @@
-#![feature(async_closure)]
-use futures::{select, FutureExt};
-use futures_timer::Delay;
-use log::{debug, error, info};
-use matchbox_socket::PeerState;
-use silk_common::{SilkSocket, SilkSocketConfig};
-use std::{
-    sync::{
-        atomic::{AtomicBool, Ordering},
-        mpsc::{self, Receiver, Sender},
-    },
-    thread,
-    time::Duration,
+use bevy::{log::LogPlugin, prelude::*};
+use silk_client::{
+    events::SilkSocketEvent, ConnectToRemoteHostEvent, SilkClientPlugin,
 };
+use std::net::{IpAddr, Ipv4Addr};
 
-#[cfg(target_arch = "wasm32")]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+enum AppState {
+    Connecting,
+    InGame,
+}
+
 fn main() {
-    console_error_panic_hook::set_once();
-    console_log::init_with_level(log::Level::Debug).unwrap();
-
-    wasm_bindgen_futures::spawn_local(async_main());
+    let mut app = App::new();
+    app.add_plugins(
+        DefaultPlugins
+            .set(LogPlugin {
+                filter:
+                    "info,wgpu_core=warn,wgpu_hal=warn,matchbox_socket=debug"
+                        .into(),
+                level: bevy::log::Level::DEBUG,
+            })
+            .set(WindowPlugin {
+                window: WindowDescriptor {
+                    fit_canvas_to_parent: true, // behave on wasm
+                    ..default()
+                },
+                ..default()
+            }),
+    )
+    .add_plugin(SilkClientPlugin)
+    .add_state(AppState::Connecting)
+    .add_system(handle_events)
+    .add_system_set(
+        SystemSet::on_enter(AppState::Connecting).with_system(on_connecting),
+    )
+    .add_system_set(
+        SystemSet::on_enter(AppState::InGame).with_system(on_connected),
+    )
+    .add_startup_system(setup_cam)
+    .add_startup_system(setup_networking)
+    .run();
 }
 
-#[cfg(not(target_arch = "wasm32"))]
-#[tokio::main]
-async fn main() {
-    use tracing_subscriber::prelude::*;
-    tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| {
-                    "silk_client=debug,matchbox_socket=info".into()
-                }),
-        )
-        .with(
-            tracing_subscriber::fmt::layer()
-                .compact()
-                .with_file(false)
-                .with_target(false),
-        )
-        .init();
-
-    async_main().await
+fn setup_cam(mut commands: Commands) {
+    commands.spawn(Camera2dBundle::default());
 }
 
-async fn async_main() {
-    info!("Connecting to matchbox");
-    let config = SilkSocketConfig::LocalSignallerAsClient { port: 3536 };
-    let socket = SilkSocket::new(config);
-    let (mut socket, loop_fut) = socket.into_parts();
-
-    let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel();
-    thread::spawn({
-        let tx = tx.clone();
-        move || loop {
-            let mut buffer = String::new();
-            std::io::stdin().read_line(&mut buffer).unwrap();
-            tx.send(buffer).unwrap();
-        }
+fn setup_networking(mut event_wtr: EventWriter<ConnectToRemoteHostEvent>) {
+    // Send one connect-to-host "request" (bevy event) on startup to the Silk
+    // Client plugin with the desired host description
+    event_wtr.send(ConnectToRemoteHostEvent {
+        ip: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
+        port: 3536,
     });
+}
 
-    let connected = AtomicBool::new(false);
-    let mut host_peer_id = None;
+fn on_connecting(mut commands: Commands) {
+    commands.insert_resource(ClearColor(Color::RED));
+}
 
-    let loop_fut = loop_fut.fuse();
-    futures::pin_mut!(loop_fut);
+fn on_connected(mut commands: Commands) {
+    commands.insert_resource(ClearColor(Color::GREEN));
+}
 
-    let timeout = Delay::new(Duration::from_millis(100));
-    futures::pin_mut!(timeout);
-
-    'client: loop {
-        for (peer, state) in socket.update_peers() {
-            match state {
-                PeerState::Connected => {
-                    if !connected.load(Ordering::Acquire) {
-                        let packet = "hello server!"
-                            .as_bytes()
-                            .to_vec()
-                            .into_boxed_slice();
-                        socket.send(packet, peer.clone());
-                        host_peer_id.replace(peer);
-                        connected.store(true, Ordering::Release);
-                    } else {
-                        error!("socket already connected to a host");
-                    }
-                }
-                PeerState::Disconnected => {
-                    if connected.load(Ordering::Acquire) {
-                        info!("Host disconnected!");
-                        connected.store(false, Ordering::Release);
-                        host_peer_id.take();
-                        break 'client;
-                    }
-                }
+fn handle_events(
+    mut app_state: ResMut<State<AppState>>,
+    mut events: EventReader<SilkSocketEvent>,
+) {
+    for event in events.iter() {
+        match event {
+            SilkSocketEvent::IdAssigned(id) => {
+                info!("Got ID from signalling server: {id}")
             }
-        }
-
-        for (peer, packet) in
-            socket.receive_on_channel(SilkSocketConfig::RELIABLE_CHANNEL_INDEX)
-        {
-            info!(
-                "Received from {:?}: {:?}",
-                peer,
-                String::from_utf8_lossy(&packet)
-            );
-        }
-
-        if connected.load(Ordering::Relaxed) {
-            while let Ok(line) = rx.try_recv() {
-                debug!("sending: {line}");
-                let packet = line.as_bytes().to_vec().into_boxed_slice();
-                let host_peer_id = host_peer_id.as_ref().unwrap();
-                socket.send_on_channel(
-                    packet,
-                    host_peer_id,
-                    SilkSocketConfig::RELIABLE_CHANNEL_INDEX,
-                );
+            SilkSocketEvent::ConnectedToHost(id) => {
+                // Connected to host
+                info!("Connected to host: {id}");
+                app_state.set(AppState::InGame).unwrap();
             }
-        }
-
-        select! {
-            _ = (&mut timeout).fuse() => {
-                timeout.reset(Duration::from_millis(100));
+            SilkSocketEvent::DisconnectedFromHost(id) => {
+                // Disconnected from host
+                error!("Disconnected from host: {id}");
+                app_state.set(AppState::Connecting).unwrap();
             }
-
-            _ = &mut loop_fut => {
-                break 'client;
+            SilkSocketEvent::Message((peer, data)) => {
+                info!("message from {peer}: {}", String::from_utf8_lossy(data));
             }
         }
     }

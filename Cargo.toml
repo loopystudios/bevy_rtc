@@ -4,7 +4,6 @@ members = [
     "silk-server",
     "silk-client",
     "silk-common",
-    "bevy-silk",
 ]
 resolver="2"
 
