@@ -1,3 +1,5 @@
+use std::net::IpAddr;
+
 use bevy::{prelude::*, tasks::IoTaskPool, time::FixedTimestep};
 use events::{SilkBroadcastEvent, SilkServerEvent};
 use matchbox_socket::{PeerState, WebRtcSocket};
@@ -7,6 +9,9 @@ pub mod events;
 pub mod state;
 
 pub struct SilkServerPlugin {
+    /// Whether the signalling server is local or remote
+    pub signalling_server: Option<IpAddr>,
+    /// The port to serve
     pub port: u16,
     /// Hertz for server tickrate, e.g. 30.0 = 30 times per second
     pub tick_rate: f64,
@@ -20,7 +25,7 @@ pub struct SocketResource {
     pub mb_socket: WebRtcSocket,
 }
 
-mod stages {
+pub mod stages {
     /// Silk Server plugin reads from silk socket and sends "incoming client
     /// message" events
     pub(crate) static READ_SOCKET: &str = "silk_read_socket";
@@ -75,9 +80,14 @@ impl Plugin for SilkServerPlugin {
             ),
         );
 
-        let socket = SilkSocket::new(SilkSocketConfig::LocalSignallerAsHost {
-            port: self.port,
-        });
+        let config = match self.signalling_server {
+            Some(ip) => SilkSocketConfig::RemoteSignallerAsHost {
+                ip,
+                port: self.port,
+            },
+            None => SilkSocketConfig::LocalSignallerAsHost { port: self.port },
+        };
+        let socket = SilkSocket::new(config);
         let (socket, loop_fut) = socket.into_parts();
 
         // The loop_fut runs the socket, and is async, so we use Bevy's polling.
