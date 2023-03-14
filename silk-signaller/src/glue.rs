@@ -1,6 +1,6 @@
 use axum::{extract::ws::Message, Error};
+use matchbox_socket::PeerId;
 
-pub type PeerId = String;
 #[derive(Debug, Clone)]
 pub(crate) struct Peer {
     pub uuid: PeerId,
@@ -11,7 +11,7 @@ pub type PeerRequest = matchbox::PeerRequest<serde_json::Value>;
 pub type PeerEvent = matchbox::PeerEvent<serde_json::Value>;
 
 mod matchbox {
-    use super::PeerId;
+    use matchbox_socket::PeerId;
     use serde::{Deserialize, Serialize};
 
     /// Requests go from peer to signalling server

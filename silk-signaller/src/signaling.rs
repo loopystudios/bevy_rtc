@@ -153,9 +153,9 @@ async fn handle_ws(
         };
 
         // Handle the message
-        info!("{peer_uuid} <- {request:?}");
         match request {
             PeerRequest::Signal { receiver, data } => {
+                info!("<-- {peer_uuid}: {data:?}");
                 let event = Message::Text(
                     serde_json::to_string(&PeerEvent::Signal {
                         sender: peer_uuid.clone(),
@@ -209,8 +209,7 @@ async fn handle_ws(
                 }
             }
         }
-        state.host.take();
-        info!("HOST UNSET");
+        state.reset();
     } else if let Some(removed_peer) = state.remove_client(&peer_uuid) {
         if state.host.is_some() {
             // Tell host about disconnected clent

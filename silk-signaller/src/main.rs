@@ -30,12 +30,7 @@ async fn main() {
                     "info,matchbox_server=info,tower_http=debug".into()
                 }),
         )
-        .with(
-            tracing_subscriber::fmt::layer()
-                .compact()
-                .with_file(false)
-                .with_target(false),
-        )
+        .with(tracing_subscriber::fmt::layer().compact())
         .init();
 
     // Setup router
