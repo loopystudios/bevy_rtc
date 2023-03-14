@@ -2,11 +2,10 @@ use bevy::{prelude::*, tasks::IoTaskPool, time::FixedTimestep};
 use events::{SilkBroadcastEvent, SilkServerEvent};
 use matchbox_socket::{PeerState, WebRtcSocket};
 use silk_common::{SilkSocket, SilkSocketConfig};
-use state::ServerState;
 use std::net::IpAddr;
 pub mod events;
-pub mod state;
 
+/// The socket server abstraction
 pub struct SilkServerPlugin {
     /// Whether the signalling server is local or remote
     pub remote_signalling_server: Option<IpAddr>,
@@ -17,10 +16,10 @@ pub struct SilkServerPlugin {
 }
 
 #[derive(Resource)]
-pub struct SocketResource {
-    // The ID the signalling server sees us as
+struct SocketResource {
+    /// The ID the signalling server sees us as
     pub id: Option<String>,
-    // The underlying matchbox socket being translated
+    /// The underlying matchbox socket being translated
     pub mb_socket: WebRtcSocket,
 }
 
@@ -57,65 +56,64 @@ impl Plugin for SilkServerPlugin {
         let task_pool = IoTaskPool::get();
         task_pool.spawn(loop_fut).detach();
 
-        app.insert_resource(ServerState::default())
-            .insert_resource(SocketResource {
-                id: None,
-                mb_socket: socket,
-            })
-            .add_stage_after(
-                CoreStage::First,
-                stages::READ_SOCKET,
-                SystemStage::parallel().with_run_criteria(
-                    FixedTimestep::steps_per_second(self.tick_rate),
-                ),
-            )
-            .add_stage_after(
-                CoreStage::PreUpdate,
-                stages::PROCESS_INCOMING_EVENTS,
-                SystemStage::parallel().with_run_criteria(
-                    FixedTimestep::steps_per_second(self.tick_rate),
-                ),
-            )
-            .add_stage_after(
-                CoreStage::Update,
-                stages::UPDATE_WORLD_STATE,
-                SystemStage::parallel().with_run_criteria(
-                    FixedTimestep::steps_per_second(self.tick_rate),
-                ),
-            )
-            .add_stage_after(
-                CoreStage::Update,
-                stages::PROCESS_OUTGOING_EVENTS,
-                SystemStage::parallel().with_run_criteria(
-                    FixedTimestep::steps_per_second(self.tick_rate),
-                ),
-            )
-            .add_stage_after(
-                CoreStage::Update,
-                stages::WRITE_SOCKET,
-                SystemStage::parallel().with_run_criteria(
-                    FixedTimestep::steps_per_second(self.tick_rate),
-                ),
-            )
-            .add_event::<SilkServerEvent>()
-            .add_system_to_stage(stages::READ_SOCKET, receive)
-            .add_event::<SilkBroadcastEvent>()
-            .add_system_to_stage(stages::WRITE_SOCKET, broadcast);
+        app.insert_resource(SocketResource {
+            id: None,
+            mb_socket: socket,
+        })
+        .add_stage_after(
+            CoreStage::First,
+            stages::READ_SOCKET,
+            SystemStage::parallel().with_run_criteria(
+                FixedTimestep::steps_per_second(self.tick_rate),
+            ),
+        )
+        .add_stage_after(
+            CoreStage::PreUpdate,
+            stages::PROCESS_INCOMING_EVENTS,
+            SystemStage::parallel().with_run_criteria(
+                FixedTimestep::steps_per_second(self.tick_rate),
+            ),
+        )
+        .add_stage_after(
+            CoreStage::Update,
+            stages::UPDATE_WORLD_STATE,
+            SystemStage::parallel().with_run_criteria(
+                FixedTimestep::steps_per_second(self.tick_rate),
+            ),
+        )
+        .add_stage_after(
+            CoreStage::Update,
+            stages::PROCESS_OUTGOING_EVENTS,
+            SystemStage::parallel().with_run_criteria(
+                FixedTimestep::steps_per_second(self.tick_rate),
+            ),
+        )
+        .add_stage_after(
+            CoreStage::Update,
+            stages::WRITE_SOCKET,
+            SystemStage::parallel().with_run_criteria(
+                FixedTimestep::steps_per_second(self.tick_rate),
+            ),
+        )
+        .add_event::<SilkServerEvent>()
+        .add_system_to_stage(stages::READ_SOCKET, socket_reader)
+        .add_event::<SilkBroadcastEvent>()
+        .add_system_to_stage(stages::WRITE_SOCKET, broadcast);
     }
 }
 
-pub fn receive(
-    mut state: ResMut<ServerState>,
+/// Translates socket events into Bevy events
+fn socket_reader(
     mut socket_res: ResMut<SocketResource>,
     mut event_wtr: EventWriter<SilkServerEvent>,
 ) {
-    let state = state.as_mut();
     let socket = socket_res.as_mut();
 
-    // Check if we received an ID from signaller
+    // Id changed events
     if let Some(id) = socket.mb_socket.id() {
         if socket.id.is_none() {
-            socket.id.replace(id);
+            socket.id.replace(id.clone());
+            event_wtr.send(SilkServerEvent::IdAssigned(id.clone()));
         }
     }
 
@@ -123,33 +121,31 @@ pub fn receive(
     for (peer, peer_state) in socket.mb_socket.update_peers() {
         match peer_state {
             PeerState::Connected => {
-                info!("Peer joined: {:?}", peer);
-                state.clients.insert(peer.clone());
                 event_wtr.send(SilkServerEvent::PeerJoined(peer));
             }
             PeerState::Disconnected => {
-                info!("Peer left: {:?}", peer);
-                state.clients.remove(&peer);
                 event_wtr.send(SilkServerEvent::PeerLeft(peer));
             }
         }
     }
 
-    // Check for new messages
-    for (peer, packet) in socket
-        .mb_socket
-        .receive_on_channel(SilkSocketConfig::RELIABLE_CHANNEL_INDEX)
-    {
-        info!(
-            "Received from {:?}: {:?}",
-            peer,
-            String::from_utf8_lossy(&packet)
-        );
-        event_wtr.send(SilkServerEvent::MessageReceived(packet));
-    }
+    // Collect Unreliable, Reliable messages
+    event_wtr.send_batch(
+        socket
+            .mb_socket
+            .receive_on_channel(SilkSocketConfig::UNRELIABLE_CHANNEL_INDEX)
+            .into_iter()
+            .chain(
+                socket.mb_socket.receive_on_channel(
+                    SilkSocketConfig::RELIABLE_CHANNEL_INDEX,
+                ),
+            )
+            .map(SilkServerEvent::Message),
+    );
 }
 
-pub fn broadcast(
+/// Reads and handles server broadcast request events
+fn broadcast(
     mut socket_res: ResMut<SocketResource>,
     mut event_reader: EventReader<SilkBroadcastEvent>,
 ) {

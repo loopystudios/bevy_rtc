@@ -1,9 +1,8 @@
-use crate::{
-    error::ServerError,
-    glue::{Peer, PeerId},
-};
+use crate::{error::ServerError, glue::Peer};
 use axum::extract::ws::Message;
+use matchbox_socket::PeerId;
 use std::collections::HashMap;
+use tracing::info;
 
 #[derive(Default, Debug, Clone)]
 pub(crate) struct ServerState {
@@ -12,6 +11,13 @@ pub(crate) struct ServerState {
 }
 
 impl ServerState {
+    /// Reset the server state
+    pub fn reset(&mut self) {
+        self.host.take();
+        self.clients.clear();
+        info!("Server reset");
+    }
+
     /// Add a clients, returning the peers already in room
     pub fn add_client(&mut self, peer: Peer) -> Vec<PeerId> {
         let existing_clients = self.clients.keys().cloned().collect();
