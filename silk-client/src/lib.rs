@@ -101,9 +101,7 @@ fn event_reader(
                     "set state: connecting"
                 );
                 socket_res.silk_config = Some(silk_socket_config);
-                connection_state
-                    .overwrite_set(ConnectionState::Connecting)
-                    .unwrap();
+                _ = connection_state.overwrite_set(ConnectionState::Connecting);
             }
         }
         Some(ConnectionRequest::Disconnect) => {
@@ -114,9 +112,8 @@ fn event_reader(
                 );
                 socket_res.mb_socket.take();
                 silk_event_wtr.send(SilkSocketEvent::DisconnectedFromHost);
-                connection_state
-                    .overwrite_set(ConnectionState::Disconnected)
-                    .unwrap();
+                _ = connection_state
+                    .overwrite_set(ConnectionState::Disconnected);
             }
         }
         None => {}
@@ -145,15 +142,13 @@ fn event_writer(
         for (id, state) in socket.update_peers() {
             match state {
                 matchbox_socket::PeerState::Connected => {
-                    connection_state
-                        .overwrite_set(ConnectionState::Connected)
-                        .unwrap();
+                    _ = connection_state
+                        .overwrite_set(ConnectionState::Connected);
                     event_wtr.send(SilkSocketEvent::ConnectedToHost(id));
                 }
                 matchbox_socket::PeerState::Disconnected => {
-                    connection_state
-                        .overwrite_set(ConnectionState::Disconnected)
-                        .unwrap();
+                    _ = connection_state
+                        .overwrite_set(ConnectionState::Disconnected);
                     event_wtr.send(SilkSocketEvent::DisconnectedFromHost);
                 }
             }
