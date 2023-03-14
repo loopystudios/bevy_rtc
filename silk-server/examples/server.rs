@@ -74,7 +74,7 @@ fn handle_events(
                     "someone left!".as_bytes().to_vec().into_boxed_slice();
                 event_wtr.send(SilkBroadcastEvent::ReliableSendAll(packet));
             }
-            SilkServerEvent::MessageReceived((id, packet)) => {
+            SilkServerEvent::Message((id, packet)) => {
                 let msg = String::from_utf8_lossy(&packet[0..packet.len() - 1]); // last char is /n
                 debug!("{id}: {msg}");
                 let packet =

@@ -9,7 +9,7 @@ pub enum SilkServerEvent {
     /// A peer has left this server
     PeerLeft(PeerId),
     /// A peer sent a message to this server
-    MessageReceived((PeerId, Packet)),
+    Message((PeerId, Packet)),
 }
 
 /// Request events for the server to broadcast a message

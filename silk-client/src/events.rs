@@ -1,4 +1,4 @@
-use matchbox_socket::PeerId;
+use matchbox_socket::{Packet, PeerId};
 
 /// Socket events that are possible to subscribe to in Bevy
 pub enum SilkSocketEvent {
@@ -9,5 +9,5 @@ pub enum SilkSocketEvent {
     /// The socket disconnected from the host
     DisconnectedFromHost,
     /// A message was received from the host
-    Message((PeerId, Box<[u8]>)),
+    Message((PeerId, Packet)),
 }
