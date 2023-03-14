@@ -77,7 +77,11 @@ fn init_socket(mut socket_res: ResMut<SocketResource>) {
 
 /// Reset the internal socket
 fn reset_socket(mut socket_res: ResMut<SocketResource>) {
-    *socket_res = SocketResource::default();
+    *socket_res = SocketResource {
+        id: None,
+        silk_config: socket_res.silk_config.take(),
+        mb_socket: None,
+    };
 }
 
 /// Reads and handles connection request events
