@@ -79,12 +79,14 @@ fn handle_events(
             SilkSocketEvent::ConnectedToHost(id) => {
                 // Connected to host
                 info!("Connected to host: {id}");
-                app_state.set(ConnectionState::Connected).unwrap();
+                app_state.overwrite_set(ConnectionState::Connected).unwrap();
             }
             SilkSocketEvent::DisconnectedFromHost => {
                 // Disconnected from host
                 error!("Disconnected from host");
-                app_state.set(ConnectionState::Disconnected).unwrap();
+                app_state
+                    .overwrite_set(ConnectionState::Disconnected)
+                    .unwrap();
                 *world_state = WorldState::default();
             }
             SilkSocketEvent::Message((peer, data)) => {

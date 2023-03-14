@@ -145,12 +145,14 @@ fn event_writer(
         for (id, state) in socket.update_peers() {
             match state {
                 matchbox_socket::PeerState::Connected => {
-                    connection_state.set(ConnectionState::Connected).unwrap();
+                    connection_state
+                        .overwrite_set(ConnectionState::Connected)
+                        .unwrap();
                     event_wtr.send(SilkSocketEvent::ConnectedToHost(id));
                 }
                 matchbox_socket::PeerState::Disconnected => {
                     connection_state
-                        .set(ConnectionState::Disconnected)
+                        .overwrite_set(ConnectionState::Disconnected)
                         .unwrap();
                     event_wtr.send(SilkSocketEvent::DisconnectedFromHost);
                 }
