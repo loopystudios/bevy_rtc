@@ -104,7 +104,15 @@ fn event_sender(
                 SilkSocketConfig::RELIABLE_CHANNEL_INDEX,
             )
         }
-        Some(SilkSendEvent::UnreliableSend(data)) => todo!(),
+        Some(SilkSendEvent::UnreliableSend(data)) => {
+            let host_id = socket_res.host_id.unwrap();
+            let socket = socket_res.mb_socket.as_mut().unwrap();
+            socket.send_on_channel(
+                data.clone(),
+                host_id,
+                SilkSocketConfig::UNRELIABLE_CHANNEL_INDEX,
+            )
+        }
         None => {}
     }
 }
