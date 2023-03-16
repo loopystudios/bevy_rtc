@@ -50,6 +50,7 @@ fn main() {
     .add_startup_system(setup_cam)
     .add_plugin(EguiPlugin)
     .add_system(ui_example_system)
+    .insert_resource(MessageScrollBox::default())
     .run();
 }
 
@@ -69,6 +70,7 @@ fn handle_events(
     mut app_state: ResMut<State<ConnectionState>>,
     mut events: EventReader<SilkSocketEvent>,
     mut world_state: ResMut<WorldState>,
+    mut messages: ResMut<MessageScrollBox>,
 ) {
     for event in events.iter() {
         match event {
@@ -88,10 +90,10 @@ fn handle_events(
                 *world_state = WorldState::default();
             }
             SilkSocketEvent::Message((peer, data)) => {
-                info!(
-                    "Message from {peer:?}: {}",
-                    String::from_utf8_lossy(data)
-                );
+                let peer = *peer;
+                let message = String::from_utf8_lossy(data).to_string();
+                info!("{peer:?}: {message}");
+                messages.messages.push((peer, message));
             }
         }
     }
@@ -101,9 +103,10 @@ fn ui_example_system(
     mut egui_context: ResMut<EguiContext>,
     mut event_wtr: EventWriter<ConnectionRequest>,
     world_state: Res<WorldState>,
+    mut messages: ResMut<MessageScrollBox>,
 ) {
-    egui::Window::new("Debug").show(egui_context.ctx_mut(), |ui| {
-        ui.label(format!("I am {:?}", world_state.id));
+    egui::Window::new("Login").show(egui_context.ctx_mut(), |ui| {
+        ui.label(format!("{:?}", world_state.id));
         ui.horizontal_wrapped(|ui| {
             if ui.button("Connect").clicked() {
                 event_wtr.send(ConnectionRequest::Connect {
@@ -116,4 +119,42 @@ fn ui_example_system(
             }
         });
     });
+    egui::Window::new("Chat").show(egui_context.ctx_mut(), |ui| {
+        ui.label("Send Message");
+        ui.horizontal_wrapped(|ui| {
+            ui.text_edit_singleline(&mut String::new());
+            if ui.button("Send").clicked() {
+                // TODO: Send chat line
+            };
+        });
+        ui.label("Messages");
+        messages.ui(ui);
+    });
+}
+
+#[derive(Resource, Default, PartialEq)]
+struct MessageScrollBox {
+    messages: Vec<(PeerId, String)>,
+}
+
+use egui::*;
+impl MessageScrollBox {
+    fn ui(&mut self, ui: &mut Ui) {
+        let text_style = egui::TextStyle::Body;
+        let row_height = ui.text_style_height(&text_style);
+        ScrollArea::vertical().stick_to_bottom(true).show_rows(
+            ui,
+            row_height,
+            self.messages.len(),
+            |ui, items| {
+                for i in items {
+                    let (from, message) = &self.messages[i];
+                    let text = format!("<-- {from:?}: {message}");
+                    ui.label(text);
+                }
+            },
+        );
+
+        ui.ctx().request_repaint();
+    }
 }
