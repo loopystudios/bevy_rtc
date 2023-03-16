@@ -87,46 +87,46 @@ async fn handle_ws(
     }
 
     // Generate a UUID for the user
-    let peer_uuid = uuid::Uuid::new_v4().to_string();
+    let peer_uuid = matchbox_socket::PeerId(uuid::Uuid::new_v4());
     {
         let mut state = state.lock().await;
         state.add_client(Peer {
-            uuid: peer_uuid.clone(),
+            uuid: peer_uuid,
             sender: sender.clone(),
         });
 
         let event_text =
-            serde_json::to_string(&PeerEvent::IdAssigned(peer_uuid.clone()))
+            serde_json::to_string(&PeerEvent::IdAssigned(peer_uuid))
                 .expect("error serializing message");
         let event = Message::Text(event_text.clone());
 
         if let Err(e) = state.try_send(&peer_uuid, event) {
-            error!("error sending to {peer_uuid}: {e:?}");
+            error!("error sending to {peer_uuid:?}: {e:?}");
             return;
         } else {
-            info!("{peer_uuid} -> {event_text}");
+            info!("{peer_uuid:?} -> {event_text}");
         };
 
         if is_host {
             // Set host
             state.host.replace(Peer {
-                uuid: peer_uuid.clone(),
+                uuid: peer_uuid,
                 sender: sender.clone(),
             });
-            info!("SET HOST: {peer_uuid}");
+            info!("SET HOST: {peer_uuid:?}");
         } else {
             // Set client
-            let peer_event = PeerEvent::NewPeer(peer_uuid.clone());
+            let peer_event = PeerEvent::NewPeer(peer_uuid);
             let event_text = serde_json::to_string(&peer_event)
                 .expect("error serializing message");
             let event = Message::Text(event_text.clone());
 
             // Tell host about this new client
             if let Err(e) = state.try_send_to_host(event) {
-                error!("error sending peer {peer_uuid} to host: {e:?}");
+                error!("error sending peer {peer_uuid:?} to host: {e:?}");
                 return;
             } else {
-                info!("{peer_uuid} -> {event_text}");
+                info!("{peer_uuid:?} -> {event_text}");
             }
         }
     }
@@ -139,7 +139,7 @@ async fn handle_ws(
             Err(ClientRequestError::Axum(e)) => {
                 // Most likely a ConnectionReset or similar.
                 error!("Axum error while receiving request: {:?}", e);
-                warn!("Severing connection with {peer_uuid}");
+                warn!("Severing connection with {peer_uuid:?}");
                 break; // give up on this peer.
             }
             Err(ClientRequestError::Close) => {
@@ -155,10 +155,10 @@ async fn handle_ws(
         // Handle the message
         match request {
             PeerRequest::Signal { receiver, data } => {
-                info!("<-- {peer_uuid}: {data:?}");
+                info!("<-- {peer_uuid:?}: {data:?}");
                 let event = Message::Text(
                     serde_json::to_string(&PeerEvent::Signal {
-                        sender: peer_uuid.clone(),
+                        sender: peer_uuid,
                         data,
                     })
                     .expect("error serializing message"),
@@ -169,7 +169,7 @@ async fn handle_ws(
                         error!("error sending: {e:?}");
                     }
                 } else {
-                    warn!("peer not found ({receiver}), ignoring signal");
+                    warn!("peer not found ({receiver:?}), ignoring signal");
                 }
             }
             PeerRequest::KeepAlive => {
@@ -189,8 +189,7 @@ async fn handle_ws(
         .is_some_and(|host| host.uuid == peer_uuid)
     {
         // Tell each connected peer about the disconnected host.
-        let peer_event =
-            PeerEvent::PeerLeft(state.host.as_ref().unwrap().uuid.clone());
+        let peer_event = PeerEvent::PeerLeft(state.host.as_ref().unwrap().uuid);
         let event = Message::Text(
             serde_json::to_string(&peer_event)
                 .expect("error serializing message"),
@@ -213,7 +212,7 @@ async fn handle_ws(
     } else if let Some(removed_peer) = state.remove_client(&peer_uuid) {
         if state.host.is_some() {
             // Tell host about disconnected clent
-            let peer_event = PeerEvent::PeerLeft(removed_peer.uuid.clone());
+            let peer_event = PeerEvent::PeerLeft(removed_peer.uuid);
             let event = Message::Text(
                 serde_json::to_string(&peer_event)
                     .expect("error serializing message"),

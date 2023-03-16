@@ -42,8 +42,7 @@ fn broadcast_to_peers(
 ) {
     for client in world_state.clients.iter() {
         let packet = format!(
-            "Hello {}, the server has {} clients",
-            client,
+            "Hello {client:?}, the server has {} clients",
             world_state.clients.len()
         )
         .as_bytes()
@@ -61,14 +60,14 @@ fn handle_events(
     while let Some(ev) = event_rdr.iter().next() {
         match ev {
             SilkServerEvent::PeerJoined(id) => {
-                world_state.clients.insert(id.clone());
-                debug!("{id} joined");
+                world_state.clients.insert(*id);
+                debug!("{id:?} joined");
                 let packet =
                     "someone joined!".as_bytes().to_vec().into_boxed_slice();
                 event_wtr.send(SilkBroadcastEvent::ReliableSendAll(packet));
             }
             SilkServerEvent::PeerLeft(id) => {
-                debug!("{id} left");
+                debug!("{id:?} left");
                 world_state.clients.remove(id);
                 let packet =
                     "someone left!".as_bytes().to_vec().into_boxed_slice();
@@ -76,12 +75,12 @@ fn handle_events(
             }
             SilkServerEvent::Message((id, packet)) => {
                 let msg = String::from_utf8_lossy(&packet[0..packet.len() - 1]); // last char is /n
-                debug!("{id}: {msg}");
+                debug!("{id:?}: {msg}");
                 let packet =
                     "message received!".as_bytes().to_vec().into_boxed_slice();
                 event_wtr.send(SilkBroadcastEvent::ReliableSendAll(packet));
             }
-            SilkServerEvent::IdAssigned(id) => info!("I am {id}"),
+            SilkServerEvent::IdAssigned(id) => info!("I am {id:?}"),
         }
     }
     event_rdr.clear();

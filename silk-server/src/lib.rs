@@ -1,6 +1,6 @@
 use bevy::{prelude::*, tasks::IoTaskPool, time::FixedTimestep};
 use events::{SilkBroadcastEvent, SilkServerEvent};
-use matchbox_socket::{PeerState, WebRtcSocket};
+use matchbox_socket::{PeerId, PeerState, WebRtcSocket};
 use silk_common::{SilkSocket, SilkSocketConfig};
 use std::net::IpAddr;
 pub mod events;
@@ -18,7 +18,7 @@ pub struct SilkServerPlugin {
 #[derive(Resource)]
 struct SocketResource {
     /// The ID the signalling server sees us as
-    pub id: Option<String>,
+    pub id: Option<PeerId>,
     /// The underlying matchbox socket being translated
     pub mb_socket: WebRtcSocket,
 }
@@ -112,8 +112,8 @@ fn socket_reader(
     // Id changed events
     if let Some(id) = socket.mb_socket.id() {
         if socket.id.is_none() {
-            socket.id.replace(id.clone());
-            event_wtr.send(SilkServerEvent::IdAssigned(id.clone()));
+            socket.id.replace(id);
+            event_wtr.send(SilkServerEvent::IdAssigned(id));
         }
     }
 
@@ -162,7 +162,7 @@ fn broadcast(
             SilkBroadcastEvent::UnreliableSend((peer, packet)) => {
                 socket.mb_socket.send_on_channel(
                     packet.clone(),
-                    peer,
+                    *peer,
                     SilkSocketConfig::UNRELIABLE_CHANNEL_INDEX,
                 )
             }
@@ -175,7 +175,7 @@ fn broadcast(
             SilkBroadcastEvent::ReliableSend((peer, packet)) => {
                 socket.mb_socket.send_on_channel(
                     packet.clone(),
-                    peer,
+                    *peer,
                     SilkSocketConfig::RELIABLE_CHANNEL_INDEX,
                 )
             }

@@ -137,8 +137,8 @@ fn event_writer(
         // Id changed events
         if let Some(id) = socket.id() {
             if socket_res.id.is_none() {
-                socket_res.id.replace(id.clone());
-                event_wtr.send(SilkSocketEvent::IdAssigned(id.to_string()));
+                socket_res.id.replace(id);
+                event_wtr.send(SilkSocketEvent::IdAssigned(id));
             }
         }
 

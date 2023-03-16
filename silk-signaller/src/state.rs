@@ -21,7 +21,7 @@ impl ServerState {
     /// Add a clients, returning the peers already in room
     pub fn add_client(&mut self, peer: Peer) -> Vec<PeerId> {
         let existing_clients = self.clients.keys().cloned().collect();
-        self.clients.insert(peer.uuid.clone(), peer);
+        self.clients.insert(peer.uuid, peer);
         existing_clients
     }
 

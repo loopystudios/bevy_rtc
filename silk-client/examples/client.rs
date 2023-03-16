@@ -73,12 +73,12 @@ fn handle_events(
     for event in events.iter() {
         match event {
             SilkSocketEvent::IdAssigned(id) => {
-                info!("Got ID from signalling server: {id}");
-                world_state.id.replace(id.clone());
+                info!("Got ID from signalling server: {id:?}");
+                world_state.id.replace(*id);
             }
             SilkSocketEvent::ConnectedToHost(id) => {
                 // Connected to host
-                info!("Connected to host: {id}");
+                info!("Connected to host: {id:?}");
                 _ = app_state.overwrite_set(ConnectionState::Connected);
             }
             SilkSocketEvent::DisconnectedFromHost => {
@@ -88,7 +88,10 @@ fn handle_events(
                 *world_state = WorldState::default();
             }
             SilkSocketEvent::Message((peer, data)) => {
-                info!("Message from {peer}: {}", String::from_utf8_lossy(data));
+                info!(
+                    "Message from {peer:?}: {}",
+                    String::from_utf8_lossy(data)
+                );
             }
         }
     }
