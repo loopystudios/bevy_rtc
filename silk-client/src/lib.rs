@@ -1,7 +1,7 @@
 use std::net::IpAddr;
 
 use bevy::{prelude::*, tasks::IoTaskPool};
-use events::SilkSocketEvent;
+use events::{SilkSendEvent, SilkSocketEvent};
 use matchbox_socket::{PeerId, WebRtcSocket};
 use silk_common::{SilkSocket, SilkSocketConfig};
 pub mod events;
@@ -25,6 +25,8 @@ impl Plugin for SilkClientPlugin {
             .add_system(event_reader)
             .add_event::<SilkSocketEvent>()
             .add_system(event_writer)
+            .add_event::<SilkSendEvent>()
+            .add_system(event_sender)
             .add_system_set(
                 SystemSet::on_enter(ConnectionState::Connecting)
                     .with_system(init_socket),
@@ -38,6 +40,8 @@ impl Plugin for SilkClientPlugin {
 
 #[derive(Resource, Default)]
 struct SocketResource {
+    /// The ID of the host
+    pub host_id: Option<PeerId>,
     /// The ID given by the signalling server
     pub id: Option<PeerId>,
     /// The socket configuration, used for connecting/reconnecting
@@ -78,10 +82,31 @@ fn init_socket(mut socket_res: ResMut<SocketResource>) {
 /// Reset the internal socket
 fn reset_socket(mut socket_res: ResMut<SocketResource>) {
     *socket_res = SocketResource {
+        host_id: None,
         id: None,
         silk_config: socket_res.silk_config.take(),
         mb_socket: None,
     };
+}
+
+/// Reads and handles connection request events
+fn event_sender(
+    mut socket_res: ResMut<SocketResource>,
+    mut silk_event_rdr: EventReader<SilkSendEvent>,
+) {
+    match silk_event_rdr.iter().next() {
+        Some(SilkSendEvent::ReliableSend(data)) => {
+            let host_id = socket_res.host_id.unwrap();
+            let socket = socket_res.mb_socket.as_mut().unwrap();
+            socket.send_on_channel(
+                data.clone(),
+                host_id,
+                SilkSocketConfig::RELIABLE_CHANNEL_INDEX,
+            )
+        }
+        Some(SilkSendEvent::UnreliableSend(data)) => todo!(),
+        None => {}
+    }
 }
 
 /// Reads and handles connection request events
@@ -146,11 +171,13 @@ fn event_writer(
         for (id, state) in socket.update_peers() {
             match state {
                 matchbox_socket::PeerState::Connected => {
+                    socket_res.host_id.replace(id);
                     _ = connection_state
                         .overwrite_set(ConnectionState::Connected);
                     event_wtr.send(SilkSocketEvent::ConnectedToHost(id));
                 }
                 matchbox_socket::PeerState::Disconnected => {
+                    socket_res.host_id.take();
                     _ = connection_state
                         .overwrite_set(ConnectionState::Disconnected);
                     event_wtr.send(SilkSocketEvent::DisconnectedFromHost);

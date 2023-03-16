@@ -2,7 +2,7 @@ use bevy::{log::LogPlugin, prelude::*, time::FixedTimestep, utils::HashSet};
 use matchbox_socket::PeerId;
 use silk_server::{
     events::{SilkBroadcastEvent, SilkServerEvent},
-    SilkServerPlugin,
+    stages, SilkServerPlugin,
 };
 
 #[derive(Resource, Debug, Default, Clone)]
@@ -24,13 +24,13 @@ fn main() {
             remote_signalling_server: None,
         })
         .add_system_to_stage(
-            silk_server::stages::PROCESS_INCOMING_EVENTS,
+            stages::PROCESS_INCOMING_EVENTS,
             handle_events,
         )
-        .add_system(
-            broadcast_to_peers
-                .with_run_criteria(FixedTimestep::steps_per_second(0.2)), // Every 5s
-        )
+        //.add_system(
+        //    broadcast_to_peers
+        //        .with_run_criteria(FixedTimestep::steps_per_second(0.2)), // Every 5s
+        //)
         .insert_resource(WorldState::default())
         .add_startup_system(|| info!("Connecting..."))
         .run();
@@ -74,10 +74,9 @@ fn handle_events(
                 event_wtr.send(SilkBroadcastEvent::ReliableSendAll(packet));
             }
             SilkServerEvent::Message((id, packet)) => {
-                let msg = String::from_utf8_lossy(&packet[0..packet.len() - 1]); // last char is /n
+                let msg = String::from_utf8_lossy(packet); // last char is /n
                 debug!("{id:?}: {msg}");
-                let packet =
-                    "message received!".as_bytes().to_vec().into_boxed_slice();
+                let packet = msg.as_bytes().to_vec().into_boxed_slice();
                 event_wtr.send(SilkBroadcastEvent::ReliableSendAll(packet));
             }
             SilkServerEvent::IdAssigned(id) => info!("I am {id:?}"),

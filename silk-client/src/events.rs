@@ -11,3 +11,11 @@ pub enum SilkSocketEvent {
     /// A message was received from the host
     Message((PeerId, Packet)),
 }
+
+/// Request events for client to send messages to server
+pub enum SilkSendEvent {
+    /// Send an unreliable packet (any order, no retransmit) to the server
+    UnreliableSend(Packet),
+    /// Send a reliable packet to the server
+    ReliableSend(Packet),
+}

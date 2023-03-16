@@ -2,9 +2,14 @@ use bevy::{log::LogPlugin, prelude::*};
 use bevy_egui::{egui, EguiContext, EguiPlugin};
 use matchbox_socket::PeerId;
 use silk_client::{
-    events::SilkSocketEvent, ConnectionRequest, SilkClientPlugin,
+    events::{SilkSendEvent, SilkSocketEvent},
+    ConnectionRequest, SilkClientPlugin,
 };
-use std::net::{IpAddr, Ipv4Addr};
+use std::{
+    borrow::BorrowMut,
+    net::{IpAddr, Ipv4Addr},
+    ops::DerefMut,
+};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 enum ConnectionState {
@@ -103,7 +108,9 @@ fn ui_example_system(
     mut egui_context: ResMut<EguiContext>,
     mut event_wtr: EventWriter<ConnectionRequest>,
     world_state: Res<WorldState>,
+    mut silk_event_wtr: EventWriter<SilkSendEvent>,
     mut messages: ResMut<MessageScrollBox>,
+    mut text: Local<String>,
 ) {
     egui::Window::new("Login").show(egui_context.ctx_mut(), |ui| {
         ui.label(format!("{:?}", world_state.id));
@@ -122,9 +129,11 @@ fn ui_example_system(
     egui::Window::new("Chat").show(egui_context.ctx_mut(), |ui| {
         ui.label("Send Message");
         ui.horizontal_wrapped(|ui| {
-            ui.text_edit_singleline(&mut String::new());
+            ui.text_edit_singleline(text.deref_mut());
             if ui.button("Send").clicked() {
                 // TODO: Send chat line
+                let data = text.as_bytes().to_vec().into_boxed_slice();
+                silk_event_wtr.send(SilkSendEvent::ReliableSend(data));
             };
         });
         ui.label("Messages");

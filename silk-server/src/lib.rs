@@ -23,23 +23,6 @@ struct SocketResource {
     pub mb_socket: WebRtcSocket,
 }
 
-pub mod stages {
-    /// Silk Server plugin reads from silk socket and sends "incoming client
-    /// message" events
-    pub(crate) static READ_SOCKET: &str = "silk_read_socket";
-    /// Game receives "incoming client message" events from Silk Server plugin
-    /// and creates "side effects"
-    pub static PROCESS_INCOMING_EVENTS: &str = "silk_process_incoming_events";
-    /// Game updates world state here with the "side effects"
-    pub static UPDATE_WORLD_STATE: &str = "silk_world_update";
-    /// Game sends broadcast events to Silk Server plugin (after world state
-    /// reacts with "side effects" to create a new world state)
-    pub static PROCESS_OUTGOING_EVENTS: &str = "silk_process_outgoing_events";
-    /// Silk Server Plugin reads broadcast events game and sends messages over
-    /// the silk socket
-    pub(crate) static WRITE_SOCKET: &str = "silk_write_socket";
-}
-
 impl Plugin for SilkServerPlugin {
     fn build(&self, app: &mut App) {
         let config = match self.remote_signalling_server {
@@ -181,4 +164,21 @@ fn broadcast(
             }
         }
     }
+}
+
+pub mod stages {
+    /// Silk plugin reads from silk socket and sends "incoming client
+    /// message" events
+    pub static READ_SOCKET: &str = "silk_read_socket";
+    /// Game receives "incoming client message" events from Silk plugin
+    /// and creates "side effects"
+    pub static PROCESS_INCOMING_EVENTS: &str = "silk_process_incoming_events";
+    /// Game updates world state here with the "side effects"
+    pub static UPDATE_WORLD_STATE: &str = "silk_world_update";
+    /// Game sends broadcast events to Silk plugin (after world state
+    /// reacts with "side effects" to create a new world state)
+    pub static PROCESS_OUTGOING_EVENTS: &str = "silk_process_outgoing_events";
+    /// Silk plugin reads broadcast events game and sends messages over
+    /// the silk socket
+    pub static WRITE_SOCKET: &str = "silk_write_socket";
 }
