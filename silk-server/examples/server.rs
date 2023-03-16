@@ -6,7 +6,7 @@ use silk_server::{
 };
 
 #[derive(Resource, Debug, Default, Clone)]
-struct WorldState {
+struct ServerState {
     clients: HashSet<PeerId>,
 }
 
@@ -31,14 +31,14 @@ fn main() {
         //    broadcast_to_peers
         //        .with_run_criteria(FixedTimestep::steps_per_second(0.2)), // Every 5s
         //)
-        .insert_resource(WorldState::default())
+        .insert_resource(ServerState::default())
         .add_startup_system(|| info!("Connecting..."))
         .run();
 }
 
 fn broadcast_to_peers(
     mut event_wtr: EventWriter<SilkBroadcastEvent>,
-    world_state: Res<WorldState>,
+    world_state: Res<ServerState>,
 ) {
     for client in world_state.clients.iter() {
         let packet = format!(
@@ -55,7 +55,7 @@ fn broadcast_to_peers(
 fn handle_events(
     mut event_rdr: EventReader<SilkServerEvent>,
     mut event_wtr: EventWriter<SilkBroadcastEvent>,
-    mut world_state: ResMut<WorldState>,
+    mut world_state: ResMut<ServerState>,
 ) {
     while let Some(ev) = event_rdr.iter().next() {
         match ev {
@@ -77,7 +77,12 @@ fn handle_events(
                 let msg = String::from_utf8_lossy(packet); // last char is /n
                 debug!("{id:?}: {msg}");
                 let packet = msg.as_bytes().to_vec().into_boxed_slice();
-                event_wtr.send(SilkBroadcastEvent::ReliableSendAll(packet));
+                for peer in world_state.clients.iter().filter(|p| p != &id) {
+                    event_wtr.send(SilkBroadcastEvent::ReliableSend((
+                        *peer,
+                        packet.clone(),
+                    )));
+                }
             }
             SilkServerEvent::IdAssigned(id) => info!("I am {id:?}"),
         }
