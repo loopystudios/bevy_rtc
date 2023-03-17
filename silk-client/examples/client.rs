@@ -6,7 +6,6 @@ use silk_client::{
     ConnectionRequest, SilkClientPlugin,
 };
 use std::{
-    borrow::BorrowMut,
     net::{IpAddr, Ipv4Addr},
     ops::DerefMut,
 };

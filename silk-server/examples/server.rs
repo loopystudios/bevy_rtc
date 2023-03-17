@@ -1,4 +1,4 @@
-use bevy::{log::LogPlugin, prelude::*, time::FixedTimestep, utils::HashSet};
+use bevy::{log::LogPlugin, prelude::*, utils::HashSet};
 use matchbox_socket::PeerId;
 use silk_server::{
     events::{SilkBroadcastEvent, SilkServerEvent},
@@ -27,29 +27,9 @@ fn main() {
             stages::PROCESS_INCOMING_EVENTS,
             handle_events,
         )
-        //.add_system(
-        //    broadcast_to_peers
-        //        .with_run_criteria(FixedTimestep::steps_per_second(0.2)), // Every 5s
-        //)
         .insert_resource(ServerState::default())
         .add_startup_system(|| info!("Connecting..."))
         .run();
-}
-
-fn broadcast_to_peers(
-    mut event_wtr: EventWriter<SilkBroadcastEvent>,
-    world_state: Res<ServerState>,
-) {
-    for client in world_state.clients.iter() {
-        let packet = format!(
-            "Hello {client:?}, the server has {} clients",
-            world_state.clients.len()
-        )
-        .as_bytes()
-        .to_vec()
-        .into_boxed_slice();
-        event_wtr.send(SilkBroadcastEvent::ReliableSendAll(packet));
-    }
 }
 
 fn handle_events(
