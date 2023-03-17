@@ -14,7 +14,7 @@ fn main() {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins)
         .add_plugin(LogPlugin {
-            filter: "error,server=debug,wgpu_core=warn,wgpu_hal=warn,matchbox_socket=warn"
+            filter: "error,chat_server=debug,wgpu_core=warn,wgpu_hal=warn,matchbox_socket=warn"
                 .into(),
             level: bevy::log::Level::DEBUG,
         })

@@ -1,10 +1,11 @@
 use bevy::{log::LogPlugin, prelude::*};
 use bevy_egui::{egui, EguiContext, EguiPlugin};
-use matchbox_socket::PeerId;
+use matchbox_socket::{Packet, PeerId};
 use silk_client::{
     events::{SilkSendEvent, SilkSocketEvent},
     ConnectionRequest, SilkClientPlugin,
 };
+use silk_common::demo_packets::Payload;
 use std::{
     net::{IpAddr, Ipv4Addr},
     ops::DerefMut,
@@ -27,7 +28,7 @@ fn main() {
         DefaultPlugins
             .set(LogPlugin {
                 filter:
-                    "error,chat_client=debug,wgpu_core=warn,wgpu_hal=warn,matchbox_socket=warn"
+                    "error,painting_client=debug,wgpu_core=warn,wgpu_hal=warn,matchbox_socket=warn"
                         .into(),
                 level: bevy::log::Level::DEBUG,
             })
@@ -94,10 +95,18 @@ fn handle_events(
                 *world_state = WorldState::default();
             }
             SilkSocketEvent::Message((peer, data)) => {
-                let peer = *peer;
-                let message = String::from_utf8_lossy(data).to_string();
-                info!("{peer:?}: {message}");
-                messages.messages.push((peer, message));
+                let packet: Packet = data.clone();
+                let protocol_message = Payload::from(packet.clone());
+                match protocol_message {
+                    Payload::Chat { from, message } => {
+                        let peer = *peer;
+                        info!("{peer:?}: {}", message);
+                        messages.messages.push((from, message));
+                    }
+                    Payload::DrawPoint { x, y } => {
+                        info!("{peer:?}: Draw at {:?}", (x, y));
+                    }
+                }
             }
         }
     }
@@ -130,9 +139,12 @@ fn ui_example_system(
         ui.horizontal_wrapped(|ui| {
             ui.text_edit_singleline(text.deref_mut());
             if ui.button("Send").clicked() {
-                // TODO: Send chat line
-                let data = text.as_bytes().to_vec().into_boxed_slice();
-                silk_event_wtr.send(SilkSendEvent::ReliableSend(data));
+                let payload = Payload::Chat {
+                    from: world_state.id.unwrap(),
+                    message: text.to_owned(),
+                };
+                silk_event_wtr
+                    .send(SilkSendEvent::ReliableSend(payload.into()));
             };
         });
         ui.label("Messages");
