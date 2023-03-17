@@ -76,7 +76,7 @@ fn handle_events(
                             )));
                         }
                     }
-                    Payload::DrawPoint { x, y } => {
+                    Payload::DrawPoint { x1, y1, x2, y2 } => {
                         for peer in
                             world_state.clients.iter().filter(|p| p != &id)
                         {
