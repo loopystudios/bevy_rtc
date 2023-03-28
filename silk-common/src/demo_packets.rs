@@ -1,5 +1,5 @@
+use bevy_matchbox::matchbox_socket::{Packet, PeerId};
 use log::error;
-use matchbox_socket::{Packet, PeerId};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]

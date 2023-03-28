@@ -1,4 +1,4 @@
-use matchbox_socket::{
+use bevy_matchbox::matchbox_socket::{
     ChannelConfig, MessageLoopFuture, MultipleChannels, WebRtcSocket,
     WebRtcSocketBuilder,
 };
