@@ -43,15 +43,15 @@ struct SocketState {
     pub addr: Option<ConnectionAddr>,
     /// The ID of the host
     pub host_id: Option<PeerId>,
-    /// The ID given by the signalling server
+    /// The ID given by the signaling server
     pub id: Option<PeerId>,
 }
 
 pub enum ConnectionRequest {
-    /// A request to connect to the server through the signalling server; the
-    /// ip and port are the signalling server
+    /// A request to connect to the server through the signaling server; the
+    /// ip and port are the signaling server
     Connect { ip: IpAddr, port: u16 },
-    /// A request to disconnect from the signalling server; this will also
+    /// A request to disconnect from the signaling server; this will also
     /// disconnect from the server
     Disconnect,
 }

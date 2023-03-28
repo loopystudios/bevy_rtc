@@ -2,7 +2,7 @@ use bevy_matchbox::matchbox_socket::{Packet, PeerId};
 
 /// Socket events that are possible to subscribe to in Bevy
 pub enum SilkServerEvent {
-    /// The signalling server assigned the socket a unique ID
+    /// The signaling server assigned the socket a unique ID
     IdAssigned(PeerId),
     /// A peer has connected to this server
     PeerJoined(PeerId),

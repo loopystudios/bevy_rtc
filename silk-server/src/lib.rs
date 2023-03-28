@@ -10,7 +10,7 @@ pub mod events;
 
 /// The socket server abstraction
 pub struct SilkServerPlugin {
-    /// Whether the signalling server is local or remote
+    /// Whether the signaling server is local or remote
     pub signaler_addr: ConnectionAddr,
     /// Hertz for server tickrate, e.g. 30.0 = 30 times per second
     pub tick_rate: f64,
@@ -21,7 +21,7 @@ struct SocketState {
     /// The socket address, used for connecting/reconnecting
     pub addr: ConnectionAddr,
 
-    /// The ID the signalling server sees us as
+    /// The ID the signaling server sees us as
     pub id: Option<PeerId>,
 }
 

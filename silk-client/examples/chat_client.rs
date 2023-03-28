@@ -79,7 +79,7 @@ fn handle_events(
     for event in events.iter() {
         match event {
             SilkSocketEvent::IdAssigned(id) => {
-                info!("Got ID from signalling server: {id:?}");
+                info!("Got ID from signaling server: {id:?}");
                 world_state.id.replace(*id);
             }
             SilkSocketEvent::ConnectedToHost(id) => {

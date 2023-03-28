@@ -44,9 +44,9 @@ impl SilkSocket {
 
 #[derive(Debug, Clone, Copy)]
 pub enum ConnectionAddr {
-    /// Connect to a local signalling server.
+    /// Connect to a local signaling server.
     Local { port: u16 },
-    /// Connect to a remote signalling server.
+    /// Connect to a remote signaling server.
     Remote { ip: IpAddr, port: u16 },
 }
 
