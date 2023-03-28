@@ -1,5 +1,6 @@
 use bevy::{log::LogPlugin, prelude::*, utils::HashSet};
-use matchbox_socket::PeerId;
+use bevy_matchbox::prelude::*;
+use silk_common::ConnectionAddr;
 use silk_server::{
     events::{SilkBroadcastEvent, SilkServerEvent},
     stages, SilkServerPlugin,
@@ -19,9 +20,8 @@ fn main() {
             level: bevy::log::Level::DEBUG,
         })
         .add_plugin(SilkServerPlugin {
-            port: 3536,
+            signaler_addr: ConnectionAddr::Local { port: 3536},
             tick_rate: 5.0,
-            remote_signalling_server: None,
         })
         .add_system_to_stage(
             stages::PROCESS_INCOMING_EVENTS,

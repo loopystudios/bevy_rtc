@@ -9,7 +9,7 @@ path = "src/main.rs"
 
 [dependencies]
 bevy = { workspace = true }
-matchbox_socket = { workspace = true }
+bevy_matchbox = { workspace = true }
 silk-common = { path = "../silk-common" }
 
 [dev-dependencies]

@@ -1,68 +1,35 @@
-#![feature(is_some_and)]
-use crate::{signaling::ws_handler, state::ServerState};
-use axum::{http::StatusCode, response::IntoResponse, routing::get, Router};
-mod glue;
-use std::{
-    net::{IpAddr, Ipv4Addr, SocketAddr},
-    sync::Arc,
-};
-use tower_http::{
-    cors::{Any, CorsLayer},
-    trace::{DefaultOnResponse, TraceLayer},
-    LatencyUnit,
-};
-use tracing::{info, Level};
-use tracing_subscriber::prelude::*;
-mod error;
-mod signaling;
-mod state;
-
-const SOCKET_ADDR: SocketAddr =
-    SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), 3536);
+use matchbox_signaling::SignalingServer;
+use std::net::Ipv4Addr;
+use tracing::info;
 
 #[tokio::main]
-async fn main() {
-    // Initialize logger
+async fn main() -> Result<(), matchbox_signaling::Error> {
+    setup_logging();
+
+    let server =
+        SignalingServer::client_server_builder((Ipv4Addr::UNSPECIFIED, 3536))
+            .on_connection_request(|connection| {
+                info!("Connecting: {connection:?}");
+                Ok(true) // Allow all connections
+            })
+            .on_id_assignment(|(socket, id)| info!("{socket} received {id:?}"))
+            .on_host_connected(|id| info!("Host joined: {id:?}"))
+            .on_host_disconnected(|id| info!("Host left: {id:?}"))
+            .on_client_connected(|id| info!("Client joined: {id:?}"))
+            .on_client_disconnected(|id| info!("Client left: {id:?}"))
+            .cors()
+            .trace()
+            .build();
+    server.serve().await
+}
+
+fn setup_logging() {
+    use tracing_subscriber::prelude::*;
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| {
-                    "info,matchbox_server=info,tower_http=debug".into()
-                }),
+                .unwrap_or_else(|_| "debug".into()),
         )
-        .with(tracing_subscriber::fmt::layer().compact())
+        .with(tracing_subscriber::fmt::layer())
         .init();
-
-    // Setup router
-    let server_state =
-        Arc::new(futures::lock::Mutex::new(ServerState::default()));
-    let app = Router::new()
-        .route("/:client_type", get(ws_handler))
-        .layer(
-            // Allow requests from anywhere - Not ideal for production!
-            CorsLayer::new()
-                .allow_origin(Any)
-                .allow_methods(Any)
-                .allow_headers(Any),
-        )
-        .layer(
-            // Middleware for logging from tower-http
-            TraceLayer::new_for_http().on_response(
-                DefaultOnResponse::new()
-                    .level(Level::INFO)
-                    .latency_unit(LatencyUnit::Micros),
-            ),
-        )
-        .with_state(server_state);
-
-    // Run server
-    info!("Matchbox Signaling Server: {}", SOCKET_ADDR);
-    axum::Server::bind(&SOCKET_ADDR)
-        .serve(app.into_make_service_with_connect_info::<SocketAddr>())
-        .await
-        .expect("Unable to run signalling server, is it already running?");
-}
-
-pub async fn health_handler() -> impl IntoResponse {
-    StatusCode::OK
 }

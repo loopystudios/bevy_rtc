@@ -1,6 +1,6 @@
 use bevy::{log::LogPlugin, prelude::*};
 use bevy_egui::{egui, EguiContext, EguiPlugin};
-use matchbox_socket::PeerId;
+use bevy_matchbox::prelude::*;
 use silk_client::{
     events::{SilkSendEvent, SilkSocketEvent},
     ConnectionRequest, SilkClientPlugin,

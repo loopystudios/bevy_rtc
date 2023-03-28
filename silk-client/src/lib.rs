@@ -1,9 +1,8 @@
-use std::net::IpAddr;
-
-use bevy::{prelude::*, tasks::IoTaskPool};
+use bevy::prelude::*;
+use bevy_matchbox::{matchbox_socket, prelude::*};
 use events::{SilkSendEvent, SilkSocketEvent};
-use matchbox_socket::{PeerId, WebRtcSocket};
-use silk_common::{SilkSocket, SilkSocketConfig};
+use silk_common::{ConnectionAddr, SilkSocket};
+use std::net::IpAddr;
 pub mod events;
 
 /// The socket client abstraction
@@ -19,7 +18,7 @@ enum ConnectionState {
 
 impl Plugin for SilkClientPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(SocketResource::default())
+        app.insert_resource(SocketState::default())
             .add_state(ConnectionState::Disconnected)
             .add_event::<ConnectionRequest>()
             .add_system(event_reader)
@@ -39,15 +38,13 @@ impl Plugin for SilkClientPlugin {
 }
 
 #[derive(Resource, Default)]
-struct SocketResource {
+struct SocketState {
+    /// The socket address, used for connecting/reconnecting
+    pub addr: Option<ConnectionAddr>,
     /// The ID of the host
     pub host_id: Option<PeerId>,
     /// The ID given by the signalling server
     pub id: Option<PeerId>,
-    /// The socket configuration, used for connecting/reconnecting
-    pub silk_config: Option<SilkSocketConfig>,
-    /// The underlying matchbox socket
-    pub mb_socket: Option<WebRtcSocket>,
 }
 
 pub enum ConnectionRequest {
@@ -60,58 +57,51 @@ pub enum ConnectionRequest {
 }
 
 /// Initialize the socket
-fn init_socket(mut socket_res: ResMut<SocketResource>) {
-    if let Some(silk_socket_config) = &socket_res.silk_config {
-        debug!("silk config: {silk_socket_config:?}");
+fn init_socket(mut commands: Commands, socket_res: Res<SocketState>) {
+    if let Some(addr) = &socket_res.addr {
+        debug!("address: {addr:?}");
 
-        // Crease silk socket
-        let silk_socket = SilkSocket::new(silk_socket_config.clone());
-        // Translate to matchbox parts
-        let (socket, loop_fut) = silk_socket.into_parts();
-
-        // The loop_fut runs the socket, and is async, so we use Bevy's polling.
-        let task_pool = IoTaskPool::get();
-        task_pool.spawn(loop_fut).detach();
-
-        socket_res.mb_socket.replace(socket);
+        // Create matchbox socket
+        let silk_socket = SilkSocket::new(*addr);
+        commands.open_socket(silk_socket.builder());
     } else {
         panic!("state set to connecting without config");
     }
 }
 
 /// Reset the internal socket
-fn reset_socket(mut socket_res: ResMut<SocketResource>) {
-    *socket_res = SocketResource {
+fn reset_socket(mut commands: Commands, mut state: ResMut<SocketState>) {
+    // TODO: This is ugly as shit and should just be commands.close_socket();
+    <bevy::prelude::Commands<'_, '_> as bevy_matchbox::CloseSocketExt<
+        MultipleChannels,
+    >>::close_socket(&mut commands);
+    *state = SocketState {
         host_id: None,
         id: None,
-        silk_config: socket_res.silk_config.take(),
-        mb_socket: None,
+        addr: state.addr.take(),
     };
 }
 
 /// Reads and handles connection request events
 fn event_sender(
-    mut socket_res: ResMut<SocketResource>,
+    mut socket: ResMut<MatchboxSocket<MultipleChannels>>,
+    state: Res<SocketState>,
     mut silk_event_rdr: EventReader<SilkSendEvent>,
 ) {
     match silk_event_rdr.iter().next() {
         Some(SilkSendEvent::ReliableSend(data)) => {
-            let host_id = socket_res.host_id.unwrap();
-            let socket = socket_res.mb_socket.as_mut().unwrap();
-            socket.send_on_channel(
-                data.clone(),
-                host_id,
-                SilkSocketConfig::RELIABLE_CHANNEL_INDEX,
-            )
+            let host_id = state.host_id.unwrap();
+            socket
+                .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
+                .unwrap()
+                .send(data.clone(), host_id);
         }
         Some(SilkSendEvent::UnreliableSend(data)) => {
-            let host_id = socket_res.host_id.unwrap();
-            let socket = socket_res.mb_socket.as_mut().unwrap();
-            socket.send_on_channel(
-                data.clone(),
-                host_id,
-                SilkSocketConfig::UNRELIABLE_CHANNEL_INDEX,
-            )
+            let host_id = state.host_id.unwrap();
+            socket
+                .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
+                .unwrap()
+                .send(data.clone(), host_id);
         }
         None => {}
     }
@@ -120,24 +110,23 @@ fn event_sender(
 /// Reads and handles connection request events
 fn event_reader(
     mut cxn_event_reader: EventReader<ConnectionRequest>,
-    mut socket_res: ResMut<SocketResource>,
+    commands: Commands,
+    mut state: ResMut<SocketState>,
     mut connection_state: ResMut<State<ConnectionState>>,
     mut silk_event_wtr: EventWriter<SilkSocketEvent>,
 ) {
     match cxn_event_reader.iter().next() {
         Some(ConnectionRequest::Connect { ip, port }) => {
             if let ConnectionState::Disconnected = connection_state.current() {
-                let silk_socket_config =
-                    SilkSocketConfig::RemoteSignallerClient {
-                        ip: *ip,
-                        port: *port,
-                    };
-
+                let addr = ConnectionAddr::Remote {
+                    ip: *ip,
+                    port: *port,
+                };
                 debug!(
                     previous = format!("{connection_state:?}"),
                     "set state: connecting"
                 );
-                socket_res.silk_config = Some(silk_socket_config);
+                state.addr = Some(addr);
                 _ = connection_state.overwrite_set(ConnectionState::Connecting);
             }
         }
@@ -147,7 +136,7 @@ fn event_reader(
                     previous = format!("{connection_state:?}"),
                     "set state: disconnected"
                 );
-                socket_res.mb_socket.take();
+                reset_socket(commands, state);
                 silk_event_wtr.send(SilkSocketEvent::DisconnectedFromHost);
                 _ = connection_state
                     .overwrite_set(ConnectionState::Disconnected);
@@ -159,49 +148,51 @@ fn event_reader(
 
 /// Translates socket updates into bevy events
 fn event_writer(
-    mut socket_res: ResMut<SocketResource>,
+    mut state: ResMut<SocketState>,
+    mut socket: ResMut<MatchboxSocket<MultipleChannels>>,
     mut event_wtr: EventWriter<SilkSocketEvent>,
     mut connection_state: ResMut<State<ConnectionState>>,
 ) {
-    let socket_res = socket_res.as_mut();
-    if let Some(ref mut socket) = socket_res.mb_socket {
-        // Create socket events for Silk
+    // Create socket events for Silk
 
-        // Id changed events
-        if let Some(id) = socket.id() {
-            if socket_res.id.is_none() {
-                socket_res.id.replace(id);
-                event_wtr.send(SilkSocketEvent::IdAssigned(id));
-            }
+    // Id changed events
+    if let Some(id) = socket.id() {
+        if state.id.is_none() {
+            state.id.replace(id);
+            event_wtr.send(SilkSocketEvent::IdAssigned(id));
         }
-
-        // Connection state updates
-        for (id, state) in socket.update_peers() {
-            match state {
-                matchbox_socket::PeerState::Connected => {
-                    socket_res.host_id.replace(id);
-                    _ = connection_state
-                        .overwrite_set(ConnectionState::Connected);
-                    event_wtr.send(SilkSocketEvent::ConnectedToHost(id));
-                }
-                matchbox_socket::PeerState::Disconnected => {
-                    socket_res.host_id.take();
-                    _ = connection_state
-                        .overwrite_set(ConnectionState::Disconnected);
-                    event_wtr.send(SilkSocketEvent::DisconnectedFromHost);
-                }
-            }
-        }
-
-        // Collect Unreliable, Reliable messages
-        event_wtr.send_batch(
-            socket
-                .receive_on_channel(SilkSocketConfig::UNRELIABLE_CHANNEL_INDEX)
-                .into_iter()
-                .chain(socket.receive_on_channel(
-                    SilkSocketConfig::RELIABLE_CHANNEL_INDEX,
-                ))
-                .map(SilkSocketEvent::Message),
-        );
     }
+
+    // Connection state updates
+    for (id, peer_state) in socket.update_peers() {
+        match peer_state {
+            matchbox_socket::PeerState::Connected => {
+                state.host_id.replace(id);
+                _ = connection_state.overwrite_set(ConnectionState::Connected);
+                event_wtr.send(SilkSocketEvent::ConnectedToHost(id));
+            }
+            matchbox_socket::PeerState::Disconnected => {
+                state.host_id.take();
+                _ = connection_state
+                    .overwrite_set(ConnectionState::Disconnected);
+                event_wtr.send(SilkSocketEvent::DisconnectedFromHost);
+            }
+        }
+    }
+
+    // Collect Unreliable, Reliable messages
+    let reliable_msgs = socket
+        .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
+        .unwrap()
+        .receive();
+    let unreliable_msgs = socket
+        .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
+        .unwrap()
+        .receive();
+    event_wtr.send_batch(
+        reliable_msgs
+            .into_iter()
+            .chain(unreliable_msgs)
+            .map(SilkSocketEvent::Message),
+    );
 }

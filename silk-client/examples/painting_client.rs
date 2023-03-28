@@ -1,6 +1,6 @@
 use bevy::{log::LogPlugin, prelude::*};
 use bevy_egui::{egui, EguiContext, EguiPlugin};
-use matchbox_socket::{Packet, PeerId};
+use bevy_matchbox::{matchbox_socket::Packet, prelude::*};
 use painting::PaintingState;
 use silk_client::{
     events::{SilkSendEvent, SilkSocketEvent},

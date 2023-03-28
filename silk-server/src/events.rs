@@ -1,4 +1,4 @@
-use matchbox_socket::{Packet, PeerId};
+use bevy_matchbox::matchbox_socket::{Packet, PeerId};
 
 /// Socket events that are possible to subscribe to in Bevy
 pub enum SilkServerEvent {
