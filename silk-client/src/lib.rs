@@ -114,7 +114,7 @@ fn event_reader(
     mut cxn_event_reader: EventReader<ConnectionRequest>,
     commands: Commands,
     mut state: ResMut<SocketState>,
-    mut connection_state: ResMut<State<ConnectionState>>,
+    mut connection_state: ResMut<NextState<ConnectionState>>,
     mut silk_event_wtr: EventWriter<SilkSocketEvent>,
 ) {
     match cxn_event_reader.iter().next() {
@@ -129,7 +129,7 @@ fn event_reader(
                     "set state: connecting"
                 );
                 state.addr = Some(addr);
-                connection_state.0 = ConnectionState::Connecting;
+                connection_state.set(ConnectionState::Connecting);
             }
         }
         Some(ConnectionRequest::Disconnect) => {
@@ -140,7 +140,7 @@ fn event_reader(
                 );
                 reset_socket(commands, state);
                 silk_event_wtr.send(SilkSocketEvent::DisconnectedFromHost);
-                connection_state.0 = ConnectionState::Disconnected;
+                connection_state.set(ConnectionState::Disconnected);
             }
         }
         None => {}
