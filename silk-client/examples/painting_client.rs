@@ -73,7 +73,7 @@ fn on_connected(mut commands: Commands) {
 }
 
 fn handle_events(
-    mut app_state: ResMut<State<ConnectionState>>,
+    mut app_state: ResMut<NextState<ConnectionState>>,
     mut events: EventReader<SilkSocketEvent>,
     mut world_state: ResMut<WorldState>,
     mut messages_state: ResMut<MessagesState>,
@@ -88,12 +88,12 @@ fn handle_events(
             SilkSocketEvent::ConnectedToHost(id) => {
                 // Connected to host
                 info!("Connected to host: {id:?}");
-                app_state.0 = ConnectionState::Connected;
+                app_state.set(ConnectionState::Connected);
             }
             SilkSocketEvent::DisconnectedFromHost => {
                 // Disconnected from host
                 error!("Disconnected from host");
-                app_state.0 = ConnectionState::Disconnected;
+                app_state.set(ConnectionState::Disconnected);
                 *world_state = WorldState::default();
             }
             SilkSocketEvent::Message((peer, data)) => {
