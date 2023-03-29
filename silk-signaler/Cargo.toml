@@ -3,21 +3,11 @@ name = "silk-signaler"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
+bevy = { workspace = true }
 silk-common = { path = "../silk-common" }
 matchbox_signaling = { workspace = true }
-anyhow = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
-bincode = { workspace = true }
-
-axum = { version = "0.6", features = ["ws"] }
-tracing = { version = "0.1", features = ["log"] }
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-tower-http = { version = "0.4", features = ["cors", "trace"] }
-tokio = { version = "1.10", features = ["macros", "rt-multi-thread"] }
-futures = { version = "0.3", default-features = false, features = ["alloc"] }
-uuid = { version = "1.0", features = ["serde", "v4"] }
-thiserror = "1.0"
-tokio-stream = "0.1"
+async-compat = "0.2"

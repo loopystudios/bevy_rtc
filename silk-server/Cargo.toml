@@ -8,6 +8,7 @@ edition = "2021"
 bevy = { workspace = true }
 bevy_matchbox = { workspace = true }
 silk-common = { path = "../silk-common" }
+silk-signaler = { path = "../silk-signaler" }
 anyhow = { workspace = true }
 
 futures-timer = { version = "3", features = ["wasm-bindgen"] }

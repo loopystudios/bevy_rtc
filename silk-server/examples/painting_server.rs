@@ -5,6 +5,7 @@ use silk_server::{
     events::{SilkBroadcastEvent, SilkServerEvent},
     stages, SilkServerPlugin,
 };
+use silk_signaler::SilkSignalerPlugin;
 
 #[derive(Resource, Debug, Default, Clone)]
 struct ServerState {
@@ -15,8 +16,9 @@ struct ServerState {
 fn main() {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins)
+        .add_plugin(SilkSignalerPlugin { port : 3536 } )
         .add_plugin(LogPlugin {
-            filter: "error,painting_server=debug,wgpu_core=warn,wgpu_hal=warn,matchbox_socket=warn"
+            filter: "warn,silk_signaler=debug,painting_server=debug,wgpu_core=warn,wgpu_hal=warn,matchbox_socket=warn"
                 .into(),
             level: bevy::log::Level::DEBUG,
         })
