@@ -114,33 +114,34 @@ fn event_reader(
     mut cxn_event_reader: EventReader<ConnectionRequest>,
     commands: Commands,
     mut state: ResMut<SocketState>,
-    mut connection_state: ResMut<NextState<ConnectionState>>,
+    mut next_connection_state: ResMut<NextState<ConnectionState>>,
+    current_connection_state: Res<State<ConnectionState>>,
     mut silk_event_wtr: EventWriter<SilkSocketEvent>,
 ) {
     match cxn_event_reader.iter().next() {
         Some(ConnectionRequest::Connect { ip, port }) => {
-            if let ConnectionState::Disconnected = connection_state.0 {
+            if let ConnectionState::Disconnected = current_connection_state.0 {
                 let addr = ConnectionAddr::Remote {
                     ip: *ip,
                     port: *port,
                 };
                 debug!(
-                    previous = format!("{connection_state:?}"),
+                    previous = format!("{current_connection_state:?}"),
                     "set state: connecting"
                 );
                 state.addr = Some(addr);
-                connection_state.set(ConnectionState::Connecting);
+                next_connection_state.set(ConnectionState::Connecting);
             }
         }
         Some(ConnectionRequest::Disconnect) => {
-            if let ConnectionState::Connected = connection_state.0 {
+            if let ConnectionState::Connected = current_connection_state.0 {
                 debug!(
-                    previous = format!("{connection_state:?}"),
+                    previous = format!("{current_connection_state:?}"),
                     "set state: disconnected"
                 );
                 reset_socket(commands, state);
                 silk_event_wtr.send(SilkSocketEvent::DisconnectedFromHost);
-                connection_state.set(ConnectionState::Disconnected);
+                next_connection_state.set(ConnectionState::Disconnected);
             }
         }
         None => {}
