@@ -1,8 +1,6 @@
-use bevy::{prelude::*, time::FixedTimestep};
-use bevy_matchbox::{
-    matchbox_socket::{PeerId, PeerState},
-    prelude::*,
-};
+use bevy::{prelude::*, time::fixed_timestep::FixedTime};
+use bevy_matchbox::matchbox_socket::{PeerId, PeerState};
+use bevy_matchbox::multi_channel_socket::*;
 use events::{SilkBroadcastEvent, SilkServerEvent};
 use silk_common::{ConnectionAddr, SilkSocket};
 
@@ -13,7 +11,7 @@ pub struct SilkServerPlugin {
     /// Whether the signaling server is local or remote
     pub signaler_addr: ConnectionAddr,
     /// Hertz for server tickrate, e.g. 30.0 = 30 times per second
-    pub tick_rate: f64,
+    pub tick_rate: f32,
 }
 
 #[derive(Resource)]
@@ -31,45 +29,29 @@ impl Plugin for SilkServerPlugin {
             addr: self.signaler_addr,
             id: None,
         })
-        .add_stage_after(
-            CoreStage::First,
-            stages::READ_SOCKET,
-            SystemStage::parallel().with_run_criteria(
-                FixedTimestep::steps_per_second(self.tick_rate),
-            ),
-        )
-        .add_stage_after(
-            CoreStage::PreUpdate,
-            stages::PROCESS_INCOMING_EVENTS,
-            SystemStage::parallel().with_run_criteria(
-                FixedTimestep::steps_per_second(self.tick_rate),
-            ),
-        )
-        .add_stage_after(
-            CoreStage::Update,
-            stages::UPDATE_WORLD_STATE,
-            SystemStage::parallel().with_run_criteria(
-                FixedTimestep::steps_per_second(self.tick_rate),
-            ),
-        )
-        .add_stage_after(
-            CoreStage::Update,
-            stages::PROCESS_OUTGOING_EVENTS,
-            SystemStage::parallel().with_run_criteria(
-                FixedTimestep::steps_per_second(self.tick_rate),
-            ),
-        )
-        .add_stage_after(
-            CoreStage::Update,
-            stages::WRITE_SOCKET,
-            SystemStage::parallel().with_run_criteria(
-                FixedTimestep::steps_per_second(self.tick_rate),
-            ),
+        .insert_resource(FixedTime::new_from_secs(1.0 / self.tick_rate))
+        .configure_sets(
+            (
+                sets::ReadSocket,
+                sets::ProcessIncomingEvents,
+                sets::UpdateWorldState,
+                sets::ProcessOutgoingEvents,
+                sets::WriteSocket,
+            )
+                .chain(),
         )
         .add_event::<SilkServerEvent>()
-        .add_system_to_stage(stages::READ_SOCKET, socket_reader)
+        .add_system(
+            socket_reader
+                .in_base_set(sets::ReadSocket)
+                .in_schedule(CoreSchedule::FixedUpdate),
+        )
         .add_event::<SilkBroadcastEvent>()
-        .add_system_to_stage(stages::WRITE_SOCKET, broadcast)
+        .add_system(
+            broadcast
+                .in_base_set(sets::WriteSocket)
+                .in_schedule(CoreSchedule::FixedUpdate),
+        )
         .add_startup_system(init_socket);
     }
 }
@@ -86,7 +68,7 @@ fn init_socket(mut commands: Commands, state: Res<SocketState>) {
 /// Translates socket events into Bevy events
 fn socket_reader(
     mut state: ResMut<SocketState>,
-    mut socket: ResMut<MatchboxSocket<MultipleChannels>>,
+    mut socket: ResMut<MatchboxSocket>,
     mut event_wtr: EventWriter<SilkServerEvent>,
 ) {
     // Id changed events
@@ -128,7 +110,7 @@ fn socket_reader(
 
 /// Reads and handles server broadcast request events
 fn broadcast(
-    mut socket: ResMut<MatchboxSocket<MultipleChannels>>,
+    mut socket: ResMut<MatchboxSocket>,
     mut event_reader: EventReader<SilkBroadcastEvent>,
 ) {
     while let Some(broadcast) = event_reader.iter().next() {
@@ -163,19 +145,35 @@ fn broadcast(
     }
 }
 
-pub mod stages {
+pub mod sets {
+    use bevy::prelude::*;
+
     /// Silk plugin reads from silk socket and sends "incoming client
     /// message" events
-    pub static READ_SOCKET: &str = "silk_read_socket";
+    #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet)]
+    #[system_set(base)]
+    pub struct ReadSocket;
+
     /// Game receives "incoming client message" events from Silk plugin
     /// and creates "side effects"
-    pub static PROCESS_INCOMING_EVENTS: &str = "silk_process_incoming_events";
+    #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet)]
+    #[system_set(base)]
+    pub struct ProcessIncomingEvents;
+
     /// Game updates world state here with the "side effects"
-    pub static UPDATE_WORLD_STATE: &str = "silk_world_update";
+    #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet)]
+    #[system_set(base)]
+    pub struct UpdateWorldState;
+
     /// Game sends broadcast events to Silk plugin (after world state
     /// reacts with "side effects" to create a new world state)
-    pub static PROCESS_OUTGOING_EVENTS: &str = "silk_process_outgoing_events";
+    #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet)]
+    #[system_set(base)]
+    pub struct ProcessOutgoingEvents;
+
     /// Silk plugin reads broadcast events game and sends messages over
     /// the silk socket
-    pub static WRITE_SOCKET: &str = "silk_write_socket";
+    #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet)]
+    #[system_set(base)]
+    pub struct WriteSocket;
 }

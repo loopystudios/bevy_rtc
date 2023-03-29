@@ -1,5 +1,5 @@
 use bevy::{log::LogPlugin, prelude::*};
-use bevy_egui::{egui, EguiContext, EguiPlugin};
+use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use bevy_matchbox::{matchbox_socket::Packet, prelude::*};
 use painting::PaintingState;
 use silk_client::{
@@ -12,8 +12,9 @@ use std::{
     ops::DerefMut,
 };
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash, States)]
 enum ConnectionState {
+    #[default]
     Disconnected,
     Connected,
 }
@@ -34,24 +35,22 @@ fn main() {
                 level: bevy::log::Level::DEBUG,
             })
             .set(WindowPlugin {
-                window: WindowDescriptor {
+                primary_window: Some(bevy::window::Window {
                     fit_canvas_to_parent: true, // behave on wasm
                     ..default()
-                },
+                }),
                 ..default()
             }),
     )
     .add_plugin(SilkClientPlugin)
-    .add_state(ConnectionState::Disconnected)
+    .add_state::<ConnectionState>()
     .insert_resource(WorldState::default())
     .add_system(handle_events)
-    .add_system_set(
-        SystemSet::on_enter(ConnectionState::Disconnected)
-            .with_system(on_disconnected),
+    .add_system(
+        on_disconnected.in_schedule(OnEnter(ConnectionState::Disconnected)),
     )
-    .add_system_set(
-        SystemSet::on_enter(ConnectionState::Connected)
-            .with_system(on_connected),
+    .add_system(
+        on_connected.in_schedule(OnEnter(ConnectionState::Connected)),
     )
     .add_startup_system(setup_cam)
     .add_plugin(EguiPlugin)
@@ -89,12 +88,12 @@ fn handle_events(
             SilkSocketEvent::ConnectedToHost(id) => {
                 // Connected to host
                 info!("Connected to host: {id:?}");
-                _ = app_state.overwrite_set(ConnectionState::Connected);
+                app_state.0 = ConnectionState::Connected;
             }
             SilkSocketEvent::DisconnectedFromHost => {
                 // Disconnected from host
                 error!("Disconnected from host");
-                _ = app_state.overwrite_set(ConnectionState::Disconnected);
+                app_state.0 = ConnectionState::Disconnected;
                 *world_state = WorldState::default();
             }
             SilkSocketEvent::Message((peer, data)) => {
@@ -123,7 +122,7 @@ fn handle_events(
 }
 
 fn ui_example_system(
-    mut egui_context: ResMut<EguiContext>,
+    mut egui_context: EguiContexts,
     mut event_wtr: EventWriter<ConnectionRequest>,
     world_state: Res<WorldState>,
     mut silk_event_wtr: EventWriter<SilkSendEvent>,

@@ -3,7 +3,7 @@ use bevy_matchbox::{matchbox_socket::Packet, prelude::*};
 use silk_common::{demo_packets::Payload, ConnectionAddr};
 use silk_server::{
     events::{SilkBroadcastEvent, SilkServerEvent},
-    stages, SilkServerPlugin,
+    sets, SilkServerPlugin,
 };
 use silk_signaler::SilkSignalerPlugin;
 
@@ -26,10 +26,7 @@ fn main() {
             signaler_addr: ConnectionAddr::Local { port: 3536},
             tick_rate: 5.0,
         })
-        .add_system_to_stage(
-            stages::PROCESS_INCOMING_EVENTS,
-            handle_events,
-        )
+        .add_system(handle_events.in_base_set(sets::ProcessIncomingEvents))
         .insert_resource(ServerState::default())
         .add_startup_system(|| info!("Connecting..."))
         .run();

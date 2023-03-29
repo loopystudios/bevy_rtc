@@ -3,9 +3,9 @@ members = ["silk-signaler", "silk-server", "silk-client", "silk-common"]
 resolver = "2"
 
 [workspace.dependencies]
-bevy = "0.9"
-matchbox_signaling = { git = "https://github.com/johanhelsing/matchbox", rev = "3494b6b99298390250b35dd165b7ab6f053ad89a" }
-bevy_matchbox = { git = "https://github.com/johanhelsing/matchbox", rev = "3494b6b99298390250b35dd165b7ab6f053ad89a" }
+bevy = "0.10"
+matchbox_signaling = { git = "https://github.com/johanhelsing/matchbox", branch = "issue-178" }
+bevy_matchbox = { git = "https://github.com/johanhelsing/matchbox", branch = "issue-178" }
 anyhow = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 bincode = "1.3"

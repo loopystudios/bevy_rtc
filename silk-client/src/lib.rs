@@ -9,8 +9,9 @@ pub mod events;
 pub struct SilkClientPlugin;
 
 /// State of the socket
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash, States)]
 enum ConnectionState {
+    #[default]
     Disconnected,
     Connecting,
     Connected,
@@ -19,20 +20,19 @@ enum ConnectionState {
 impl Plugin for SilkClientPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(SocketState::default())
-            .add_state(ConnectionState::Disconnected)
+            .add_state::<ConnectionState>()
             .add_event::<ConnectionRequest>()
             .add_system(event_reader)
             .add_event::<SilkSocketEvent>()
             .add_system(event_writer)
             .add_event::<SilkSendEvent>()
             .add_system(event_sender)
-            .add_system_set(
-                SystemSet::on_enter(ConnectionState::Connecting)
-                    .with_system(init_socket),
+            .add_system(
+                init_socket.in_schedule(OnEnter(ConnectionState::Connecting)),
             )
-            .add_system_set(
-                SystemSet::on_enter(ConnectionState::Disconnected)
-                    .with_system(reset_socket),
+            .add_system(
+                reset_socket
+                    .in_schedule(OnEnter(ConnectionState::Disconnected)),
             );
     }
 }
@@ -119,7 +119,7 @@ fn event_reader(
 ) {
     match cxn_event_reader.iter().next() {
         Some(ConnectionRequest::Connect { ip, port }) => {
-            if let ConnectionState::Disconnected = connection_state.current() {
+            if let ConnectionState::Disconnected = connection_state.0 {
                 let addr = ConnectionAddr::Remote {
                     ip: *ip,
                     port: *port,
@@ -129,19 +129,18 @@ fn event_reader(
                     "set state: connecting"
                 );
                 state.addr = Some(addr);
-                _ = connection_state.overwrite_set(ConnectionState::Connecting);
+                connection_state.0 = ConnectionState::Connecting;
             }
         }
         Some(ConnectionRequest::Disconnect) => {
-            if let ConnectionState::Connected = connection_state.current() {
+            if let ConnectionState::Connected = connection_state.0 {
                 debug!(
                     previous = format!("{connection_state:?}"),
                     "set state: disconnected"
                 );
                 reset_socket(commands, state);
                 silk_event_wtr.send(SilkSocketEvent::DisconnectedFromHost);
-                _ = connection_state
-                    .overwrite_set(ConnectionState::Disconnected);
+                connection_state.0 = ConnectionState::Disconnected;
             }
         }
         None => {}
@@ -170,14 +169,12 @@ fn event_writer(
             match peer_state {
                 matchbox_socket::PeerState::Connected => {
                     state.host_id.replace(id);
-                    _ = connection_state
-                        .overwrite_set(ConnectionState::Connected);
+                    connection_state.0 = ConnectionState::Connected;
                     event_wtr.send(SilkSocketEvent::ConnectedToHost(id));
                 }
                 matchbox_socket::PeerState::Disconnected => {
                     state.host_id.take();
-                    _ = connection_state
-                        .overwrite_set(ConnectionState::Disconnected);
+                    connection_state.0 = ConnectionState::Disconnected;
                     event_wtr.send(SilkSocketEvent::DisconnectedFromHost);
                 }
             }
