@@ -6,7 +6,7 @@ use silk_client::{
     events::{SilkSendEvent, SilkSocketEvent},
     ConnectionRequest, SilkClientPlugin,
 };
-use silk_common::demo_packets::Payload;
+use silk_common::demo_packets::PaintingDemoPayload;
 use std::{
     net::{IpAddr, Ipv4Addr},
     ops::DerefMut,
@@ -98,14 +98,15 @@ fn handle_events(
             }
             SilkSocketEvent::Message((peer, data)) => {
                 let packet: Packet = data.clone();
-                let protocol_message = Payload::from(packet.clone());
+                let protocol_message =
+                    PaintingDemoPayload::from(packet.clone());
                 match protocol_message {
-                    Payload::Chat { from, message } => {
+                    PaintingDemoPayload::Chat { from, message } => {
                         let peer = *peer;
                         info!("{peer:?}: {}", message);
                         messages_state.messages.push((from, message));
                     }
-                    Payload::DrawPoint { x1, y1, x2, y2 } => {
+                    PaintingDemoPayload::DrawPoint { x1, y1, x2, y2 } => {
                         info!(
                             "{peer:?}: Draw from {:?} to {:?}",
                             (x1, y1),
@@ -149,7 +150,7 @@ fn ui_example_system(
         ui.horizontal_wrapped(|ui| {
             ui.text_edit_singleline(text.deref_mut());
             if ui.button("Send").clicked() {
-                let payload = Payload::Chat {
+                let payload = PaintingDemoPayload::Chat {
                     from: world_state.id.unwrap(),
                     message: text.to_owned(),
                 };
@@ -164,7 +165,7 @@ fn ui_example_system(
         let mut out: Option<(f32, f32, f32, f32)> = None;
         painting.ui(ui, &mut out);
         if let Some((x1, y1, x2, y2)) = out {
-            let payload = Payload::DrawPoint { x1, y1, x2, y2 };
+            let payload = PaintingDemoPayload::DrawPoint { x1, y1, x2, y2 };
             info!("Sending Draw from {:?} to {:?}", (x1, y1), (x2, y2));
             silk_event_wtr.send(SilkSendEvent::ReliableSend(payload.into()));
         }

@@ -1,6 +1,6 @@
 use bevy::{log::LogPlugin, prelude::*, utils::HashSet};
 use bevy_matchbox::{matchbox_socket::Packet, prelude::*};
-use silk_common::{demo_packets::Payload, ConnectionAddr};
+use silk_common::{demo_packets::PaintingDemoPayload, ConnectionAddr};
 use silk_server::{
     events::{SilkBroadcastEvent, SilkServerEvent},
     sets, SilkServerPlugin,
@@ -42,9 +42,9 @@ fn handle_events(
             SilkServerEvent::PeerJoined(id) => {
                 world_state.clients.insert(*id);
                 debug!("{id:?} joined");
-                let packet = Payload::Chat {
+                let packet = PaintingDemoPayload::Chat {
                     from: world_state.server_id.unwrap(),
-                    message: "someone joined!".to_string(),
+                    message: format!("Hello {id:?}"),
                 };
                 event_wtr
                     .send(SilkBroadcastEvent::ReliableSendAll(packet.into()));
@@ -52,9 +52,9 @@ fn handle_events(
             SilkServerEvent::PeerLeft(id) => {
                 debug!("{id:?} left");
                 world_state.clients.remove(id);
-                let packet = Payload::Chat {
+                let packet = PaintingDemoPayload::Chat {
                     from: world_state.server_id.unwrap(),
-                    message: "someone left!".to_string(),
+                    message: format!("Goodbye {id:?}"),
                 };
                 event_wtr
                     .send(SilkBroadcastEvent::ReliableSendAll(packet.into()));
@@ -62,28 +62,13 @@ fn handle_events(
             // Message comes from Client
             SilkServerEvent::Message((id, packet)) => {
                 let packet: Packet = packet.clone();
-                let protocol_message = Payload::from(packet.clone());
-                match protocol_message {
-                    Payload::Chat { from, message } => {
-                        for peer in
-                            world_state.clients.iter().filter(|p| p != &id)
-                        {
-                            event_wtr.send(SilkBroadcastEvent::ReliableSend((
-                                *peer,
-                                packet.clone(),
-                            )));
-                        }
-                    }
-                    Payload::DrawPoint { x1, y1, x2, y2 } => {
-                        for peer in
-                            world_state.clients.iter().filter(|p| p != &id)
-                        {
-                            event_wtr.send(SilkBroadcastEvent::ReliableSend((
-                                *peer,
-                                packet.clone(),
-                            )));
-                        }
-                    }
+                let protocol_message =
+                    PaintingDemoPayload::from(packet.clone());
+                for peer in world_state.clients.iter().filter(|p| p != &id) {
+                    event_wtr.send(SilkBroadcastEvent::ReliableSend((
+                        *peer,
+                        protocol_message.clone().into(),
+                    )));
                 }
             }
             SilkServerEvent::IdAssigned(id) => {
