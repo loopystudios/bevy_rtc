@@ -7,6 +7,9 @@ use std::net::IpAddr;
 pub mod demo_packets;
 pub mod packets;
 
+// Re-exports
+pub use bevy_matchbox::matchbox_socket::Packet;
+
 /// An abstraction over [`matchbox_socket::WebRtcSocket`] to fit Tribrid's
 /// Client-Server architecture.
 pub struct SilkSocket {
