@@ -29,7 +29,10 @@ impl Plugin for SilkServerPlugin {
             addr: self.signaler_addr,
             id: None,
         })
+        .add_startup_system(init_socket)
         .insert_resource(FixedTime::new_from_secs(1.0 / self.tick_rate))
+        .add_event::<SilkServerEvent>()
+        .add_event::<SilkBroadcastEvent>()
         .configure_sets(
             (
                 sets::ReadSocket,
@@ -40,19 +43,12 @@ impl Plugin for SilkServerPlugin {
             )
                 .chain(),
         )
-        .add_event::<SilkServerEvent>()
         .add_system(
             socket_reader
                 .in_base_set(sets::ReadSocket)
                 .in_schedule(CoreSchedule::FixedUpdate),
         )
-        .add_event::<SilkBroadcastEvent>()
-        .add_system(
-            broadcast
-                .in_base_set(sets::WriteSocket)
-                .in_schedule(CoreSchedule::FixedUpdate),
-        )
-        .add_startup_system(init_socket);
+        .add_system(broadcast.in_base_set(sets::WriteSocket));
     }
 }
 

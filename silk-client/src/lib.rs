@@ -112,7 +112,6 @@ fn event_sender(
 /// Reads and handles connection request events
 fn event_reader(
     mut cxn_event_reader: EventReader<ConnectionRequest>,
-    commands: Commands,
     mut state: ResMut<SocketState>,
     mut next_connection_state: ResMut<NextState<ConnectionState>>,
     current_connection_state: Res<State<ConnectionState>>,
