@@ -139,7 +139,6 @@ fn event_reader(
                     previous = format!("{current_connection_state:?}"),
                     "set state: disconnected"
                 );
-                reset_socket(commands, state);
                 silk_event_wtr.send(SilkSocketEvent::DisconnectedFromHost);
                 next_connection_state.set(ConnectionState::Disconnected);
             }
@@ -153,7 +152,7 @@ fn event_writer(
     mut state: ResMut<SocketState>,
     mut socket: Option<ResMut<MatchboxSocket<MultipleChannels>>>,
     mut event_wtr: EventWriter<SilkSocketEvent>,
-    mut connection_state: ResMut<State<ConnectionState>>,
+    mut connection_state: ResMut<NextState<ConnectionState>>,
 ) {
     // Create socket events for Silk
     if let Some(socket) = socket.as_mut() {
@@ -170,12 +169,12 @@ fn event_writer(
             match peer_state {
                 matchbox_socket::PeerState::Connected => {
                     state.host_id.replace(id);
-                    connection_state.0 = ConnectionState::Connected;
+                    connection_state.set(ConnectionState::Connected);
                     event_wtr.send(SilkSocketEvent::ConnectedToHost(id));
                 }
                 matchbox_socket::PeerState::Disconnected => {
                     state.host_id.take();
-                    connection_state.0 = ConnectionState::Disconnected;
+                    connection_state.set(ConnectionState::Disconnected);
                     event_wtr.send(SilkSocketEvent::DisconnectedFromHost);
                 }
             }
