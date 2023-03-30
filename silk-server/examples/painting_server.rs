@@ -24,7 +24,7 @@ fn main() {
         })
         .add_plugin(SilkServerPlugin {
             signaler_addr: ConnectionAddr::Local { port: 3536},
-            tick_rate: 5.0,
+            tick_rate: 10.0,
         })
         .add_system(handle_events.in_base_set(sets::ProcessIncomingEvents))
         .insert_resource(ServerState::default())
