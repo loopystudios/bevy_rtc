@@ -71,10 +71,7 @@ fn init_socket(mut commands: Commands, socket_res: Res<SocketState>) {
 
 /// Reset the internal socket
 fn reset_socket(mut commands: Commands, mut state: ResMut<SocketState>) {
-    // TODO: This is ugly as shit and should just be commands.close_socket();
-    <bevy::prelude::Commands<'_, '_> as bevy_matchbox::CloseSocketExt<
-        MultipleChannels,
-    >>::close_socket(&mut commands);
+    commands.close_socket::<MultipleChannels>();
     *state = SocketState {
         host_id: None,
         id: None,
@@ -94,14 +91,12 @@ fn event_sender(
                 let host_id = state.host_id.unwrap();
                 socket
                     .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
-                    .unwrap()
                     .send(data.clone(), host_id);
             }
             Some(SilkSendEvent::UnreliableSend(data)) => {
                 let host_id = state.host_id.unwrap();
                 socket
                     .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
-                    .unwrap()
                     .send(data.clone(), host_id);
             }
             None => {}
@@ -180,13 +175,10 @@ fn event_writer(
         }
 
         // Collect Unreliable, Reliable messages
-        let reliable_msgs = socket
-            .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
-            .unwrap()
-            .receive();
+        let reliable_msgs =
+            socket.channel(SilkSocket::RELIABLE_CHANNEL_INDEX).receive();
         let unreliable_msgs = socket
             .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
-            .unwrap()
             .receive();
         event_wtr.send_batch(
             reliable_msgs

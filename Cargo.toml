@@ -4,8 +4,8 @@ resolver = "2"
 
 [workspace.dependencies]
 bevy = "0.10"
-matchbox_signaling = { git = "https://github.com/johanhelsing/matchbox", branch = "issue-178" }
-bevy_matchbox = { git = "https://github.com/johanhelsing/matchbox", branch = "issue-178" }
+matchbox_signaling = { git = "https://github.com/johanhelsing/matchbox", rev = "99fd5b759a0800ac2c3816141bfddacb50ec59e3" }
+bevy_matchbox = { git = "https://github.com/johanhelsing/matchbox", rev = "99fd5b759a0800ac2c3816141bfddacb50ec59e3" }
 anyhow = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 bincode = "1.3"
