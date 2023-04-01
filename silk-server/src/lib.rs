@@ -5,9 +5,11 @@ use bevy_matchbox::{
     MatchboxSocket, OpenSocketExt,
 };
 use events::{SilkBroadcastEvent, SilkServerEvent};
+use signaler::SilkSignalerPlugin;
 use silk_common::{ConnectionAddr, SilkSocket};
 
 pub mod events;
+pub mod signaler;
 
 /// The socket server abstraction
 pub struct SilkServerPlugin {
@@ -28,6 +30,9 @@ struct SocketState {
 
 impl Plugin for SilkServerPlugin {
     fn build(&self, app: &mut App) {
+        if let ConnectionAddr::Local { port } = self.signaler_addr {
+            app.add_plugin(SilkSignalerPlugin { port });
+        }
         app.insert_resource(SocketState {
             addr: self.signaler_addr,
             id: None,
