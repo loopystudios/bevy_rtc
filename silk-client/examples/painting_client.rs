@@ -104,7 +104,9 @@ fn handle_events(
                     PaintingDemoPayload::Chat { from, message } => {
                         let peer = *peer;
                         info!("{peer:?}: {}", message);
-                        messages_state.messages.push((from, message));
+                        messages_state
+                            .messages
+                            .push((format!("{from:?}"), message));
                     }
                     PaintingDemoPayload::DrawPoint { x1, y1, x2, y2 } => {
                         info!(
@@ -151,7 +153,7 @@ fn ui_example_system(
             ui.text_edit_singleline(text.deref_mut());
             if ui.button("Send").clicked() {
                 let payload = PaintingDemoPayload::Chat {
-                    from: world_state.id.unwrap(),
+                    from: format!("{:?}", world_state.id.unwrap()),
                     message: text.to_owned(),
                 };
                 silk_event_wtr
@@ -174,7 +176,7 @@ fn ui_example_system(
 
 #[derive(Resource, Default, PartialEq)]
 struct MessagesState {
-    messages: Vec<(PeerId, String)>,
+    messages: Vec<(String, String)>,
 }
 
 use egui::*;

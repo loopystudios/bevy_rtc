@@ -1,6 +1,9 @@
 use bevy::{log::LogPlugin, prelude::*, utils::HashSet};
-use bevy_matchbox::{matchbox_socket::Packet, prelude::*};
-use silk_common::{demo_packets::PaintingDemoPayload, ConnectionAddr};
+use silk_common::bevy_matchbox::matchbox_socket::Packet;
+use silk_common::{
+    bevy_matchbox::prelude::PeerId, demo_packets::PaintingDemoPayload,
+    ConnectionAddr,
+};
 use silk_server::{
     events::{SilkBroadcastEvent, SilkServerEvent},
     sets, SilkServerPlugin,
@@ -41,7 +44,7 @@ fn handle_events(
                 world_state.clients.insert(*id);
                 debug!("{id:?} joined");
                 let packet = PaintingDemoPayload::Chat {
-                    from: world_state.server_id.unwrap(),
+                    from: format!("{:?}", world_state.server_id.unwrap()),
                     message: format!("Hello {id:?}"),
                 };
                 event_wtr
@@ -51,7 +54,7 @@ fn handle_events(
                 debug!("{id:?} left");
                 world_state.clients.remove(id);
                 let packet = PaintingDemoPayload::Chat {
-                    from: world_state.server_id.unwrap(),
+                    from: format!("{:?}", world_state.server_id.unwrap()),
                     message: format!("Goodbye {id:?}"),
                 };
                 event_wtr
