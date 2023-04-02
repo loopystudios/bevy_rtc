@@ -1,11 +1,11 @@
 use bevy::{prelude::*, time::fixed_timestep::FixedTime};
-use bevy_matchbox::{
+use events::{SilkBroadcastEvent, SilkServerEvent};
+use signaler::SilkSignalerPlugin;
+use silk_common::bevy_matchbox::{
     matchbox_socket::{PeerId, PeerState},
     prelude::MultipleChannels,
     MatchboxSocket, OpenSocketExt,
 };
-use events::{SilkBroadcastEvent, SilkServerEvent};
-use signaler::SilkSignalerPlugin;
 use silk_common::{ConnectionAddr, SilkSocket};
 
 pub mod events;

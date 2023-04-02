@@ -1,11 +1,11 @@
 use bevy::{log::LogPlugin, prelude::*};
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
-use bevy_matchbox::{matchbox_socket::Packet, prelude::*};
 use painting::PaintingState;
 use silk_client::{
     events::{SilkSendEvent, SilkSocketEvent},
     ConnectionRequest, SilkClientPlugin,
 };
+use silk_common::bevy_matchbox::{matchbox_socket::Packet, prelude::*};
 use silk_common::demo_packets::PaintingDemoPayload;
 use std::{
     net::{IpAddr, Ipv4Addr},
