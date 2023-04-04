@@ -1,8 +1,9 @@
 use bevy::prelude::*;
-use silk_common::bevy_matchbox::{matchbox_socket, prelude::*};
 use events::{SilkSendEvent, SilkSocketEvent};
+use silk_common::bevy_matchbox::{matchbox_socket, prelude::*};
 use silk_common::{ConnectionAddr, SilkSocket};
 use std::net::IpAddr;
+
 pub mod events;
 
 /// The socket client abstraction

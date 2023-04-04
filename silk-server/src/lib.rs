@@ -116,6 +116,16 @@ fn broadcast(
 ) {
     while let Some(broadcast) = event_reader.iter().next() {
         match broadcast {
+            // Unreliable operations
+            SilkBroadcastEvent::UnreliableSendAllExcept((peer, packet)) => {
+                let peers: Vec<PeerId> =
+                    socket.connected_peers().filter(|p| p != peer).collect();
+                peers.into_iter().for_each(|peer| {
+                    socket
+                        .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
+                        .send(packet.clone(), peer)
+                })
+            }
             SilkBroadcastEvent::UnreliableSendAll(packet) => {
                 let peers: Vec<PeerId> = socket.connected_peers().collect();
                 peers.into_iter().for_each(|peer| {
@@ -127,6 +137,17 @@ fn broadcast(
             SilkBroadcastEvent::UnreliableSend((peer, packet)) => socket
                 .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
                 .send(packet.clone(), *peer),
+
+            // Reliable operations
+            SilkBroadcastEvent::ReliableSendAllExcept((peer, packet)) => {
+                let peers: Vec<PeerId> =
+                    socket.connected_peers().filter(|p| p != peer).collect();
+                peers.into_iter().for_each(|peer| {
+                    socket
+                        .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
+                        .send(packet.clone(), peer)
+                })
+            }
             SilkBroadcastEvent::ReliableSendAll(packet) => {
                 let peers: Vec<PeerId> = socket.connected_peers().collect();
                 peers.into_iter().for_each(|peer| {
