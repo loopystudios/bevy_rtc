@@ -56,7 +56,11 @@ impl Plugin for SilkServerPlugin {
                 .in_base_set(sets::ReadSocket)
                 .in_schedule(CoreSchedule::FixedUpdate),
         )
-        .add_system(broadcast.in_base_set(sets::WriteSocket));
+        .add_system(
+            broadcast
+                .in_base_set(sets::WriteSocket)
+                .in_schedule(CoreSchedule::FixedUpdate),
+        );
     }
 }
 
