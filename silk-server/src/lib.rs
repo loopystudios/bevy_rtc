@@ -10,6 +10,8 @@ use silk_common::{ConnectionAddr, SilkSocket};
 
 pub mod events;
 pub mod signaler;
+mod stages;
+pub use stages::*;
 
 /// The socket server abstraction
 pub struct SilkServerPlugin {
@@ -40,24 +42,68 @@ impl Plugin for SilkServerPlugin {
         .add_startup_system(init_socket)
         .insert_resource(FixedTime::new_from_secs(1.0 / self.tick_rate))
         .add_event::<SilkServerEvent>()
-        .add_event::<SilkBroadcastEvent>()
-        .configure_sets(
-            (
-                sets::ReadSocket,
-                sets::ProcessIncomingEvents,
-                sets::UpdateWorldState,
-                sets::ProcessOutgoingEvents,
-                sets::WriteSocket,
-            )
-                .chain(),
+        .add_event::<SilkBroadcastEvent>();
+
+        app.init_schedule(SilkStagesSchedule);
+
+        // it's important here to configure set order
+        app.edit_schedule(SilkStagesSchedule, |schedule| {
+            schedule.configure_sets(SilkStages::sets());
+        });
+
+        app.add_systems(
+            (socket_reader, print_read)
+                .in_base_set(SilkStages::ReadSocket)
+                .in_schedule(SilkStagesSchedule),
         )
         .add_system(
-            socket_reader
-                .in_base_set(sets::ReadSocket)
-                .in_schedule(CoreSchedule::FixedUpdate),
+            print_incoming
+                .in_base_set(SilkStages::ProcessIncomingEvents)
+                .in_schedule(SilkStagesSchedule),
         )
-        .add_system(broadcast.in_base_set(sets::WriteSocket));
+        .add_system(
+            print_update_state
+                .in_base_set(SilkStages::UpdateWorldState)
+                .in_schedule(SilkStagesSchedule),
+        )
+        .add_system(
+            print_outgoing
+                .in_base_set(SilkStages::ProcessOutgoingEvents)
+                .in_schedule(SilkStagesSchedule),
+        )
+        .add_systems(
+            (broadcast, print_write)
+                .in_base_set(SilkStages::WriteSocket)
+                .in_schedule(SilkStagesSchedule),
+        );
+
+        // add scheduler
+        app.add_system(
+            stages::run_silk_schedule
+                .in_schedule(CoreSchedule::FixedUpdate)
+                .before(bevy::time::fixed_timestep::run_fixed_update_schedule),
+        );
     }
+}
+
+fn print_read() {
+    error!("1");
+}
+
+fn print_incoming() {
+    error!("2");
+}
+
+fn print_update_state() {
+    error!("3");
+}
+
+fn print_outgoing() {
+    error!("4");
+}
+
+fn print_write() {
+    error!("5");
 }
 
 /// Initialize the socket
@@ -161,37 +207,4 @@ fn broadcast(
                 .send(packet.clone(), *peer),
         }
     }
-}
-
-pub mod sets {
-    use bevy::prelude::*;
-
-    /// Silk plugin reads from silk socket and sends "incoming client
-    /// message" events
-    #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet)]
-    #[system_set(base)]
-    pub struct ReadSocket;
-
-    /// Game receives "incoming client message" events from Silk plugin
-    /// and creates "side effects"
-    #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet)]
-    #[system_set(base)]
-    pub struct ProcessIncomingEvents;
-
-    /// Game updates world state here with the "side effects"
-    #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet)]
-    #[system_set(base)]
-    pub struct UpdateWorldState;
-
-    /// Game sends broadcast events to Silk plugin (after world state
-    /// reacts with "side effects" to create a new world state)
-    #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet)]
-    #[system_set(base)]
-    pub struct ProcessOutgoingEvents;
-
-    /// Silk plugin reads broadcast events game and sends messages over
-    /// the silk socket
-    #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet)]
-    #[system_set(base)]
-    pub struct WriteSocket;
 }
