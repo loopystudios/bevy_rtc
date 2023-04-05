@@ -52,27 +52,27 @@ impl Plugin for SilkServerPlugin {
         });
 
         app.add_systems(
-            (socket_reader, print_read)
+            (socket_reader, trace_read)
                 .in_base_set(SilkStages::ReadSocket)
                 .in_schedule(SilkStagesSchedule),
         )
         .add_system(
-            print_incoming
+            trace_incoming
                 .in_base_set(SilkStages::ProcessIncomingEvents)
                 .in_schedule(SilkStagesSchedule),
         )
         .add_system(
-            print_update_state
+            trace_update_state
                 .in_base_set(SilkStages::UpdateWorldState)
                 .in_schedule(SilkStagesSchedule),
         )
         .add_system(
-            print_outgoing
+            trace_outgoing
                 .in_base_set(SilkStages::ProcessOutgoingEvents)
                 .in_schedule(SilkStagesSchedule),
         )
         .add_systems(
-            (broadcast, print_write)
+            (broadcast, trace_write)
                 .in_base_set(SilkStages::WriteSocket)
                 .in_schedule(SilkStagesSchedule),
         );
@@ -86,24 +86,24 @@ impl Plugin for SilkServerPlugin {
     }
 }
 
-fn print_read() {
-    error!("1");
+fn trace_read() {
+    trace!("Trace 1: Read");
 }
 
-fn print_incoming() {
-    error!("2");
+fn trace_incoming() {
+    trace!("Trace 2: Incoming");
 }
 
-fn print_update_state() {
-    error!("3");
+fn trace_update_state() {
+    trace!("Trace 3: Update");
 }
 
-fn print_outgoing() {
-    error!("4");
+fn trace_outgoing() {
+    trace!("Trace 4: Outgoing");
 }
 
-fn print_write() {
-    error!("5");
+fn trace_write() {
+    trace!("Trace 5: Write");
 }
 
 /// Initialize the socket
