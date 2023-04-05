@@ -44,37 +44,37 @@ impl Plugin for SilkServerPlugin {
         .add_event::<SilkServerEvent>()
         .add_event::<SilkBroadcastEvent>();
 
-        app.init_schedule(SilkStagesSchedule);
+        app.init_schedule(SilkStageSchedule);
 
         // it's important here to configure set order
-        app.edit_schedule(SilkStagesSchedule, |schedule| {
-            schedule.configure_sets(SilkStages::sets());
+        app.edit_schedule(SilkStageSchedule, |schedule| {
+            schedule.configure_sets(SilkStage::sets());
         });
 
         app.add_systems(
             (socket_reader, trace_read)
-                .in_base_set(SilkStages::ReadSocket)
-                .in_schedule(SilkStagesSchedule),
+                .in_base_set(SilkStage::ReadSocket)
+                .in_schedule(SilkStageSchedule),
         )
         .add_system(
             trace_incoming
-                .in_base_set(SilkStages::ProcessIncomingEvents)
-                .in_schedule(SilkStagesSchedule),
+                .in_base_set(SilkStage::ProcessIncomingEvents)
+                .in_schedule(SilkStageSchedule),
         )
         .add_system(
             trace_update_state
-                .in_base_set(SilkStages::UpdateWorldState)
-                .in_schedule(SilkStagesSchedule),
+                .in_base_set(SilkStage::UpdateWorldState)
+                .in_schedule(SilkStageSchedule),
         )
         .add_system(
             trace_outgoing
-                .in_base_set(SilkStages::ProcessOutgoingEvents)
-                .in_schedule(SilkStagesSchedule),
+                .in_base_set(SilkStage::ProcessOutgoingEvents)
+                .in_schedule(SilkStageSchedule),
         )
         .add_systems(
             (broadcast, trace_write)
-                .in_base_set(SilkStages::WriteSocket)
-                .in_schedule(SilkStagesSchedule),
+                .in_base_set(SilkStage::WriteSocket)
+                .in_schedule(SilkStageSchedule),
         );
 
         // add scheduler

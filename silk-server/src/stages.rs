@@ -4,16 +4,15 @@ use bevy::{
 };
 
 #[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash)]
-pub struct SilkStagesSchedule;
+pub struct SilkStageSchedule;
 
 pub fn run_silk_schedule(world: &mut World) {
-    error!("FIXED");
-    world.run_schedule(SilkStagesSchedule);
+    world.run_schedule(SilkStageSchedule);
 }
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy, SystemSet)]
 #[system_set(base)]
-pub enum SilkStages {
+pub enum SilkStage {
     /// Silk plugin reads from silk socket and sends "incoming client
     /// message" events
     ReadSocket,
@@ -30,7 +29,7 @@ pub enum SilkStages {
     WriteSocket,
 }
 
-impl SilkStages {
+impl SilkStage {
     pub fn iter() -> impl Iterator<Item = Self> {
         [
             Self::ReadSocket,
