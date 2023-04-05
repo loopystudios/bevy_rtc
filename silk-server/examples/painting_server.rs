@@ -6,8 +6,9 @@ use silk_common::{
 };
 use silk_server::{
     events::{SilkBroadcastEvent, SilkServerEvent},
-    sets, SilkServerPlugin,
+    SilkServerPlugin,
 };
+use silk_server::{SilkStage, SilkStageSchedule};
 
 #[derive(Resource, Debug, Default, Clone)]
 struct ServerState {
@@ -25,9 +26,11 @@ fn main() {
         })
         .add_plugin(SilkServerPlugin {
             signaler_addr: ConnectionAddr::Local { port: 3536 },
-            tick_rate: 10.0,
+            tick_rate: 1.0,
         })
-        .add_system(handle_events.in_base_set(sets::ProcessIncomingEvents))
+        .add_system(handle_events
+                .in_base_set(SilkStage::WriteSocket)
+                .in_schedule(SilkStageSchedule))
         .insert_resource(ServerState::default())
         .add_startup_system(|| info!("Connecting..."))
         .run();
