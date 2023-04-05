@@ -27,7 +27,10 @@ impl SilkSocket {
     pub fn new(config: ConnectionAddr) -> Self {
         let room_url = config.to_url();
         let builder = WebRtcSocket::builder(room_url)
-            .add_channel(ChannelConfig::unreliable()) // Match UNRELIABLE_CHANNEL_INDEX
+            .add_channel(ChannelConfig {
+                ordered: true,
+                max_retransmits: Some(0),
+            }) // Match UNRELIABLE_CHANNEL_INDEX
             .add_channel(ChannelConfig::reliable()); // Match RELIABLE_CHANNEL_INDEX
 
         Self { builder }
