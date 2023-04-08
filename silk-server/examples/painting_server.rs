@@ -28,9 +28,11 @@ fn main() {
             signaler_addr: ConnectionAddr::Local { port: 3536 },
             tick_rate: 1.0,
         })
-        .add_system(handle_events
+        .add_system(
+            handle_events
                 .in_base_set(SilkStage::WriteSocket)
-                .in_schedule(SilkStageSchedule))
+                .in_schedule(SilkStageSchedule),
+        )
         .insert_resource(ServerState::default())
         .add_startup_system(|| info!("Connecting..."))
         .run();
