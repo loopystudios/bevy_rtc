@@ -1,6 +1,7 @@
 use silk_common::bevy_matchbox::matchbox_socket::{Packet, PeerId};
 
 /// Socket events that are possible to subscribe to in Bevy
+#[derive(Debug, Clone)]
 pub enum SilkSocketEvent {
     /// The signaling server assigned the socket a unique ID
     IdAssigned(PeerId),
@@ -13,6 +14,7 @@ pub enum SilkSocketEvent {
 }
 
 /// Request events for client to send messages to server
+#[derive(Debug)]
 pub enum SilkSendEvent {
     /// Send an unreliable packet (any order, no retransmit) to the server
     UnreliableSend(Packet),
