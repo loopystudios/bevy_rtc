@@ -51,31 +51,40 @@ impl Plugin for SilkServerPlugin {
             schedule.configure_sets(SilkServerStage::sets());
         });
 
-        app.add_systems(
-            (socket_reader, trace_read)
+        app.add_system(
+            trace_read
                 .before(SilkServerStage::ReadSocket)
                 .in_schedule(SilkServerSchedule),
         )
         .add_system(
-            trace_incoming
+            // Read silk events always after servers, who hook into this stage
+            socket_reader
                 .after(SilkServerStage::ReadSocket)
+                .in_schedule(SilkServerSchedule),
+        )
+        .add_system(
+            trace_incoming
                 .before(SilkServerStage::ProcessIncomingEvents)
                 .in_schedule(SilkServerSchedule),
         )
         .add_system(
             trace_update_state
-                .after(SilkServerStage::ProcessIncomingEvents)
                 .before(SilkServerStage::UpdateWorldState)
                 .in_schedule(SilkServerSchedule),
         )
         .add_system(
             trace_outgoing
-                .after(SilkServerStage::UpdateWorldState)
                 .before(SilkServerStage::ProcessOutgoingEvents)
                 .in_schedule(SilkServerSchedule),
         )
-        .add_systems(
-            (broadcast, trace_write)
+        .add_system(
+            trace_write
+                .before(SilkServerStage::WriteSocket)
+                .in_schedule(SilkServerSchedule),
+        )
+        .add_system(
+            // Write silk events always after servers, who hook into this stage
+            broadcast
                 .after(SilkServerStage::WriteSocket)
                 .in_schedule(SilkServerSchedule),
         );
