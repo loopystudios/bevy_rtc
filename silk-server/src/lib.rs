@@ -82,7 +82,7 @@ impl Plugin for SilkServerPlugin {
         )
         .add_system(
             trace_write
-                .after(SilkServerStage::UpdateWorldState)
+                .after(SilkServerStage::ProcessOutgoingEvents)
                 .before(SilkServerStage::WriteSocket)
                 .in_schedule(SilkServerSchedule),
         )
