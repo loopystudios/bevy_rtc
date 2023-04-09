@@ -6,9 +6,9 @@ pub enum SilkServerEvent {
     /// The signaling server assigned the socket a unique ID
     IdAssigned(PeerId),
     /// A peer has connected to this server
-    PeerJoined(PeerId),
+    ClientJoined(PeerId),
     /// A peer has left this server
-    PeerLeft(PeerId),
+    ClientLeft(PeerId),
     /// A peer sent a message to this server
     Message((PeerId, Packet)),
 }

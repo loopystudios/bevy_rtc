@@ -133,10 +133,10 @@ fn socket_reader(
     for (peer, peer_state) in socket.update_peers() {
         match peer_state {
             PeerState::Connected => {
-                event_wtr.send(SilkServerEvent::PeerJoined(peer));
+                event_wtr.send(SilkServerEvent::ClientJoined(peer));
             }
             PeerState::Disconnected => {
-                event_wtr.send(SilkServerEvent::PeerLeft(peer));
+                event_wtr.send(SilkServerEvent::ClientLeft(peer));
             }
         }
     }

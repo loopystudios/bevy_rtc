@@ -45,7 +45,7 @@ fn handle_events(
 ) {
     while let Some(ev) = event_rdr.iter().next() {
         match ev {
-            SilkServerEvent::PeerJoined(id) => {
+            SilkServerEvent::ClientJoined(id) => {
                 world_state.clients.insert(*id);
                 debug!("{id:?} joined");
                 let packet = PaintingDemoPayload::Chat {
@@ -55,7 +55,7 @@ fn handle_events(
                 event_wtr
                     .send(SilkBroadcastEvent::ReliableSendAll(packet.into()));
             }
-            SilkServerEvent::PeerLeft(id) => {
+            SilkServerEvent::ClientLeft(id) => {
                 debug!("{id:?} left");
                 world_state.clients.remove(id);
                 let packet = PaintingDemoPayload::Chat {
