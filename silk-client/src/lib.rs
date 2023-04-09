@@ -43,19 +43,30 @@ impl Plugin for SilkClientPlugin {
             schedule.configure_sets(SilkClientStage::sets());
         });
 
-        app.add_systems(
-            (event_reader, trace_read)
+        app.add_system(
+            trace_read
                 .before(SilkClientStage::ReadSocket)
                 .in_schedule(SilkClientSchedule),
         )
         .add_system(
-            trace_update_state
+            // Read silk events always after clients, who hook into this stage
+            event_reader
                 .after(SilkClientStage::ReadSocket)
+                .in_schedule(SilkClientSchedule),
+        )
+        .add_system(
+            trace_update_state
                 .before(SilkClientStage::UpdateWorldState)
                 .in_schedule(SilkClientSchedule),
         )
-        .add_systems(
-            (event_writer, trace_write)
+        .add_system(
+            trace_write
+                .before(SilkClientStage::WriteSocket)
+                .in_schedule(SilkClientSchedule),
+        )
+        .add_system(
+            // Write silk events always after clients, who hook into this stage
+            event_writer
                 .after(SilkClientStage::WriteSocket)
                 .in_schedule(SilkClientSchedule),
         );
