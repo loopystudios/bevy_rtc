@@ -30,7 +30,7 @@ fn main() {
         DefaultPlugins
             .set(LogPlugin {
                 filter:
-                    "error,silk_client=debug,painting_client=debug,wgpu_core=warn,wgpu_hal=warn,matchbox_socket=warn"
+                    "error,silk_client=trace,painting_client=debug,wgpu_core=warn,wgpu_hal=warn,matchbox_socket=warn"
                         .into(),
                 level: bevy::log::Level::DEBUG,
             })

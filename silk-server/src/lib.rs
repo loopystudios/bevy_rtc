@@ -64,21 +64,25 @@ impl Plugin for SilkServerPlugin {
         )
         .add_system(
             trace_incoming
+                .after(SilkServerStage::ReadSocket)
                 .before(SilkServerStage::ProcessIncomingEvents)
                 .in_schedule(SilkServerSchedule),
         )
         .add_system(
             trace_update_state
+                .after(SilkServerStage::ProcessIncomingEvents)
                 .before(SilkServerStage::UpdateWorldState)
                 .in_schedule(SilkServerSchedule),
         )
         .add_system(
             trace_outgoing
+                .after(SilkServerStage::UpdateWorldState)
                 .before(SilkServerStage::ProcessOutgoingEvents)
                 .in_schedule(SilkServerSchedule),
         )
         .add_system(
             trace_write
+                .after(SilkServerStage::UpdateWorldState)
                 .before(SilkServerStage::WriteSocket)
                 .in_schedule(SilkServerSchedule),
         )

@@ -56,11 +56,13 @@ impl Plugin for SilkClientPlugin {
         )
         .add_system(
             trace_update_state
+                .after(SilkClientStage::ReadSocket)
                 .before(SilkClientStage::UpdateWorldState)
                 .in_schedule(SilkClientSchedule),
         )
         .add_system(
             trace_write
+                .after(SilkClientStage::UpdateWorldState)
                 .before(SilkClientStage::WriteSocket)
                 .in_schedule(SilkClientSchedule),
         )
