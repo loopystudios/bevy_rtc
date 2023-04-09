@@ -84,24 +84,24 @@ fn reset_socket(mut commands: Commands, mut state: ResMut<SocketState>) {
 fn event_sender(
     mut socket: Option<ResMut<MatchboxSocket<MultipleChannels>>>,
     state: Res<SocketState>,
+    current_connection_state: Res<State<ConnectionState>>,
     mut silk_event_rdr: EventReader<SilkSendEvent>,
 ) {
-    if let Some(socket) = socket.as_mut() {
-        match silk_event_rdr.iter().next() {
-            Some(SilkSendEvent::ReliableSend(data)) => {
-                let host_id = state.host_id.unwrap();
-                socket
-                    .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
-                    .send(data.clone(), host_id);
-            }
-            Some(SilkSendEvent::UnreliableSend(data)) => {
-                let host_id = state.host_id.unwrap();
-                socket
-                    .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
-                    .send(data.clone(), host_id);
-            }
-            None => {}
+    let Some(socket) = socket.as_mut() else { return };
+    let ConnectionState::Connected = current_connection_state.0 else { return };
+    let Some(host) = state.host_id else { return };
+    match silk_event_rdr.iter().next() {
+        Some(SilkSendEvent::ReliableSend(data)) => {
+            socket
+                .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
+                .send(data.clone(), host);
         }
+        Some(SilkSendEvent::UnreliableSend(data)) => {
+            socket
+                .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
+                .send(data.clone(), host);
+        }
+        None => {}
     }
 }
 
