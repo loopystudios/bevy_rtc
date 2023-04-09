@@ -53,13 +53,13 @@ impl Plugin for SilkServerPlugin {
 
         app.add_system(
             trace_read
-                .before(SilkServerStage::ReadSocket)
+                .before(socket_reader)
                 .in_schedule(SilkServerSchedule),
         )
         .add_system(
-            // Read silk events always after servers, who hook into this stage
+            // Read silk events always before servers, who hook into this stage
             socket_reader
-                .after(SilkServerStage::ReadSocket)
+                .before(SilkServerStage::ReadSocket)
                 .in_schedule(SilkServerSchedule),
         )
         .add_system(
@@ -174,6 +174,7 @@ fn broadcast(
     mut socket: ResMut<MatchboxSocket<MultipleChannels>>,
     mut event_reader: EventReader<SilkBroadcastEvent>,
 ) {
+    trace!("Trace 5: Broadcasting {} events", event_reader.len());
     while let Some(broadcast) = event_reader.iter().next() {
         match broadcast {
             // Unreliable operations

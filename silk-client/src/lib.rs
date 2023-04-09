@@ -27,7 +27,7 @@ impl Plugin for SilkClientPlugin {
             .add_event::<ConnectionRequest>()
             .add_event::<SilkSocketEvent>()
             .add_event::<SilkSendEvent>()
-            .add_system(event_sender)
+            .add_system(connection_event_reader)
             .add_system(
                 init_socket.in_schedule(OnEnter(ConnectionState::Connecting)),
             )
@@ -45,13 +45,13 @@ impl Plugin for SilkClientPlugin {
 
         app.add_system(
             trace_read
-                .before(SilkClientStage::ReadSocket)
+                .before(socket_reader)
                 .in_schedule(SilkClientSchedule),
         )
         .add_system(
-            // Read silk events always after clients, who hook into this stage
-            event_reader
-                .after(SilkClientStage::ReadSocket)
+            // Read silk events always before clients, who hook into this stage
+            socket_reader
+                .before(SilkClientStage::ReadSocket)
                 .in_schedule(SilkClientSchedule),
         )
         .add_system(
@@ -68,7 +68,7 @@ impl Plugin for SilkClientPlugin {
         )
         .add_system(
             // Write silk events always after clients, who hook into this stage
-            event_writer
+            socket_writer
                 .after(SilkClientStage::WriteSocket)
                 .in_schedule(SilkClientSchedule),
         );
@@ -135,32 +135,7 @@ fn reset_socket(mut commands: Commands, mut state: ResMut<SocketState>) {
 }
 
 /// Reads and handles connection request events
-fn event_sender(
-    mut socket: Option<ResMut<MatchboxSocket<MultipleChannels>>>,
-    state: Res<SocketState>,
-    current_connection_state: Res<State<ConnectionState>>,
-    mut silk_event_rdr: EventReader<SilkSendEvent>,
-) {
-    let Some(socket) = socket.as_mut() else { return };
-    let ConnectionState::Connected = current_connection_state.0 else { return };
-    let Some(host) = state.host_id else { return };
-    match silk_event_rdr.iter().next() {
-        Some(SilkSendEvent::ReliableSend(data)) => {
-            socket
-                .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
-                .send(data.clone(), host);
-        }
-        Some(SilkSendEvent::UnreliableSend(data)) => {
-            socket
-                .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
-                .send(data.clone(), host);
-        }
-        None => {}
-    }
-}
-
-/// Reads and handles connection request events
-fn event_reader(
+fn connection_event_reader(
     mut cxn_event_reader: EventReader<ConnectionRequest>,
     mut state: ResMut<SocketState>,
     mut next_connection_state: ResMut<NextState<ConnectionState>>,
@@ -197,7 +172,7 @@ fn event_reader(
 }
 
 /// Translates socket updates into bevy events
-fn event_writer(
+fn socket_reader(
     mut state: ResMut<SocketState>,
     mut socket: Option<ResMut<MatchboxSocket<MultipleChannels>>>,
     mut event_wtr: EventWriter<SilkSocketEvent>,
@@ -241,5 +216,32 @@ fn event_writer(
                 .chain(unreliable_msgs)
                 .map(SilkSocketEvent::Message),
         );
+    }
+}
+
+/// Sends aggregated messages requested by the client
+fn socket_writer(
+    mut socket: Option<ResMut<MatchboxSocket<MultipleChannels>>>,
+    state: Res<SocketState>,
+    current_connection_state: Res<State<ConnectionState>>,
+    mut silk_event_rdr: EventReader<SilkSendEvent>,
+) {
+    let Some(socket) = socket.as_mut() else { return };
+    let ConnectionState::Connected = current_connection_state.0 else { return };
+    let Some(host) = state.host_id else { return };
+    trace!("Trace 3: Sending {} messages", silk_event_rdr.len());
+    for ev in silk_event_rdr.iter() {
+        match ev {
+            SilkSendEvent::ReliableSend(data) => {
+                socket
+                    .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
+                    .send(data.clone(), host);
+            }
+            SilkSendEvent::UnreliableSend(data) => {
+                socket
+                    .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
+                    .send(data.clone(), host);
+            }
+        }
     }
 }
