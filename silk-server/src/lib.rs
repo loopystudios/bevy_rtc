@@ -53,35 +53,36 @@ impl Plugin for SilkServerPlugin {
 
         app.add_systems(
             (socket_reader, trace_read)
-                .in_base_set(SilkServerStage::ReadSocket)
+                .before(SilkServerStage::ReadSocket)
                 .in_schedule(SilkServerSchedule),
         )
         .add_system(
             trace_incoming
-                .in_base_set(SilkServerStage::ProcessIncomingEvents)
+                .after(SilkServerStage::ReadSocket)
+                .before(SilkServerStage::ProcessIncomingEvents)
                 .in_schedule(SilkServerSchedule),
         )
         .add_system(
             trace_update_state
-                .in_base_set(SilkServerStage::UpdateWorldState)
+                .after(SilkServerStage::ProcessIncomingEvents)
+                .before(SilkServerStage::UpdateWorldState)
                 .in_schedule(SilkServerSchedule),
         )
         .add_system(
             trace_outgoing
-                .in_base_set(SilkServerStage::ProcessOutgoingEvents)
+                .after(SilkServerStage::UpdateWorldState)
+                .before(SilkServerStage::ProcessOutgoingEvents)
                 .in_schedule(SilkServerSchedule),
         )
         .add_systems(
             (broadcast, trace_write)
-                .in_base_set(SilkServerStage::WriteSocket)
+                .after(SilkServerStage::WriteSocket)
                 .in_schedule(SilkServerSchedule),
         );
 
         // add scheduler
         app.add_system(
-            schedule::run_silk_schedule
-                .in_schedule(CoreSchedule::FixedUpdate)
-                .before(bevy::time::fixed_timestep::run_fixed_update_schedule),
+            schedule::run_silk_schedule.in_schedule(CoreSchedule::FixedUpdate),
         );
     }
 }

@@ -45,17 +45,18 @@ impl Plugin for SilkClientPlugin {
 
         app.add_systems(
             (event_reader, trace_read)
-                .in_base_set(SilkClientStage::ReadSocket)
+                .before(SilkClientStage::ReadSocket)
                 .in_schedule(SilkClientSchedule),
         )
         .add_system(
             trace_update_state
-                .in_base_set(SilkClientStage::UpdateWorldState)
+                .after(SilkClientStage::ReadSocket)
+                .before(SilkClientStage::UpdateWorldState)
                 .in_schedule(SilkClientSchedule),
         )
         .add_systems(
             (event_writer, trace_write)
-                .in_base_set(SilkClientStage::WriteSocket)
+                .after(SilkClientStage::WriteSocket)
                 .in_schedule(SilkClientSchedule),
         );
 
