@@ -8,7 +8,7 @@ use silk_server::{
     events::{SilkBroadcastEvent, SilkServerEvent},
     SilkServerPlugin,
 };
-use silk_server::{SilkStage, SilkStageSchedule};
+use silk_server::{SilkServerSchedule, SilkServerStage};
 
 #[derive(Resource, Debug, Default, Clone)]
 struct ServerState {
@@ -30,8 +30,8 @@ fn main() {
         })
         .add_system(
             handle_events
-                .in_base_set(SilkStage::WriteSocket)
-                .in_schedule(SilkStageSchedule),
+                .in_base_set(SilkServerStage::WriteSocket)
+                .in_schedule(SilkServerSchedule),
         )
         .insert_resource(ServerState::default())
         .add_startup_system(|| info!("Connecting..."))

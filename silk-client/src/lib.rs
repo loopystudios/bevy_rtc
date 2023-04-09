@@ -1,10 +1,12 @@
 use bevy::prelude::*;
 use events::{SilkSendEvent, SilkSocketEvent};
+use schedule::{SilkClientSchedule, SilkClientStage};
 use silk_common::bevy_matchbox::{matchbox_socket, prelude::*};
 use silk_common::{ConnectionAddr, SilkSocket};
 use std::net::IpAddr;
 
 pub mod events;
+pub mod schedule;
 
 /// The socket client abstraction
 pub struct SilkClientPlugin;
@@ -23,9 +25,7 @@ impl Plugin for SilkClientPlugin {
         app.insert_resource(SocketState::default())
             .add_state::<ConnectionState>()
             .add_event::<ConnectionRequest>()
-            .add_system(event_reader)
             .add_event::<SilkSocketEvent>()
-            .add_system(event_writer)
             .add_event::<SilkSendEvent>()
             .add_system(event_sender)
             .add_system(
@@ -35,7 +35,40 @@ impl Plugin for SilkClientPlugin {
                 reset_socket
                     .in_schedule(OnEnter(ConnectionState::Disconnected)),
             );
+
+        app.add_systems(
+            (event_reader, trace_read)
+                .in_base_set(SilkClientStage::ReadSocket)
+                .in_schedule(SilkClientSchedule),
+        )
+        .add_system(
+            trace_update_state
+                .in_base_set(SilkClientStage::UpdateWorldState)
+                .in_schedule(SilkClientSchedule),
+        )
+        .add_systems(
+            (event_writer, trace_write)
+                .in_base_set(SilkClientStage::WriteSocket)
+                .in_schedule(SilkClientSchedule),
+        );
+
+        // add scheduler
+        app.add_system(
+            schedule::run_silk_schedule.in_schedule(CoreSchedule::Main),
+        );
     }
+}
+
+fn trace_read() {
+    trace!("Trace 1: Read");
+}
+
+fn trace_update_state() {
+    trace!("Trace 2: Update");
+}
+
+fn trace_write() {
+    trace!("Trace 3: Write");
 }
 
 #[derive(Resource, Default)]

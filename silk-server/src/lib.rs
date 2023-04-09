@@ -9,9 +9,9 @@ use silk_common::bevy_matchbox::{
 use silk_common::{ConnectionAddr, SilkSocket};
 
 pub mod events;
+pub mod schedule;
 pub mod signaler;
-mod stages;
-pub use stages::*;
+pub use schedule::*;
 
 /// The socket server abstraction
 pub struct SilkServerPlugin {
@@ -44,42 +44,42 @@ impl Plugin for SilkServerPlugin {
         .add_event::<SilkServerEvent>()
         .add_event::<SilkBroadcastEvent>();
 
-        app.init_schedule(SilkStageSchedule);
+        app.init_schedule(SilkServerSchedule);
 
         // it's important here to configure set order
-        app.edit_schedule(SilkStageSchedule, |schedule| {
-            schedule.configure_sets(SilkStage::sets());
+        app.edit_schedule(SilkServerSchedule, |schedule| {
+            schedule.configure_sets(SilkServerStage::sets());
         });
 
         app.add_systems(
             (socket_reader, trace_read)
-                .in_base_set(SilkStage::ReadSocket)
-                .in_schedule(SilkStageSchedule),
+                .in_base_set(SilkServerStage::ReadSocket)
+                .in_schedule(SilkServerSchedule),
         )
         .add_system(
             trace_incoming
-                .in_base_set(SilkStage::ProcessIncomingEvents)
-                .in_schedule(SilkStageSchedule),
+                .in_base_set(SilkServerStage::ProcessIncomingEvents)
+                .in_schedule(SilkServerSchedule),
         )
         .add_system(
             trace_update_state
-                .in_base_set(SilkStage::UpdateWorldState)
-                .in_schedule(SilkStageSchedule),
+                .in_base_set(SilkServerStage::UpdateWorldState)
+                .in_schedule(SilkServerSchedule),
         )
         .add_system(
             trace_outgoing
-                .in_base_set(SilkStage::ProcessOutgoingEvents)
-                .in_schedule(SilkStageSchedule),
+                .in_base_set(SilkServerStage::ProcessOutgoingEvents)
+                .in_schedule(SilkServerSchedule),
         )
         .add_systems(
             (broadcast, trace_write)
-                .in_base_set(SilkStage::WriteSocket)
-                .in_schedule(SilkStageSchedule),
+                .in_base_set(SilkServerStage::WriteSocket)
+                .in_schedule(SilkServerSchedule),
         );
 
         // add scheduler
         app.add_system(
-            stages::run_silk_schedule
+            schedule::run_silk_schedule
                 .in_schedule(CoreSchedule::FixedUpdate)
                 .before(bevy::time::fixed_timestep::run_fixed_update_schedule),
         );
