@@ -25,11 +25,6 @@ async fn start_signaler(port: u16) {
                 debug!("Connecting: {connection:?}");
                 Ok(true) // Allow all connections
             })
-            .on_id_assignment(|(socket, id)| debug!("{socket} received {id:?}"))
-            .on_host_connected(|id| info!("Host joined: {id:?}"))
-            .on_host_disconnected(|id| info!("Host left: {id:?}"))
-            .on_client_connected(|id| info!("Client joined: {id:?}"))
-            .on_client_disconnected(|id| info!("Client left: {id:?}"))
             .cors()
             .build();
 

@@ -30,7 +30,7 @@ fn main() {
         })
         .add_system(
             handle_events
-                .in_base_set(SilkServerStage::WriteSocket)
+                .in_base_set(SilkServerStage::WriteOut)
                 .in_schedule(SilkServerSchedule),
         )
         .insert_resource(ServerState::default())

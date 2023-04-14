@@ -13,41 +13,33 @@ pub fn run_silk_schedule(world: &mut World) {
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy, SystemSet)]
 #[system_set(base)]
 pub enum SilkServerStage {
-    /// Silk plugin reads from silk socket and sends "incoming client
-    /// message" events
-    ReadSocket,
-    /// Game receives "incoming client message" events from Silk plugin
-    /// and creates "side effects"
-    ProcessIncomingEvents,
-    /// Game updates world state here with the "side effects"
-    UpdateWorldState,
-    /// Game sends broadcast events to Silk plugin (after world state
-    /// reacts with "side effects" to create a new world state)
-    ProcessOutgoingEvents,
-    /// Silk plugin reads broadcast events game and sends messages over
-    /// the silk socket
-    WriteSocket,
+    /// An exclusive system to read Silk events.
+    ReadIn,
+    /// An exclusive system to process latency.
+    ProcessLatency,
+    /// Default stage for game updates.
+    Update,
+    /// The last opportunity to write Silk broadcast events this tick.
+    WriteOut,
 }
 
 impl SilkServerStage {
     pub fn iter() -> impl Iterator<Item = Self> {
         [
-            Self::ReadSocket,
-            Self::ProcessIncomingEvents,
-            Self::UpdateWorldState,
-            Self::ProcessOutgoingEvents,
-            Self::WriteSocket,
+            Self::ReadIn,
+            Self::ProcessLatency,
+            Self::Update,
+            Self::WriteOut,
         ]
         .into_iter()
     }
 
     pub fn sets() -> SystemSetConfigs {
         (
-            Self::ReadSocket,
-            Self::ProcessIncomingEvents,
-            Self::UpdateWorldState,
-            Self::ProcessOutgoingEvents,
-            Self::WriteSocket,
+            Self::ReadIn,
+            Self::ProcessLatency,
+            Self::Update,
+            Self::WriteOut,
         )
             .chain()
     }

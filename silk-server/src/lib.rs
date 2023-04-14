@@ -59,37 +59,31 @@ impl Plugin for SilkServerPlugin {
         .add_system(
             // Read silk events always before servers, who hook into this stage
             socket_reader
-                .before(SilkServerStage::ReadSocket)
+                .before(SilkServerStage::ReadIn)
                 .in_schedule(SilkServerSchedule),
         )
         .add_system(
             trace_incoming
-                .after(SilkServerStage::ReadSocket)
-                .before(SilkServerStage::ProcessIncomingEvents)
+                .after(SilkServerStage::ReadIn)
+                .before(SilkServerStage::ProcessLatency)
                 .in_schedule(SilkServerSchedule),
         )
         .add_system(
             trace_update_state
-                .after(SilkServerStage::ProcessIncomingEvents)
-                .before(SilkServerStage::UpdateWorldState)
-                .in_schedule(SilkServerSchedule),
-        )
-        .add_system(
-            trace_outgoing
-                .after(SilkServerStage::UpdateWorldState)
-                .before(SilkServerStage::ProcessOutgoingEvents)
+                .after(SilkServerStage::ProcessLatency)
+                .before(SilkServerStage::Update)
                 .in_schedule(SilkServerSchedule),
         )
         .add_system(
             trace_write
-                .after(SilkServerStage::ProcessOutgoingEvents)
-                .before(SilkServerStage::WriteSocket)
+                .after(SilkServerStage::Update)
+                .before(SilkServerStage::WriteOut)
                 .in_schedule(SilkServerSchedule),
         )
         .add_system(
             // Write silk events always after servers, who hook into this stage
             broadcast
-                .after(SilkServerStage::WriteSocket)
+                .after(SilkServerStage::WriteOut)
                 .in_schedule(SilkServerSchedule),
         );
 
@@ -105,19 +99,15 @@ fn trace_read() {
 }
 
 fn trace_incoming() {
-    trace!("Trace 2: Incoming");
+    trace!("Trace 2: Latency Processing");
 }
 
 fn trace_update_state() {
     trace!("Trace 3: Update");
 }
 
-fn trace_outgoing() {
-    trace!("Trace 4: Outgoing");
-}
-
 fn trace_write() {
-    trace!("Trace 5: Write");
+    trace!("Trace 4: Write");
 }
 
 /// Initialize the socket

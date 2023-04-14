@@ -51,25 +51,31 @@ impl Plugin for SilkClientPlugin {
         .add_system(
             // Read silk events always before clients, who hook into this stage
             socket_reader
-                .before(SilkClientStage::ReadSocket)
+                .before(SilkClientStage::ReadIn)
+                .in_schedule(SilkClientSchedule),
+        )
+        .add_system(
+            trace_incoming
+                .after(SilkClientStage::ReadIn)
+                .before(SilkClientStage::ProcessLatency)
                 .in_schedule(SilkClientSchedule),
         )
         .add_system(
             trace_update_state
-                .after(SilkClientStage::ReadSocket)
-                .before(SilkClientStage::UpdateWorldState)
+                .after(SilkClientStage::ProcessLatency)
+                .before(SilkClientStage::Update)
                 .in_schedule(SilkClientSchedule),
         )
         .add_system(
             trace_write
-                .after(SilkClientStage::UpdateWorldState)
-                .before(SilkClientStage::WriteSocket)
+                .after(SilkClientStage::Update)
+                .before(SilkClientStage::WriteOut)
                 .in_schedule(SilkClientSchedule),
         )
         .add_system(
             // Write silk events always after clients, who hook into this stage
             socket_writer
-                .after(SilkClientStage::WriteSocket)
+                .after(SilkClientStage::WriteOut)
                 .in_schedule(SilkClientSchedule),
         );
 
@@ -84,12 +90,16 @@ fn trace_read() {
     trace!("Trace 1: Read");
 }
 
+fn trace_incoming() {
+    trace!("Trace 2: Latency Processing");
+}
+
 fn trace_update_state() {
-    trace!("Trace 2: Update");
+    trace!("Trace 3: Update");
 }
 
 fn trace_write() {
-    trace!("Trace 3: Write");
+    trace!("Trace 4: Write");
 }
 
 #[derive(Resource, Default)]
