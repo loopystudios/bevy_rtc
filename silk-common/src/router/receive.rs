@@ -4,11 +4,11 @@ use crate::events::RecvMessageEvent;
 
 use super::message::Message;
 #[derive(Default, Debug, Resource)]
-pub struct RecvMessages<M: Message> {
+pub struct IncomingMessages<M: Message> {
     pub messages: Vec<M>,
 }
 
-impl<M: Message> RecvMessages<M> {
+impl<M: Message> IncomingMessages<M> {
     /// Swaps the event buffers and clears the oldest event buffer. In general, this should be
     /// called once per frame/update.
     pub fn update(&mut self) {

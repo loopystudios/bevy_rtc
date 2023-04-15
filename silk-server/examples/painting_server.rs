@@ -7,7 +7,7 @@ use silk_common::{
     bevy_matchbox::prelude::PeerId, demo_packets::PaintingDemoPayload,
     ConnectionAddr,
 };
-use silk_common::{AddNetworkQuery, SilkStage};
+use silk_common::{AddNetworkMessage, SilkStage};
 use silk_server::{
     events::{SilkBroadcastEvent, SilkServerEvent},
     SilkServerPlugin,
@@ -37,7 +37,7 @@ fn main() {
                 .in_schedule(SilkSchedule),
         )
         // .add_network_query::<Chat>()
-        .add_network_query::<DrawPointMessage>()
+        .add_network_message::<DrawPointMessage>()
         .add_system(network_query)
         .insert_resource(ServerState::default())
         .add_startup_system(|| info!("Connecting..."))

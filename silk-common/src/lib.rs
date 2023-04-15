@@ -15,7 +15,7 @@ pub mod stage;
 
 // Re-exports
 pub use bevy_matchbox;
-pub use router::AddNetworkQuery;
+pub use router::AddNetworkMessage;
 pub use stage::SilkStage;
 
 /// An abstraction over [`matchbox_socket::WebRtcSocket`] to fit Tribrid's
