@@ -16,19 +16,19 @@ impl<M: Message> IncomingMessages<M> {
     }
 
     /// A system that calls [`Events::update`] once per frame.
-    pub fn update_system(mut query: ResMut<Self>) {
-        query.update();
+    pub fn update_system(mut incoming: ResMut<Self>) {
+        incoming.update();
     }
 
     pub fn read_system(
-        mut query: ResMut<Self>,
-        mut recv: EventReader<RecvMessageEvent>,
+        mut incoming: ResMut<Self>,
+        mut events: EventReader<RecvMessageEvent>,
     ) {
-        for RecvMessageEvent(_peer_id, packet) in recv.iter() {
+        for RecvMessageEvent(_peer_id, packet) in events.iter() {
             if let Some(message) = M::from_packet(packet) {
                 error!("router received msg id {}", M::id());
 
-                query.messages.push(message);
+                incoming.messages.push(message);
             }
         }
     }

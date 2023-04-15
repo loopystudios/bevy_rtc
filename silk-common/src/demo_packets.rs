@@ -20,7 +20,7 @@ impl From<Packet> for PaintingDemoPayload {
     }
 }
 
-#[derive(Default, Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Default, Clone, Debug)]
 pub struct DrawPointMessage {
     x1: f32,
     y1: f32,
@@ -36,10 +36,10 @@ impl Message for DrawPointMessage {
             .and_then(|silk_packet| Some(silk_packet.message))
     }
 
-    fn to_packet(self) -> Packet {
+    fn to_packet(&self) -> Packet {
         let silk_packet = SilkPacket {
             msg_id: Self::id(),
-            message: self,
+            message: self.clone(),
         };
         bincode::serialize(&silk_packet).unwrap().into_boxed_slice()
     }
@@ -49,7 +49,7 @@ impl Message for DrawPointMessage {
     }
 }
 
-#[derive(Default, Serialize, Deserialize)]
+#[derive(Deserialize, Serialize, Default, Clone, Debug)]
 pub struct Chat {
     from: String,
     message: String,
@@ -60,10 +60,10 @@ impl Message for Chat {
         bincode::deserialize(packet).ok()
     }
 
-    fn to_packet(self) -> Packet {
+    fn to_packet(&self) -> Packet {
         let silk_packet = SilkPacket {
             msg_id: Self::id(),
-            message: self,
+            message: self.clone(),
         };
         bincode::serialize(&silk_packet).unwrap().into_boxed_slice()
     }
