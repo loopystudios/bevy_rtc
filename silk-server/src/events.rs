@@ -26,15 +26,6 @@ pub enum SilkServerEvent {
 
 /// Request events for the server to broadcast a message
 #[derive(Debug)]
-pub(crate) enum SilkRawBroadcastEvent {
-    /// Send a raw packet to a peer
-    UnreliableSend((PeerId, Packet)),
-    /// Send a raw packet to a peer
-    ReliableSend((PeerId, Packet)),
-}
-
-/// Request events for the server to broadcast a message
-#[derive(Debug)]
 pub enum SilkBroadcastEvent {
     /// Send an unreliable packet (any order, no retransmit) to all peers except one
     UnreliableSendAllExcept((PeerId, SilkPayload)),
