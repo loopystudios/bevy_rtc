@@ -276,6 +276,7 @@ fn socket_reader(
                 // Only respond to authentication
                 ConnectionState::LoggingIn => match payload {
                     SilkPayload::LoginAccepted { username } => {
+                        info!("connected to host");
                         next_connection_state.set(ConnectionState::Connected);
                         event_wtr.send(SilkSocketEvent::ConnectedToHost {
                             host: state.host_id.unwrap(),
@@ -283,6 +284,7 @@ fn socket_reader(
                         });
                     }
                     SilkPayload::LoginDenied { reason } => {
+                        error!("login denied, reason: {reason}");
                         next_connection_state
                             .set(ConnectionState::Disconnected);
                         event_wtr.send(SilkSocketEvent::DisconnectedFromHost {
