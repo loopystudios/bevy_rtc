@@ -26,7 +26,7 @@ impl<M: Message> RecvMessages<M> {
     ) {
         for RecvMessageEvent(_peer_id, packet) in recv.iter() {
             if let Some(message) = M::from_packet(packet) {
-                error!("NetworkQuery received!");
+                error!("router received msg id {}", M::id());
 
                 query.messages.push(message);
             }
