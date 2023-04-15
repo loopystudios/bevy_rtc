@@ -5,8 +5,8 @@ use bevy::{ecs::schedule::SystemSetConfigs, prelude::*};
 pub enum SilkStage {
     /// An exclusive system to read Silk events.
     ReadIn,
-    /// An exclusive system to process latency.
-    ProcessLatency,
+    /// A system to process messages we read.
+    Process,
     /// Default stage for game updates.
     Update,
     /// The last opportunity to write Silk broadcast events this tick.
@@ -15,22 +15,10 @@ pub enum SilkStage {
 
 impl SilkStage {
     pub fn iter() -> impl Iterator<Item = Self> {
-        [
-            Self::ReadIn,
-            Self::ProcessLatency,
-            Self::Update,
-            Self::WriteOut,
-        ]
-        .into_iter()
+        [Self::ReadIn, Self::Process, Self::Update, Self::WriteOut].into_iter()
     }
 
     pub fn sets() -> SystemSetConfigs {
-        (
-            Self::ReadIn,
-            Self::ProcessLatency,
-            Self::Update,
-            Self::WriteOut,
-        )
-            .chain()
+        (Self::ReadIn, Self::Process, Self::Update, Self::WriteOut).chain()
     }
 }

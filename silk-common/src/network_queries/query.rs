@@ -17,4 +17,6 @@ impl<M: Message> NetworkQuery<M> {
     pub fn update_system(mut query: ResMut<Self>) {
         query.update();
     }
+
+    pub fn receive_system(mut query: ResMut<Self>) {}
 }

@@ -8,6 +8,7 @@ pub mod demo_packets;
 pub mod network_queries;
 pub mod packets;
 pub mod stage;
+pub mod events;
 
 // Re-exports
 pub use bevy_matchbox;

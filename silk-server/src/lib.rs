@@ -69,12 +69,12 @@ impl Plugin for SilkServerPlugin {
         .add_system(
             trace_incoming
                 .after(SilkStage::ReadIn)
-                .before(SilkStage::ProcessLatency)
+                .before(SilkStage::Process)
                 .in_schedule(SilkServerSchedule),
         )
         .add_system(
             trace_update_state
-                .after(SilkStage::ProcessLatency)
+                .after(SilkStage::Process)
                 .before(SilkStage::Update)
                 .in_schedule(SilkServerSchedule),
         )
