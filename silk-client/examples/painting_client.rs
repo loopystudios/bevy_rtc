@@ -1,12 +1,10 @@
 use bevy::{log::LogPlugin, prelude::*};
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use painting::PaintingState;
-use silk_client::{
-    events::{SilkSendEvent, SilkSocketEvent},
-    ConnectionRequest, SilkClientPlugin,
-};
+use silk_client::{events::SilkSendEvent, ConnectionRequest, SilkClientPlugin};
 use silk_common::bevy_matchbox::{matchbox_socket::Packet, prelude::*};
 use silk_common::demo_packets::PaintingDemoPayload;
+use silk_common::SilkSocketEvent;
 use std::{
     net::{IpAddr, Ipv4Addr},
     ops::DerefMut,
@@ -76,8 +74,8 @@ fn handle_events(
     mut app_state: ResMut<NextState<ConnectionState>>,
     mut events: EventReader<SilkSocketEvent>,
     mut world_state: ResMut<WorldState>,
-    mut messages_state: ResMut<MessagesState>,
-    mut painting_state: ResMut<PaintingState>,
+    // mut messages_state: ResMut<MessagesState>,
+    // mut painting_state: ResMut<PaintingState>,
 ) {
     for event in events.iter() {
         match event {
@@ -96,30 +94,30 @@ fn handle_events(
                 app_state.set(ConnectionState::Disconnected);
                 *world_state = WorldState::default();
             }
-            SilkSocketEvent::Message((peer, data)) => {
-                let packet: Packet = data.clone();
-                let protocol_message =
-                    PaintingDemoPayload::from(packet.clone());
-                match protocol_message {
-                    PaintingDemoPayload::Chat { from, message } => {
-                        let peer = *peer;
-                        info!("{peer:?}: {}", message);
-                        messages_state
-                            .messages
-                            .push((format!("{from:?}"), message));
-                    }
-                    PaintingDemoPayload::DrawPoint { x1, y1, x2, y2 } => {
-                        info!(
-                            "{peer:?}: Draw from {:?} to {:?}",
-                            (x1, y1),
-                            (x2, y2)
-                        );
-                        painting_state
-                            .lines
-                            .push(vec![Pos2::new(x1, y1), Pos2::new(x2, y2)]);
-                    }
-                }
-            }
+            _ => {} // SilkEvent::Message((peer, data)) => {
+                    //     let packet: Packet = data.clone();
+                    //     let protocol_message =
+                    //         PaintingDemoPayload::from(packet.clone());
+                    //     match protocol_message {
+                    //         PaintingDemoPayload::Chat { from, message } => {
+                    //             let peer = *peer;
+                    //             info!("{peer:?}: {}", message);
+                    //             messages_state
+                    //                 .messages
+                    //                 .push((format!("{from:?}"), message));
+                    //         }
+                    //         PaintingDemoPayload::DrawPoint { x1, y1, x2, y2 } => {
+                    //             info!(
+                    //                 "{peer:?}: Draw from {:?} to {:?}",
+                    //                 (x1, y1),
+                    //                 (x2, y2)
+                    //             );
+                    //             painting_state
+                    //                 .lines
+                    //                 .push(vec![Pos2::new(x1, y1), Pos2::new(x2, y2)]);
+                    //         }
+                    //     }
+                    // }
         }
     }
 }

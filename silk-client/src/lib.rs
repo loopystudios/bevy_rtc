@@ -1,8 +1,10 @@
 use bevy::prelude::*;
-use events::{SilkSendEvent, SilkSocketEvent};
+use events::SilkSendEvent;
 use silk_common::bevy_matchbox::{matchbox_socket, prelude::*};
 use silk_common::schedule::SilkSchedule;
-use silk_common::{ConnectionAddr, SilkCommonPlugin, SilkSocket, SilkStage};
+use silk_common::{
+    ConnectionAddr, SilkCommonPlugin, SilkSocket, SilkSocketEvent, SilkStage,
+};
 use std::net::IpAddr;
 
 pub mod events;
@@ -25,7 +27,6 @@ impl Plugin for SilkClientPlugin {
             .insert_resource(SocketState::default())
             .add_state::<ConnectionState>()
             .add_event::<ConnectionRequest>()
-            .add_event::<SilkSocketEvent>()
             .add_event::<SilkSendEvent>()
             .add_system(connection_event_reader)
             .add_system(
@@ -206,19 +207,6 @@ fn socket_reader(
                 }
             }
         }
-
-        // Collect Unreliable, Reliable messages
-        let reliable_msgs =
-            socket.channel(SilkSocket::RELIABLE_CHANNEL_INDEX).receive();
-        let unreliable_msgs = socket
-            .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
-            .receive();
-        event_wtr.send_batch(
-            reliable_msgs
-                .into_iter()
-                .chain(unreliable_msgs)
-                .map(SilkSocketEvent::Message),
-        );
     }
 }
 

@@ -8,7 +8,7 @@ use bevy_matchbox::prelude::PeerId;
 pub use message::Message;
 pub use receive::IncomingMessages;
 
-use crate::{schedule::SilkSchedule, SilkStage};
+use crate::{schedule::SilkSchedule, socket::socket_reader, SilkStage};
 
 use self::send::OutgoingMessages;
 
@@ -29,12 +29,16 @@ pub struct NetworkWriter<'w, M: Message> {
 }
 
 impl<'w, M: Message> NetworkWriter<'w, M> {
-    pub fn send_reliable_all(&mut self, message: &M) {
-        self.outgoing.reliable_all.push(message.clone());
+    pub fn send_reliable_to_all(&mut self, message: &M) {
+        self.outgoing.reliable_to_all.push(message.clone());
     }
 
-    pub fn send_reliable(&mut self, peer: PeerId, message: &M) {
-        self.outgoing.reliable.push((peer, message.clone()));
+    pub fn send_reliable_to_peer(&mut self, peer: PeerId, message: &M) {
+        self.outgoing.reliable_to_peer.push((peer, message.clone()));
+    }
+
+    pub fn send_reliable_to_host(&mut self, message: &M) {
+        self.outgoing.reliable_to_host.push(message.clone());
     }
 }
 
@@ -55,7 +59,8 @@ impl AddNetworkMessage for App {
                 )
                 .add_system(
                     IncomingMessages::<T>::read_system
-                        .in_base_set(SilkStage::ReadIn)
+                        .before(SilkStage::ReadIn)
+                        .after(socket_reader)
                         .in_schedule(SilkSchedule),
                 );
         }
@@ -67,7 +72,7 @@ impl AddNetworkMessage for App {
                 )
                 .add_system(
                     OutgoingMessages::<T>::write_system
-                        .in_base_set(SilkStage::WriteOut)
+                        .after(SilkStage::WriteOut)
                         .in_schedule(SilkSchedule),
                 );
         }

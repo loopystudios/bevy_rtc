@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::events::RecvMessageEvent;
+use crate::events::SocketRecvEvent;
 
 use super::message::Message;
 #[derive(Default, Debug, Resource)]
@@ -22,9 +22,9 @@ impl<M: Message> IncomingMessages<M> {
 
     pub fn read_system(
         mut incoming: ResMut<Self>,
-        mut events: EventReader<RecvMessageEvent>,
+        mut events: EventReader<SocketRecvEvent>,
     ) {
-        for RecvMessageEvent(_peer_id, packet) in events.iter() {
+        for SocketRecvEvent((_peer_id, packet)) in events.iter() {
             if let Some(message) = M::from_packet(packet) {
                 error!("router received msg id {}", M::id());
 

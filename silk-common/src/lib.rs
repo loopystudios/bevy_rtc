@@ -3,18 +3,22 @@ use bevy_matchbox::matchbox_socket::{
     ChannelConfig, MessageLoopFuture, MultipleChannels, WebRtcSocket,
     WebRtcSocketBuilder,
 };
-use events::RecvMessageEvent;
+use events::SocketRecvEvent;
+use schedule::SilkSchedule;
+use socket::{socket_reader, SocketState, handle_socket_events};
 use std::net::IpAddr;
 
 pub mod demo_packets;
-pub mod events;
+mod events;
 pub mod packets;
 pub mod router;
 pub mod schedule;
+pub mod socket;
 pub mod stage;
 
 // Re-exports
 pub use bevy_matchbox;
+pub use events::SilkSocketEvent;
 pub use router::AddNetworkMessage;
 pub use stage::SilkStage;
 
@@ -81,7 +85,16 @@ pub struct SilkCommonPlugin;
 
 impl Plugin for SilkCommonPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<RecvMessageEvent>();
+        app.init_resource::<SocketState>()
+            .add_event::<SocketRecvEvent>()
+            .add_event::<SilkSocketEvent>()
+            .add_system(handle_socket_events)
+            .add_system(
+                // Read silk events always before servers, who hook into this stage
+                socket_reader
+                    .before(SilkStage::ReadIn)
+                    .in_schedule(SilkSchedule),
+            );
 
         // add scheduler
         app.add_system(
