@@ -1,7 +1,6 @@
+use crate::network_queries::Message;
 use bevy_matchbox::matchbox_socket::Packet;
 use serde::{Deserialize, Serialize};
-
-use crate::network_queries::Message;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub enum PaintingDemoPayload {

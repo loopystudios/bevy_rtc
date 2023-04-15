@@ -5,7 +5,7 @@ use silk_common::{
     bevy_matchbox::prelude::PeerId, demo_packets::PaintingDemoPayload,
     ConnectionAddr,
 };
-use silk_common::{AppAddNetworkQuery, SilkStage};
+use silk_common::{AddNetworkQuery, SilkStage};
 use silk_server::SilkServerSchedule;
 use silk_server::{
     events::{SilkBroadcastEvent, SilkServerEvent},

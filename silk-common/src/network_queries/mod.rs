@@ -1,34 +1,16 @@
 use bevy::prelude::*;
-use serde::Deserialize;
 
-pub trait Message:
-    for<'a> Deserialize<'a> + std::default::Default + Send + Sync + 'static
-{
-}
+mod message;
+mod query;
 
-#[derive(Default, Debug, Resource)]
-pub struct NetworkQuery<M: Message> {
-    messages: Vec<M>,
-}
+pub use message::Message;
+pub use query::NetworkQuery;
 
-impl<M: Message> NetworkQuery<M> {
-    /// Swaps the event buffers and clears the oldest event buffer. In general, this should be
-    /// called once per frame/update.
-    pub fn update(&mut self) {
-        self.messages.clear();
-    }
-
-    /// A system that calls [`Events::update`] once per frame.
-    pub fn update_system(mut query: ResMut<Self>) {
-        query.update();
-    }
-}
-
-pub trait AppAddNetworkQuery {
+pub trait AddNetworkQuery {
     fn add_network_query<T: Message>(&mut self) -> &mut Self;
 }
 
-impl AppAddNetworkQuery for App {
+impl AddNetworkQuery for App {
     fn add_network_query<T>(&mut self) -> &mut Self
     where
         T: Message,
