@@ -34,9 +34,15 @@ impl AppAddNetworkQuery for App {
         T: Message,
     {
         if !self.world.contains_resource::<NetworkQuery<T>>() {
-            self.init_resource::<NetworkQuery<T>>().add_system(
-                NetworkQuery::<T>::update_system.in_base_set(CoreSet::First),
-            );
+            self.init_resource::<NetworkQuery<T>>()
+                .add_system(
+                    NetworkQuery::<T>::update_system
+                        .in_base_set(CoreSet::First),
+                )
+                .add_system(
+                    NetworkQuery::<T>::update_system
+                        .in_base_set(CoreSet::PreUpdate),
+                );
         }
         self
     }

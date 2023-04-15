@@ -20,6 +20,7 @@ impl From<Packet> for PaintingDemoPayload {
         bincode::deserialize(&value).unwrap()
     }
 }
+
 #[derive(Default, Deserialize)]
 pub struct Chat {
     from: String,

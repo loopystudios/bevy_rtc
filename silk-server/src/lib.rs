@@ -1,16 +1,20 @@
 use bevy::{prelude::*, time::fixed_timestep::FixedTime};
 use events::{SilkBroadcastEvent, SilkServerEvent};
 use signaler::SilkSignalerPlugin;
-use silk_common::bevy_matchbox::{
-    matchbox_socket::{PeerId, PeerState},
-    prelude::MultipleChannels,
-    MatchboxSocket, OpenSocketExt,
+use silk_common::{
+    bevy_matchbox::{
+        matchbox_socket::{PeerId, PeerState},
+        prelude::MultipleChannels,
+        MatchboxSocket, OpenSocketExt,
+    },
+    SilkStage,
 };
 use silk_common::{ConnectionAddr, SilkSocket};
 
 pub mod events;
 pub mod schedule;
 pub mod signaler;
+
 pub use schedule::*;
 
 /// The socket server abstraction
@@ -48,7 +52,7 @@ impl Plugin for SilkServerPlugin {
 
         // it's important here to configure set order
         app.edit_schedule(SilkServerSchedule, |schedule| {
-            schedule.configure_sets(SilkServerStage::sets());
+            schedule.configure_sets(SilkStage::sets());
         });
 
         app.add_system(
@@ -59,31 +63,31 @@ impl Plugin for SilkServerPlugin {
         .add_system(
             // Read silk events always before servers, who hook into this stage
             socket_reader
-                .before(SilkServerStage::ReadIn)
+                .before(SilkStage::ReadIn)
                 .in_schedule(SilkServerSchedule),
         )
         .add_system(
             trace_incoming
-                .after(SilkServerStage::ReadIn)
-                .before(SilkServerStage::ProcessLatency)
+                .after(SilkStage::ReadIn)
+                .before(SilkStage::ProcessLatency)
                 .in_schedule(SilkServerSchedule),
         )
         .add_system(
             trace_update_state
-                .after(SilkServerStage::ProcessLatency)
-                .before(SilkServerStage::Update)
+                .after(SilkStage::ProcessLatency)
+                .before(SilkStage::Update)
                 .in_schedule(SilkServerSchedule),
         )
         .add_system(
             trace_write
-                .after(SilkServerStage::Update)
-                .before(SilkServerStage::WriteOut)
+                .after(SilkStage::Update)
+                .before(SilkStage::WriteOut)
                 .in_schedule(SilkServerSchedule),
         )
         .add_system(
             // Write silk events always after servers, who hook into this stage
             broadcast
-                .after(SilkServerStage::WriteOut)
+                .after(SilkStage::WriteOut)
                 .in_schedule(SilkServerSchedule),
         );
 

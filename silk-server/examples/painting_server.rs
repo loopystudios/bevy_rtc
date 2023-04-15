@@ -1,16 +1,16 @@
 use bevy::{log::LogPlugin, prelude::*, utils::HashSet};
 use silk_common::bevy_matchbox::matchbox_socket::Packet;
 use silk_common::demo_packets::{Chat, DrawPoint};
-use silk_common::AppAddNetworkQuery;
 use silk_common::{
     bevy_matchbox::prelude::PeerId, demo_packets::PaintingDemoPayload,
     ConnectionAddr,
 };
+use silk_common::{AppAddNetworkQuery, SilkStage};
+use silk_server::SilkServerSchedule;
 use silk_server::{
     events::{SilkBroadcastEvent, SilkServerEvent},
     SilkServerPlugin,
 };
-use silk_server::{SilkServerSchedule, SilkServerStage};
 
 #[derive(Resource, Debug, Default, Clone)]
 struct ServerState {
@@ -32,7 +32,7 @@ fn main() {
         })
         .add_system(
             handle_events
-                .in_base_set(SilkServerStage::WriteOut)
+                .in_base_set(SilkStage::WriteOut)
                 .in_schedule(SilkServerSchedule),
         )
         .add_network_query::<Chat>()

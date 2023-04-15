@@ -1,46 +1,8 @@
-use bevy::{
-    ecs::schedule::{ScheduleLabel, SystemSetConfigs},
-    prelude::*,
-};
+use bevy::{ecs::schedule::ScheduleLabel, prelude::*};
 
 #[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct SilkServerSchedule;
 
 pub fn run_silk_schedule(world: &mut World) {
     world.run_schedule(SilkServerSchedule);
-}
-
-#[derive(Debug, Hash, PartialEq, Eq, Clone, Copy, SystemSet)]
-#[system_set(base)]
-pub enum SilkServerStage {
-    /// An exclusive system to read Silk events.
-    ReadIn,
-    /// An exclusive system to process latency.
-    ProcessLatency,
-    /// Default stage for game updates.
-    Update,
-    /// The last opportunity to write Silk broadcast events this tick.
-    WriteOut,
-}
-
-impl SilkServerStage {
-    pub fn iter() -> impl Iterator<Item = Self> {
-        [
-            Self::ReadIn,
-            Self::ProcessLatency,
-            Self::Update,
-            Self::WriteOut,
-        ]
-        .into_iter()
-    }
-
-    pub fn sets() -> SystemSetConfigs {
-        (
-            Self::ReadIn,
-            Self::ProcessLatency,
-            Self::Update,
-            Self::WriteOut,
-        )
-            .chain()
-    }
 }

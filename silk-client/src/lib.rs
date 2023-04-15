@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 use events::{SilkSendEvent, SilkSocketEvent};
-use schedule::{SilkClientSchedule, SilkClientStage};
+use schedule::SilkClientSchedule;
 use silk_common::bevy_matchbox::{matchbox_socket, prelude::*};
-use silk_common::{ConnectionAddr, SilkSocket};
+use silk_common::{ConnectionAddr, SilkSocket, SilkStage};
 use std::net::IpAddr;
 
 pub mod events;
@@ -40,7 +40,7 @@ impl Plugin for SilkClientPlugin {
 
         // it's important here to configure set order
         app.edit_schedule(SilkClientSchedule, |schedule| {
-            schedule.configure_sets(SilkClientStage::sets());
+            schedule.configure_sets(SilkStage::sets());
         });
 
         app.add_system(
@@ -51,31 +51,31 @@ impl Plugin for SilkClientPlugin {
         .add_system(
             // Read silk events always before clients, who hook into this stage
             socket_reader
-                .before(SilkClientStage::ReadIn)
+                .before(SilkStage::ReadIn)
                 .in_schedule(SilkClientSchedule),
         )
         .add_system(
             trace_incoming
-                .after(SilkClientStage::ReadIn)
-                .before(SilkClientStage::ProcessLatency)
+                .after(SilkStage::ReadIn)
+                .before(SilkStage::ProcessLatency)
                 .in_schedule(SilkClientSchedule),
         )
         .add_system(
             trace_update_state
-                .after(SilkClientStage::ProcessLatency)
-                .before(SilkClientStage::Update)
+                .after(SilkStage::ProcessLatency)
+                .before(SilkStage::Update)
                 .in_schedule(SilkClientSchedule),
         )
         .add_system(
             trace_write
-                .after(SilkClientStage::Update)
-                .before(SilkClientStage::WriteOut)
+                .after(SilkStage::Update)
+                .before(SilkStage::WriteOut)
                 .in_schedule(SilkClientSchedule),
         )
         .add_system(
             // Write silk events always after clients, who hook into this stage
             socket_writer
-                .after(SilkClientStage::WriteOut)
+                .after(SilkStage::WriteOut)
                 .in_schedule(SilkClientSchedule),
         );
 
