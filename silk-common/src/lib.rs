@@ -56,13 +56,25 @@ pub enum ConnectionAddr {
     Remote { ip: IpAddr, port: u16 },
 }
 
+#[derive(Debug, Clone)]
+pub enum PlayerAuthentication {
+    Registered {
+        username: String,
+        password: String,
+        mfa: Option<String>,
+    },
+    Guest {
+        username: String,
+    },
+}
+
 impl ConnectionAddr {
     pub fn to_url(&self) -> String {
         match self {
-            ConnectionAddr::Local { port } => {
+            ConnectionAddr::Local { port, .. } => {
                 format!("ws://0.0.0.0:{port}/")
             }
-            ConnectionAddr::Remote { ip, port } => {
+            ConnectionAddr::Remote { ip, port, .. } => {
                 format!("ws://{ip}:{port}/")
             }
         }

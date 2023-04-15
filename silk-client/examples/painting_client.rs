@@ -1,12 +1,15 @@
-use bevy::{log::LogPlugin, prelude::*};
+use bevy::{log::LogPlugin, prelude::*, window::WindowResolution};
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use painting::PaintingState;
 use silk_client::{
     events::{SilkSendEvent, SilkSocketEvent},
     ConnectionRequest, SilkClientPlugin,
 };
-use silk_common::bevy_matchbox::{matchbox_socket::Packet, prelude::*};
-use silk_common::demo_packets::PaintingDemoPayload;
+use silk_common::{
+    bevy_matchbox::{matchbox_socket::Packet, prelude::*},
+    PlayerAuthentication,
+};
+use silk_common::{demo_packets::PaintingDemoPayload, packets::SilkPayload};
 use std::{
     net::{IpAddr, Ipv4Addr},
     ops::DerefMut,
@@ -16,6 +19,7 @@ use std::{
 enum ConnectionState {
     #[default]
     Disconnected,
+    LoggingIn,
     Connected,
 }
 
@@ -30,13 +34,14 @@ fn main() {
         DefaultPlugins
             .set(LogPlugin {
                 filter:
-                    "error,silk_client=trace,painting_client=debug,wgpu_core=warn,wgpu_hal=warn,matchbox_socket=warn"
+                    "error,silk_client=warn,painting_client=debug,wgpu_core=warn,wgpu_hal=warn,matchbox_socket=warn"
                         .into(),
                 level: bevy::log::Level::DEBUG,
             })
             .set(WindowPlugin {
                 primary_window: Some(bevy::window::Window {
                     fit_canvas_to_parent: true, // behave on wasm
+                    resolution: WindowResolution::new(400.0, 700.0),
                     ..default()
                 }),
                 ..default()
@@ -48,6 +53,9 @@ fn main() {
     .add_system(handle_events)
     .add_system(
         on_disconnected.in_schedule(OnEnter(ConnectionState::Disconnected)),
+    )
+    .add_system(
+        on_logging_in.in_schedule(OnEnter(ConnectionState::LoggingIn)),
     )
     .add_system(
         on_connected.in_schedule(OnEnter(ConnectionState::Connected)),
@@ -68,6 +76,10 @@ fn on_disconnected(mut commands: Commands) {
     commands.insert_resource(ClearColor(Color::RED));
 }
 
+fn on_logging_in(mut commands: Commands) {
+    commands.insert_resource(ClearColor(Color::ORANGE));
+}
+
 fn on_connected(mut commands: Commands) {
     commands.insert_resource(ClearColor(Color::GREEN));
 }
@@ -85,21 +97,23 @@ fn handle_events(
                 info!("Got ID from signaling server: {id:?}");
                 world_state.id.replace(*id);
             }
-            SilkSocketEvent::ConnectedToHost(id) => {
+            SilkSocketEvent::ConnectedToHost { host, username } => {
                 // Connected to host
-                info!("Connected to host: {id:?}");
+                info!("Connected to host {host:?} as '{username}'");
                 app_state.set(ConnectionState::Connected);
             }
-            SilkSocketEvent::DisconnectedFromHost => {
+            SilkSocketEvent::DisconnectedFromHost { reason } => {
                 // Disconnected from host
-                error!("Disconnected from host");
+                error!("Disconnected from host, reason: {reason:?}");
                 app_state.set(ConnectionState::Disconnected);
                 *world_state = WorldState::default();
             }
             SilkSocketEvent::Message((peer, data)) => {
-                let packet: Packet = data.clone();
+                if let Ok(something) = SilkPayload::try_from(data) {
+                    error!("This isn't getting sent right: {something:?}");
+                }
                 let protocol_message =
-                    PaintingDemoPayload::from(packet.clone());
+                    PaintingDemoPayload::try_from(data).unwrap();
                 match protocol_message {
                     PaintingDemoPayload::Chat { from, message } => {
                         let peer = *peer;
@@ -132,18 +146,26 @@ fn ui_example_system(
     mut messages_state: ResMut<MessagesState>,
     mut painting: ResMut<PaintingState>,
     mut text: Local<String>,
+    mut app_state: ResMut<NextState<ConnectionState>>,
 ) {
     egui::Window::new("Login").show(egui_context.ctx_mut(), |ui| {
         ui.label(format!("{:?}", world_state.id));
         ui.horizontal_wrapped(|ui| {
             if ui.button("Connect").clicked() {
+                app_state.set(ConnectionState::LoggingIn);
                 event_wtr.send(ConnectionRequest::Connect {
                     ip: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
                     port: 3536,
+                    auth: PlayerAuthentication::Guest {
+                        // The painting server decides a username
+                        username: String::new(), // TODO: Make Guest username optional
+                    },
                 });
             }
             if ui.button("Disconnect").clicked() {
-                event_wtr.send(ConnectionRequest::Disconnect);
+                event_wtr.send(ConnectionRequest::Disconnect {
+                    reason: Some("User clicked disconnect".to_string()),
+                });
             }
         });
     });
@@ -152,7 +174,7 @@ fn ui_example_system(
         ui.horizontal_wrapped(|ui| {
             ui.text_edit_singleline(text.deref_mut());
             if ui.button("Send").clicked() {
-                let payload = PaintingDemoPayload::Chat {
+                let payload = &PaintingDemoPayload::Chat {
                     from: format!("{:?}", world_state.id.unwrap()),
                     message: text.to_owned(),
                 };
@@ -167,7 +189,7 @@ fn ui_example_system(
         let mut out: Option<(f32, f32, f32, f32)> = None;
         painting.ui(ui, &mut out);
         if let Some((x1, y1, x2, y2)) = out {
-            let payload = PaintingDemoPayload::DrawPoint { x1, y1, x2, y2 };
+            let payload = &PaintingDemoPayload::DrawPoint { x1, y1, x2, y2 };
             info!("Sending Draw from {:?} to {:?}", (x1, y1), (x2, y2));
             silk_event_wtr.send(SilkSendEvent::ReliableSend(payload.into()));
         }

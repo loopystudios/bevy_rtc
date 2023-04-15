@@ -1,4 +1,7 @@
-use silk_common::bevy_matchbox::matchbox_socket::{Packet, PeerId};
+use silk_common::{
+    bevy_matchbox::matchbox_socket::{Packet, PeerId},
+    packets::SilkPayload,
+};
 
 /// Socket events that are possible to subscribe to in Bevy
 #[derive(Debug, Clone)]
@@ -6,9 +9,9 @@ pub enum SilkSocketEvent {
     /// The signaling server assigned the socket a unique ID
     IdAssigned(PeerId),
     /// The socket has successfully connected to a host
-    ConnectedToHost(PeerId),
+    ConnectedToHost { host: PeerId, username: String },
     /// The socket disconnected from the host
-    DisconnectedFromHost,
+    DisconnectedFromHost { reason: Option<String> },
     /// A message was received from the host
     Message((PeerId, Packet)),
 }
@@ -17,7 +20,7 @@ pub enum SilkSocketEvent {
 #[derive(Debug)]
 pub enum SilkSendEvent {
     /// Send an unreliable packet (any order, no retransmit) to the server
-    UnreliableSend(Packet),
+    UnreliableSend(SilkPayload),
     /// Send a reliable packet to the server
-    ReliableSend(Packet),
+    ReliableSend(SilkPayload),
 }

@@ -2,7 +2,8 @@ use bevy::prelude::*;
 use events::{SilkSendEvent, SilkSocketEvent};
 use schedule::{SilkClientSchedule, SilkClientStage};
 use silk_common::bevy_matchbox::{matchbox_socket, prelude::*};
-use silk_common::{ConnectionAddr, SilkSocket};
+use silk_common::packets::SilkPayload;
+use silk_common::{ConnectionAddr, PlayerAuthentication, SilkSocket};
 use std::net::IpAddr;
 
 pub mod events;
@@ -16,7 +17,8 @@ pub struct SilkClientPlugin;
 enum ConnectionState {
     #[default]
     Disconnected,
-    Connecting,
+    Establishing,
+    LoggingIn,
     Connected,
 }
 
@@ -29,7 +31,7 @@ impl Plugin for SilkClientPlugin {
             .add_event::<SilkSendEvent>()
             .add_system(connection_event_reader)
             .add_system(
-                init_socket.in_schedule(OnEnter(ConnectionState::Connecting)),
+                init_socket.in_schedule(OnEnter(ConnectionState::Establishing)),
             )
             .add_system(
                 reset_socket
@@ -106,6 +108,8 @@ fn trace_write() {
 struct SocketState {
     /// The socket address, used for connecting/reconnecting
     pub addr: Option<ConnectionAddr>,
+    /// The authentication provided to connect
+    pub auth: Option<PlayerAuthentication>,
     /// The ID of the host
     pub host_id: Option<PeerId>,
     /// The ID given by the signaling server
@@ -115,10 +119,14 @@ struct SocketState {
 pub enum ConnectionRequest {
     /// A request to connect to the server through the signaling server; the
     /// ip and port are the signaling server
-    Connect { ip: IpAddr, port: u16 },
+    Connect {
+        ip: IpAddr,
+        port: u16,
+        auth: PlayerAuthentication,
+    },
     /// A request to disconnect from the signaling server; this will also
     /// disconnect from the server
-    Disconnect,
+    Disconnect { reason: Option<String> },
 }
 
 /// Initialize the socket
@@ -137,11 +145,7 @@ fn init_socket(mut commands: Commands, socket_res: Res<SocketState>) {
 /// Reset the internal socket
 fn reset_socket(mut commands: Commands, mut state: ResMut<SocketState>) {
     commands.close_socket::<MultipleChannels>();
-    *state = SocketState {
-        host_id: None,
-        id: None,
-        addr: state.addr.take(),
-    };
+    *state = SocketState::default();
 }
 
 /// Reads and handles connection request events
@@ -153,7 +157,7 @@ fn connection_event_reader(
     mut silk_event_wtr: EventWriter<SilkSocketEvent>,
 ) {
     match cxn_event_reader.iter().next() {
-        Some(ConnectionRequest::Connect { ip, port }) => {
+        Some(ConnectionRequest::Connect { ip, port, auth }) => {
             if let ConnectionState::Disconnected = current_connection_state.0 {
                 let addr = ConnectionAddr::Remote {
                     ip: *ip,
@@ -163,19 +167,20 @@ fn connection_event_reader(
                     previous = format!("{current_connection_state:?}"),
                     "set state: connecting"
                 );
-                state.addr = Some(addr);
-                next_connection_state.set(ConnectionState::Connecting);
+                state.addr.replace(addr);
+                state.auth.replace(auth.clone());
+                next_connection_state.set(ConnectionState::Establishing);
             }
         }
-        Some(ConnectionRequest::Disconnect) => {
-            if let ConnectionState::Connected = current_connection_state.0 {
-                debug!(
-                    previous = format!("{current_connection_state:?}"),
-                    "set state: disconnected"
-                );
-                silk_event_wtr.send(SilkSocketEvent::DisconnectedFromHost);
-                next_connection_state.set(ConnectionState::Disconnected);
-            }
+        Some(ConnectionRequest::Disconnect { reason }) => {
+            debug!(
+                previous = format!("{current_connection_state:?}"),
+                "set state: disconnected"
+            );
+            silk_event_wtr.send(SilkSocketEvent::DisconnectedFromHost {
+                reason: reason.clone(),
+            });
+            next_connection_state.set(ConnectionState::Disconnected);
         }
         None => {}
     }
@@ -186,7 +191,9 @@ fn socket_reader(
     mut state: ResMut<SocketState>,
     mut socket: Option<ResMut<MatchboxSocket<MultipleChannels>>>,
     mut event_wtr: EventWriter<SilkSocketEvent>,
-    mut connection_state: ResMut<NextState<ConnectionState>>,
+    mut send_wtr: EventWriter<SilkSendEvent>,
+    connection_state: Res<State<ConnectionState>>,
+    mut next_connection_state: ResMut<NextState<ConnectionState>>,
 ) {
     // Create socket events for Silk
     if let Some(socket) = socket.as_mut() {
@@ -202,30 +209,91 @@ fn socket_reader(
         for (id, peer_state) in socket.update_peers() {
             match peer_state {
                 matchbox_socket::PeerState::Connected => {
+                    if state.host_id.is_some() {
+                        panic!("server already connected");
+                    }
                     state.host_id.replace(id);
-                    connection_state.set(ConnectionState::Connected);
-                    event_wtr.send(SilkSocketEvent::ConnectedToHost(id));
+                    next_connection_state.set(ConnectionState::LoggingIn);
+                    match state.auth.as_ref().expect("auth not set") {
+                        PlayerAuthentication::Registered {
+                            username,
+                            password,
+                            mfa,
+                        } => send_wtr.send(SilkSendEvent::ReliableSend(
+                            SilkPayload::AuthenticateUser {
+                                username: username.clone(),
+                                password: password.clone(),
+                                mfa: mfa.clone(),
+                            },
+                        )),
+                        PlayerAuthentication::Guest { username } => send_wtr
+                            .send(SilkSendEvent::ReliableSend(
+                                SilkPayload::AuthenticateGuest {
+                                    username: username.clone(),
+                                },
+                            )),
+                    }
                 }
                 matchbox_socket::PeerState::Disconnected => {
+                    if state.host_id.is_none() {
+                        panic!("server wasn't connected!");
+                    }
                     state.host_id.take();
-                    connection_state.set(ConnectionState::Disconnected);
-                    event_wtr.send(SilkSocketEvent::DisconnectedFromHost);
+                    next_connection_state.set(ConnectionState::Disconnected);
+                    event_wtr.send(SilkSocketEvent::DisconnectedFromHost {
+                        reason: Some("Server reset".to_string()),
+                    });
                 }
             }
         }
 
         // Collect Unreliable, Reliable messages
-        let reliable_msgs =
-            socket.channel(SilkSocket::RELIABLE_CHANNEL_INDEX).receive();
-        let unreliable_msgs = socket
-            .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
-            .receive();
-        event_wtr.send_batch(
-            reliable_msgs
-                .into_iter()
-                .chain(unreliable_msgs)
-                .map(SilkSocketEvent::Message),
-        );
+        let messages = socket
+            .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
+            .receive()
+            .into_iter()
+            .chain(
+                socket
+                    .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
+                    .receive(),
+            );
+
+        // Route requests
+        for (peer, packet) in messages {
+            let Ok(payload) = SilkPayload::try_from(&packet) else {
+                error!("bad packet: {packet:?}");
+                continue;
+            };
+            match connection_state.0 {
+                // Respond to anything
+                ConnectionState::Connected => {
+                    let SilkPayload::Message(packet) = payload else {
+                        error!("in connected state and received non-message: {packet:?}");
+                        continue;
+                    };
+                    event_wtr.send(SilkSocketEvent::Message((peer, packet)))
+                }
+                // Only respond to authentication
+                ConnectionState::LoggingIn => match payload {
+                    SilkPayload::LoginAccepted { username } => {
+                        next_connection_state.set(ConnectionState::Connected);
+                        event_wtr.send(SilkSocketEvent::ConnectedToHost {
+                            host: state.host_id.unwrap(),
+                            username,
+                        });
+                    }
+                    SilkPayload::LoginDenied { reason } => {
+                        next_connection_state
+                            .set(ConnectionState::Disconnected);
+                        event_wtr.send(SilkSocketEvent::DisconnectedFromHost {
+                            reason: Some(reason),
+                        });
+                    }
+                    _ => {}
+                },
+                _ => {}
+            }
+        }
     }
 }
 
@@ -237,7 +305,7 @@ fn socket_writer(
     mut silk_event_rdr: EventReader<SilkSendEvent>,
 ) {
     let Some(socket) = socket.as_mut() else { return };
-    let ConnectionState::Connected = current_connection_state.0 else { return };
+    let (ConnectionState::LoggingIn | ConnectionState::Connected) = current_connection_state.0 else { return };
     let Some(host) = state.host_id else { return };
     trace!("Trace 3: Sending {} messages", silk_event_rdr.len());
     for ev in silk_event_rdr.iter() {
@@ -245,12 +313,12 @@ fn socket_writer(
             SilkSendEvent::ReliableSend(data) => {
                 socket
                     .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
-                    .send(data.clone(), host);
+                    .send(data.into_packet(), host);
             }
             SilkSendEvent::UnreliableSend(data) => {
                 socket
                     .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
-                    .send(data.clone(), host);
+                    .send(data.into_packet(), host);
             }
         }
     }

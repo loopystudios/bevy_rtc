@@ -9,6 +9,7 @@ bevy = { workspace = true }
 silk-common = { path = "../silk-common" }
 anyhow = { workspace = true }
 matchbox_signaling = { workspace = true }
+auth-client = { git = "https://github.com/vectorgameexperts/auth-gql", rev = "8788885" }
 async-compat = "0.2"
 
 futures-timer = { version = "3", features = ["wasm-bindgen"] }

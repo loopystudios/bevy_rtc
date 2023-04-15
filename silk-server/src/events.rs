@@ -1,12 +1,23 @@
-use silk_common::bevy_matchbox::matchbox_socket::{Packet, PeerId};
+use silk_common::{
+    bevy_matchbox::matchbox_socket::{Packet, PeerId},
+    packets::SilkPayload,
+};
 
 /// Socket events that are possible to subscribe to in Bevy
 #[derive(Debug, Clone)]
 pub enum SilkServerEvent {
     /// The signaling server assigned the socket a unique ID
     IdAssigned(PeerId),
-    /// A peer has connected to this server
-    ClientJoined(PeerId),
+    GuestLoginRequest {
+        peer_id: PeerId,
+        username: String,
+    },
+    LoginRequest {
+        peer_id: PeerId,
+        username: String,
+        password: String,
+        mfa: Option<String>,
+    },
     /// A peer has left this server
     ClientLeft(PeerId),
     /// A peer sent a message to this server
@@ -15,18 +26,27 @@ pub enum SilkServerEvent {
 
 /// Request events for the server to broadcast a message
 #[derive(Debug)]
+pub(crate) enum SilkRawBroadcastEvent {
+    /// Send a raw packet to a peer
+    UnreliableSend((PeerId, Packet)),
+    /// Send a raw packet to a peer
+    ReliableSend((PeerId, Packet)),
+}
+
+/// Request events for the server to broadcast a message
+#[derive(Debug)]
 pub enum SilkBroadcastEvent {
     /// Send an unreliable packet (any order, no retransmit) to all peers except one
-    UnreliableSendAllExcept((PeerId, Packet)),
+    UnreliableSendAllExcept((PeerId, SilkPayload)),
     /// Send an unreliable packet (any order, no retransmit) to all peers
-    UnreliableSendAll(Packet),
+    UnreliableSendAll(SilkPayload),
     /// Send an unreliable packet (any order, no retransmit) to a peer
-    UnreliableSend((PeerId, Packet)),
+    UnreliableSend((PeerId, SilkPayload)),
 
     /// Send a reliable packet to all peers except one
-    ReliableSendAllExcept((PeerId, Packet)),
+    ReliableSendAllExcept((PeerId, SilkPayload)),
     /// Send a reliable packet to all peers
-    ReliableSendAll(Packet),
+    ReliableSendAll(SilkPayload),
     /// Send a reliable packet to a peer
-    ReliableSend((PeerId, Packet)),
+    ReliableSend((PeerId, SilkPayload)),
 }
