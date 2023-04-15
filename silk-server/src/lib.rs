@@ -7,7 +7,7 @@ use silk_common::{
         prelude::MultipleChannels,
         MatchboxSocket, OpenSocketExt,
     },
-    SilkStage,
+    SilkCommonPlugin, SilkStage,
 };
 use silk_common::{ConnectionAddr, SilkSocket};
 
@@ -36,6 +36,8 @@ struct SocketState {
 
 impl Plugin for SilkServerPlugin {
     fn build(&self, app: &mut App) {
+        app.add_plugin(SilkCommonPlugin);
+
         if let ConnectionAddr::Local { port } = self.signaler_addr {
             app.add_plugin(SilkSignalerPlugin { port });
         }

@@ -1,14 +1,16 @@
+use bevy::prelude::*;
 use bevy_matchbox::matchbox_socket::{
     ChannelConfig, MessageLoopFuture, MultipleChannels, WebRtcSocket,
     WebRtcSocketBuilder,
 };
+use events::RecvMessageEvent;
 use std::net::IpAddr;
 
 pub mod demo_packets;
+pub mod events;
 pub mod network_queries;
 pub mod packets;
 pub mod stage;
-pub mod events;
 
 // Re-exports
 pub use bevy_matchbox;
@@ -71,5 +73,13 @@ impl ConnectionAddr {
                 format!("ws://{ip}:{port}/")
             }
         }
+    }
+}
+
+pub struct SilkCommonPlugin;
+
+impl Plugin for SilkCommonPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_event::<RecvMessageEvent>();
     }
 }

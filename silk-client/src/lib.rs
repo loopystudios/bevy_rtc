@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use events::{SilkSendEvent, SilkSocketEvent};
 use schedule::SilkClientSchedule;
 use silk_common::bevy_matchbox::{matchbox_socket, prelude::*};
-use silk_common::{ConnectionAddr, SilkSocket, SilkStage};
+use silk_common::{ConnectionAddr, SilkSocket, SilkStage, SilkCommonPlugin};
 use std::net::IpAddr;
 
 pub mod events;
@@ -22,7 +22,8 @@ enum ConnectionState {
 
 impl Plugin for SilkClientPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(SocketState::default())
+        app.add_plugin(SilkCommonPlugin)
+            .insert_resource(SocketState::default())
             .add_state::<ConnectionState>()
             .add_event::<ConnectionRequest>()
             .add_event::<SilkSocketEvent>()
