@@ -5,7 +5,7 @@ use bevy_matchbox::matchbox_socket::{
 };
 use events::SocketRecvEvent;
 use schedule::SilkSchedule;
-use socket::{socket_reader, SocketState, handle_socket_events};
+use socket::{handle_socket_events, socket_reader, SocketState};
 use std::net::IpAddr;
 
 pub mod demo_packets;
@@ -85,6 +85,13 @@ pub struct SilkCommonPlugin;
 
 impl Plugin for SilkCommonPlugin {
     fn build(&self, app: &mut App) {
+        app.init_schedule(SilkSchedule);
+
+        // it's important here to configure set order
+        app.edit_schedule(SilkSchedule, |schedule| {
+            schedule.configure_sets(SilkStage::sets());
+        });
+
         app.init_resource::<SocketState>()
             .add_event::<SocketRecvEvent>()
             .add_event::<SilkSocketEvent>()

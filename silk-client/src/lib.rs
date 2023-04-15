@@ -37,13 +37,6 @@ impl Plugin for SilkClientPlugin {
                     .in_schedule(OnEnter(ConnectionState::Disconnected)),
             );
 
-        app.init_schedule(SilkSchedule);
-
-        // it's important here to configure set order
-        app.edit_schedule(SilkSchedule, |schedule| {
-            schedule.configure_sets(SilkStage::sets());
-        });
-
         app.add_system(
             trace_read.before(socket_reader).in_schedule(SilkSchedule),
         )
