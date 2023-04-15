@@ -51,8 +51,8 @@ impl Message for DrawPointMessage {
 
 #[derive(Deserialize, Serialize, Default, Clone, Debug)]
 pub struct Chat {
-    from: String,
-    message: String,
+    pub from: String,
+    pub message: String,
 }
 
 impl Message for Chat {

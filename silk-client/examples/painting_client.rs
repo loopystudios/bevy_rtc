@@ -2,9 +2,10 @@ use bevy::{log::LogPlugin, prelude::*};
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use painting::PaintingState;
 use silk_client::{ConnectionRequest, SilkClientPlugin};
-use silk_common::bevy_matchbox::{matchbox_socket::Packet, prelude::*};
-use silk_common::demo_packets::PaintingDemoPayload;
-use silk_common::SilkSocketEvent;
+use silk_common::bevy_matchbox::prelude::*;
+use silk_common::demo_packets::{Chat, DrawPointMessage, PaintingDemoPayload};
+use silk_common::router::NetworkWriter;
+use silk_common::{AddNetworkMessage, SilkSocketEvent};
 use std::{
     net::{IpAddr, Ipv4Addr},
     ops::DerefMut,
@@ -28,7 +29,7 @@ fn main() {
         DefaultPlugins
             .set(LogPlugin {
                 filter:
-                    "error,silk_client=trace,painting_client=debug,wgpu_core=warn,wgpu_hal=warn,matchbox_socket=warn"
+                    "error,silk_client=error,painting_client=debug,wgpu_core=warn,wgpu_hal=warn,matchbox_socket=warn"
                         .into(),
                 level: bevy::log::Level::DEBUG,
             })
@@ -41,6 +42,8 @@ fn main() {
             }),
     )
     .add_plugin(SilkClientPlugin)
+    .add_network_message::<Chat>()
+    .add_network_message::<DrawPointMessage>()
     .add_state::<ConnectionState>()
     .insert_resource(WorldState::default())
     .add_system(handle_events)
@@ -53,6 +56,7 @@ fn main() {
     .add_startup_system(setup_cam)
     .add_plugin(EguiPlugin)
     .add_system(ui_example_system)
+    .add_system(chatbox_ui.in_set(OnUpdate(ConnectionState::Connected)))
     .insert_resource(MessagesState::default())
     .insert_resource(PaintingState::default())
     .run();
@@ -122,13 +126,35 @@ fn handle_events(
     }
 }
 
+fn chatbox_ui(
+    mut egui_context: EguiContexts,
+    world_state: Res<WorldState>,
+    mut messages_state: ResMut<MessagesState>,
+    mut text: Local<String>,
+    mut net: NetworkWriter<Chat>,
+) {
+    egui::Window::new("Chat").show(egui_context.ctx_mut(), |ui| {
+        ui.label("Send Message");
+        ui.horizontal_wrapped(|ui| {
+            ui.text_edit_singleline(text.deref_mut());
+            if ui.button("Send").clicked() {
+                let chat_message = Chat {
+                    from: format!("{:?}", world_state.id.unwrap()),
+                    message: text.to_owned(),
+                };
+                net.send_reliable_to_host(&chat_message);
+            };
+        });
+        ui.label("Messages");
+        messages_state.ui(ui);
+    });
+}
+
 fn ui_example_system(
     mut egui_context: EguiContexts,
     mut event_wtr: EventWriter<ConnectionRequest>,
     world_state: Res<WorldState>,
-    mut messages_state: ResMut<MessagesState>,
     mut painting: ResMut<PaintingState>,
-    mut text: Local<String>,
 ) {
     egui::Window::new("Login").show(egui_context.ctx_mut(), |ui| {
         ui.label(format!("{:?}", world_state.id));
@@ -143,23 +169,6 @@ fn ui_example_system(
                 event_wtr.send(ConnectionRequest::Disconnect);
             }
         });
-    });
-    egui::Window::new("Chat").show(egui_context.ctx_mut(), |ui| {
-        ui.label("Send Message");
-        ui.horizontal_wrapped(|ui| {
-            ui.text_edit_singleline(text.deref_mut());
-            if ui.button("Send").clicked() {
-                let payload = PaintingDemoPayload::Chat {
-                    from: format!("{:?}", world_state.id.unwrap()),
-                    message: text.to_owned(),
-                };
-                // TODO
-                // silk_event_wtr
-                //     .send(SilkSendEvent::ReliableSend(payload.into()));
-            };
-        });
-        ui.label("Messages");
-        messages_state.ui(ui);
     });
     egui::Window::new("Painter").show(egui_context.ctx_mut(), |ui| {
         let mut out: Option<(f32, f32, f32, f32)> = None;

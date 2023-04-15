@@ -23,13 +23,8 @@ impl<M: Message> OutgoingMessages<M> {
         self.reliable_to_host.clear();
     }
 
-    /// A system that calls [`Events::update`] once per frame.
-    pub fn update_system(mut query: ResMut<Self>) {
-        query.update();
-    }
-
     pub fn write_system(
-        queue: ResMut<Self>,
+        mut queue: ResMut<Self>,
         mut socket: Option<ResMut<MatchboxSocket<MultipleChannels>>>,
         state: Res<SocketState>,
     ) {
@@ -37,6 +32,8 @@ impl<M: Message> OutgoingMessages<M> {
             if let Some(host) = state.host {
                 // Client is sending
                 for message in queue.reliable_to_host.iter() {
+                    info!("Sending message to host {:?}", message);
+
                     socket
                         .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
                         .send(message.to_packet(), host)
@@ -57,6 +54,7 @@ impl<M: Message> OutgoingMessages<M> {
                         .send(message.to_packet(), *peer)
                 }
             }
+            queue.update();
         }
     }
 }

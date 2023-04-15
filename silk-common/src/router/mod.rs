@@ -54,27 +54,23 @@ impl AddNetworkMessage for App {
         if !self.world.contains_resource::<IncomingMessages<T>>() {
             self.init_resource::<IncomingMessages<T>>()
                 .add_system(
-                    IncomingMessages::<T>::update_system
-                        .in_base_set(CoreSet::First),
-                )
-                .add_system(
                     IncomingMessages::<T>::read_system
                         .before(SilkStage::ReadIn)
                         .after(socket_reader)
                         .in_schedule(SilkSchedule),
-                );
-        }
-        if !self.world.contains_resource::<OutgoingMessages<T>>() {
-            self.init_resource::<OutgoingMessages<T>>()
-                .add_system(
-                    OutgoingMessages::<T>::update_system
-                        .in_base_set(CoreSet::Last),
                 )
                 .add_system(
-                    OutgoingMessages::<T>::write_system
+                    IncomingMessages::<T>::update_system
                         .after(SilkStage::WriteOut)
                         .in_schedule(SilkSchedule),
                 );
+        }
+        if !self.world.contains_resource::<OutgoingMessages<T>>() {
+            self.init_resource::<OutgoingMessages<T>>().add_system(
+                OutgoingMessages::<T>::write_system
+                    .after(SilkStage::WriteOut)
+                    .in_schedule(SilkSchedule),
+            );
         }
         self
     }
