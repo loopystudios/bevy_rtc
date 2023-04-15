@@ -1,5 +1,7 @@
 use bevy::{log::LogPlugin, prelude::*, utils::HashSet};
 use silk_common::bevy_matchbox::matchbox_socket::Packet;
+use silk_common::demo_packets::{Chat, DrawPoint};
+use silk_common::AppAddNetworkQuery;
 use silk_common::{
     bevy_matchbox::prelude::PeerId, demo_packets::PaintingDemoPayload,
     ConnectionAddr,
@@ -33,6 +35,8 @@ fn main() {
                 .in_base_set(SilkServerStage::WriteOut)
                 .in_schedule(SilkServerSchedule),
         )
+        .add_network_query::<Chat>()
+        .add_network_query::<DrawPoint>()
         .insert_resource(ServerState::default())
         .add_startup_system(|| info!("Connecting..."))
         .run();
