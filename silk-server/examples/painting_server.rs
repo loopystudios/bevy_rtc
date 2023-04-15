@@ -1,6 +1,7 @@
 use bevy::{log::LogPlugin, prelude::*, utils::HashSet};
 use silk_common::bevy_matchbox::matchbox_socket::Packet;
-use silk_common::demo_packets::{Chat, DrawPoint};
+use silk_common::demo_packets::{Chat, TestMessage};
+use silk_common::network_queries::{NetworkQuery, RecvMessages};
 use silk_common::schedule::SilkSchedule;
 use silk_common::{
     bevy_matchbox::prelude::PeerId, demo_packets::PaintingDemoPayload,
@@ -35,11 +36,18 @@ fn main() {
                 .in_base_set(SilkStage::WriteOut)
                 .in_schedule(SilkSchedule),
         )
-        .add_network_query::<Chat>()
-        .add_network_query::<DrawPoint>()
+        // .add_network_query::<Chat>()
+        .add_network_query::<TestMessage>()
+        .add_system(network_query)
         .insert_resource(ServerState::default())
         .add_startup_system(|| info!("Connecting..."))
         .run();
+}
+
+fn network_query(mut query: NetworkQuery<TestMessage>) {
+    for test_message in query.iter() {
+        error!("network queried {:?}", test_message);
+    }
 }
 
 fn handle_events(

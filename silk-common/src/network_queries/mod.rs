@@ -1,10 +1,10 @@
 use bevy::prelude::*;
 
 mod message;
-mod query;
+mod receive;
 
 pub use message::Message;
-pub use query::NetworkQuery;
+pub use receive::{NetworkQuery, RecvMessages};
 
 use crate::{schedule::SilkSchedule, SilkStage};
 
@@ -17,14 +17,14 @@ impl AddNetworkQuery for App {
     where
         T: Message,
     {
-        if !self.world.contains_resource::<NetworkQuery<T>>() {
-            self.init_resource::<NetworkQuery<T>>()
+        if !self.world.contains_resource::<RecvMessages<T>>() {
+            self.init_resource::<RecvMessages<T>>()
                 .add_system(
-                    NetworkQuery::<T>::update_system
+                    RecvMessages::<T>::update_system
                         .in_base_set(CoreSet::First),
                 )
                 .add_system(
-                    NetworkQuery::<T>::read_system
+                    RecvMessages::<T>::read_system
                         .in_base_set(SilkStage::ReadIn)
                         .in_schedule(SilkSchedule),
                 );

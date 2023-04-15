@@ -26,14 +26,22 @@ pub struct Chat {
     message: String,
 }
 
-impl Message for Chat {}
+impl Message for Chat {
+    fn from_packet(packet: &Packet) -> Option<Self> {
+        bincode::deserialize(packet).ok()
+    }
+}
 
-#[derive(Default, Deserialize)]
-pub struct DrawPoint {
+#[derive(Default, Deserialize, Debug)]
+pub struct TestMessage {
     x1: f32,
     y1: f32,
     x2: f32,
     y2: f32,
 }
 
-impl Message for DrawPoint {}
+impl Message for TestMessage {
+    fn from_packet(packet: &Packet) -> Option<TestMessage> {
+        bincode::deserialize(packet).ok()
+    }
+}
