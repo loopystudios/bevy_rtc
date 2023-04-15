@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::events::RecvMessageEvent;
+
 use super::message::Message;
 #[derive(Default, Debug, Resource)]
 pub struct NetworkQuery<M: Message> {
@@ -18,5 +20,15 @@ impl<M: Message> NetworkQuery<M> {
         query.update();
     }
 
-    pub fn receive_system(mut query: ResMut<Self>) {}
+    pub fn read_system(
+        mut query: ResMut<Self>,
+        mut recv: EventReader<RecvMessageEvent>,
+    ) {
+        for RecvMessageEvent(_peer_id, packet) in recv.iter() {
+            if let Ok(message) = bincode::deserialize::<M>(&packet) {
+                query.messages.push(message);
+            }
+            error!("NetworkQuery received!");
+        }
+    }
 }

@@ -7,6 +7,7 @@ use silk_common::{
         prelude::MultipleChannels,
         MatchboxSocket, OpenSocketExt,
     },
+    events::RecvMessageEvent,
     schedule::*,
     SilkCommonPlugin, SilkStage,
 };
@@ -121,6 +122,7 @@ fn socket_reader(
     mut state: ResMut<SocketState>,
     mut socket: ResMut<MatchboxSocket<MultipleChannels>>,
     mut event_wtr: EventWriter<SilkServerEvent>,
+    mut net_queries_event_wtr: EventWriter<RecvMessageEvent>,
 ) {
     // Id changed events
     if let Some(id) = socket.id() {
@@ -148,11 +150,21 @@ fn socket_reader(
     let unreliable_msgs = socket
         .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
         .receive();
+    let reliable_msgs_cloned = reliable_msgs.clone();
+    let unreliable_msgs_cloned = unreliable_msgs.clone();
+
     event_wtr.send_batch(
         reliable_msgs
             .into_iter()
             .chain(unreliable_msgs)
             .map(SilkServerEvent::Message),
+    );
+
+    net_queries_event_wtr.send_batch(
+        reliable_msgs_cloned
+            .into_iter()
+            .chain(unreliable_msgs_cloned)
+            .map(|v| RecvMessageEvent(v.0, v.1)),
     );
 }
 

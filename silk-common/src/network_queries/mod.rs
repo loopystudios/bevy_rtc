@@ -6,6 +6,8 @@ mod query;
 pub use message::Message;
 pub use query::NetworkQuery;
 
+use crate::{schedule::SilkSchedule, SilkStage};
+
 pub trait AddNetworkQuery {
     fn add_network_query<T: Message>(&mut self) -> &mut Self;
 }
@@ -22,8 +24,9 @@ impl AddNetworkQuery for App {
                         .in_base_set(CoreSet::First),
                 )
                 .add_system(
-                    NetworkQuery::<T>::receive_system
-                        .in_base_set(CoreSet::PreUpdate),
+                    NetworkQuery::<T>::read_system
+                        .in_base_set(SilkStage::ReadIn)
+                        .in_schedule(SilkSchedule),
                 );
         }
         self

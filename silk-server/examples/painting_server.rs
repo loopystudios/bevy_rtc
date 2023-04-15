@@ -22,7 +22,7 @@ fn main() {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins)
         .add_plugin(LogPlugin {
-            filter: "warn,silk_server=trace,silk_signaler=debug,painting_server=debug,wgpu_core=warn,wgpu_hal=warn,matchbox_socket=warn"
+            filter: "warn,silk_server=error,silk_signaler=debug,painting_server=debug,wgpu_core=warn,wgpu_hal=warn,matchbox_socket=warn"
                 .into(),
             level: bevy::log::Level::DEBUG,
         })
