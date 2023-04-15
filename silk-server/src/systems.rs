@@ -1,5 +1,5 @@
 use crate::{
-    events::{SilkBroadcastEvent, SilkRawBroadcastEvent, SilkServerEvent},
+    events::{SilkBroadcastEvent, SilkServerEvent},
     state::SocketState,
 };
 use bevy::prelude::*;
@@ -89,7 +89,7 @@ pub(crate) fn socket_reader(
                 | SilkPayload::LoginDenied { .. } => {}
             };
         } else {
-            error!("bad packet from {peer_id:?}: {packet:?}");
+            error!("unwrapped packet from {peer_id:?}: {packet:?}");
         }
     }
 }
