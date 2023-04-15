@@ -22,7 +22,7 @@ impl AddNetworkQuery for App {
                         .in_base_set(CoreSet::First),
                 )
                 .add_system(
-                    NetworkQuery::<T>::update_system
+                    NetworkQuery::<T>::receive_system
                         .in_base_set(CoreSet::PreUpdate),
                 );
         }
