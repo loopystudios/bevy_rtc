@@ -192,7 +192,7 @@ fn socket_reader(
     mut socket: Option<ResMut<MatchboxSocket<MultipleChannels>>>,
     mut event_wtr: EventWriter<SilkSocketEvent>,
     mut send_wtr: EventWriter<SilkSendEvent>,
-    connection_state: Res<State<ConnectionState>>,
+    mut connection_state: ResMut<State<ConnectionState>>,
     mut next_connection_state: ResMut<NextState<ConnectionState>>,
 ) {
     // Create socket events for Silk
@@ -238,7 +238,6 @@ fn socket_reader(
                     if state.host_id.is_none() {
                         panic!("server wasn't connected!");
                     }
-                    state.host_id.take();
                     next_connection_state.set(ConnectionState::Disconnected);
                     event_wtr.send(SilkSocketEvent::DisconnectedFromHost {
                         reason: Some("Server reset".to_string()),
@@ -277,6 +276,7 @@ fn socket_reader(
                 ConnectionState::LoggingIn => match payload {
                     SilkPayload::LoginAccepted { username } => {
                         info!("connected to host");
+                        connection_state.0 = ConnectionState::Connected;
                         next_connection_state.set(ConnectionState::Connected);
                         event_wtr.send(SilkSocketEvent::ConnectedToHost {
                             host: state.host_id.unwrap(),
