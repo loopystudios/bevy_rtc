@@ -1,7 +1,7 @@
 use bevy::{log::LogPlugin, prelude::*};
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use painting::PaintingState;
-use silk_client::{events::SilkSendEvent, ConnectionRequest, SilkClientPlugin};
+use silk_client::{ConnectionRequest, SilkClientPlugin};
 use silk_common::bevy_matchbox::{matchbox_socket::Packet, prelude::*};
 use silk_common::demo_packets::PaintingDemoPayload;
 use silk_common::SilkSocketEvent;
@@ -126,7 +126,6 @@ fn ui_example_system(
     mut egui_context: EguiContexts,
     mut event_wtr: EventWriter<ConnectionRequest>,
     world_state: Res<WorldState>,
-    mut silk_event_wtr: EventWriter<SilkSendEvent>,
     mut messages_state: ResMut<MessagesState>,
     mut painting: ResMut<PaintingState>,
     mut text: Local<String>,
@@ -154,8 +153,9 @@ fn ui_example_system(
                     from: format!("{:?}", world_state.id.unwrap()),
                     message: text.to_owned(),
                 };
-                silk_event_wtr
-                    .send(SilkSendEvent::ReliableSend(payload.into()));
+                // TODO
+                // silk_event_wtr
+                //     .send(SilkSendEvent::ReliableSend(payload.into()));
             };
         });
         ui.label("Messages");
@@ -167,7 +167,8 @@ fn ui_example_system(
         if let Some((x1, y1, x2, y2)) = out {
             let payload = PaintingDemoPayload::DrawPoint { x1, y1, x2, y2 };
             info!("Sending Draw from {:?} to {:?}", (x1, y1), (x2, y2));
-            silk_event_wtr.send(SilkSendEvent::ReliableSend(payload.into()));
+            // TODO
+            // silk_event_wtr.send(SilkSendEvent::ReliableSend(payload.into()));
         }
     });
 }

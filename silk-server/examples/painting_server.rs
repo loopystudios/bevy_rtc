@@ -1,13 +1,10 @@
 use bevy::{log::LogPlugin, prelude::*, utils::HashSet};
-use silk_common::demo_packets::DrawPointMessage;
+use silk_common::demo_packets::{Chat, DrawPointMessage};
 use silk_common::router::NetworkReader;
 use silk_common::schedule::SilkSchedule;
-use silk_common::{
-    bevy_matchbox::prelude::PeerId, demo_packets::PaintingDemoPayload,
-    ConnectionAddr,
-};
+use silk_common::{bevy_matchbox::prelude::PeerId, ConnectionAddr};
 use silk_common::{AddNetworkMessage, SilkSocketEvent, SilkStage};
-use silk_server::{events::SilkBroadcastEvent, SilkServerPlugin};
+use silk_server::SilkServerPlugin;
 
 #[derive(Resource, Debug, Default, Clone)]
 struct ServerState {
@@ -32,7 +29,7 @@ fn main() {
                 .in_base_set(SilkStage::WriteOut)
                 .in_schedule(SilkSchedule),
         )
-        // .add_network_query::<Chat>()
+        .add_network_message::<Chat>()
         .add_network_message::<DrawPointMessage>()
         .add_system(network_query)
         .insert_resource(ServerState::default())
@@ -48,7 +45,6 @@ fn network_query(mut query: NetworkReader<DrawPointMessage>) {
 
 fn handle_events(
     mut event_rdr: EventReader<SilkSocketEvent>,
-    mut event_wtr: EventWriter<SilkBroadcastEvent>,
     mut world_state: ResMut<ServerState>,
 ) {
     while let Some(ev) = event_rdr.iter().next() {
@@ -56,22 +52,22 @@ fn handle_events(
             SilkSocketEvent::ClientJoined(id) => {
                 world_state.clients.insert(*id);
                 debug!("{id:?} joined");
-                let packet = PaintingDemoPayload::Chat {
-                    from: format!("{:?}", world_state.server_id.unwrap()),
-                    message: format!("Hello {id:?}"),
-                };
-                event_wtr
-                    .send(SilkBroadcastEvent::ReliableSendAll(packet.into()));
+                // let packet = PaintingDemoPayload::Chat {
+                //     from: format!("{:?}", world_state.server_id.unwrap()),
+                //     message: format!("Hello {id:?}"),
+                // };
+                // event_wtr
+                //     .send(SilkBroadcastEvent::ReliableSendAll(packet.into()));
             }
             SilkSocketEvent::ClientLeft(id) => {
                 debug!("{id:?} left");
                 world_state.clients.remove(id);
-                let packet = PaintingDemoPayload::Chat {
-                    from: format!("{:?}", world_state.server_id.unwrap()),
-                    message: format!("Goodbye {id:?}"),
-                };
-                event_wtr
-                    .send(SilkBroadcastEvent::ReliableSendAll(packet.into()));
+                // let packet = PaintingDemoPayload::Chat {
+                //     from: format!("{:?}", world_state.server_id.unwrap()),
+                //     message: format!("Goodbye {id:?}"),
+                // };
+                // event_wtr
+                //     .send(SilkBroadcastEvent::ReliableSendAll(packet.into()));
             }
             // // Message comes from Client
             // SilkEvent::Message((id, packet)) => {

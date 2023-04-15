@@ -1,13 +1,10 @@
 use bevy::prelude::*;
-use events::SilkSendEvent;
 use silk_common::bevy_matchbox::{matchbox_socket, prelude::*};
 use silk_common::schedule::SilkSchedule;
 use silk_common::{
     ConnectionAddr, SilkCommonPlugin, SilkSocket, SilkSocketEvent, SilkStage,
 };
 use std::net::IpAddr;
-
-pub mod events;
 
 /// The socket client abstraction
 pub struct SilkClientPlugin;
@@ -27,7 +24,6 @@ impl Plugin for SilkClientPlugin {
             .insert_resource(SocketState::default())
             .add_state::<ConnectionState>()
             .add_event::<ConnectionRequest>()
-            .add_event::<SilkSendEvent>()
             .add_system(connection_event_reader)
             .add_system(
                 init_socket.in_schedule(OnEnter(ConnectionState::Connecting)),
@@ -62,12 +58,6 @@ impl Plugin for SilkClientPlugin {
             trace_write
                 .after(SilkStage::Update)
                 .before(SilkStage::WriteOut)
-                .in_schedule(SilkSchedule),
-        )
-        .add_system(
-            // Write silk events always after clients, who hook into this stage
-            socket_writer
-                .after(SilkStage::WriteOut)
                 .in_schedule(SilkSchedule),
         );
     }
@@ -198,33 +188,6 @@ fn socket_reader(
                     connection_state.set(ConnectionState::Disconnected);
                     event_wtr.send(SilkSocketEvent::DisconnectedFromHost);
                 }
-            }
-        }
-    }
-}
-
-/// Sends aggregated messages requested by the client
-fn socket_writer(
-    mut socket: Option<ResMut<MatchboxSocket<MultipleChannels>>>,
-    state: Res<SocketState>,
-    current_connection_state: Res<State<ConnectionState>>,
-    mut silk_event_rdr: EventReader<SilkSendEvent>,
-) {
-    let Some(socket) = socket.as_mut() else { return };
-    let ConnectionState::Connected = current_connection_state.0 else { return };
-    let Some(host) = state.host_id else { return };
-    trace!("Trace 3: Sending {} messages", silk_event_rdr.len());
-    for ev in silk_event_rdr.iter() {
-        match ev {
-            SilkSendEvent::ReliableSend(data) => {
-                socket
-                    .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
-                    .send(data.clone(), host);
-            }
-            SilkSendEvent::UnreliableSend(data) => {
-                socket
-                    .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
-                    .send(data.clone(), host);
             }
         }
     }
