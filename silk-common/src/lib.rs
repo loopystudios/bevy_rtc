@@ -10,6 +10,7 @@ pub mod demo_packets;
 pub mod events;
 pub mod network_queries;
 pub mod packets;
+pub mod schedule;
 pub mod stage;
 
 // Re-exports
@@ -81,5 +82,10 @@ pub struct SilkCommonPlugin;
 impl Plugin for SilkCommonPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<RecvMessageEvent>();
+
+        // add scheduler
+        app.add_system(
+            schedule::run_silk_schedule.in_schedule(CoreSchedule::FixedUpdate),
+        );
     }
 }

@@ -7,15 +7,13 @@ use silk_common::{
         prelude::MultipleChannels,
         MatchboxSocket, OpenSocketExt,
     },
+    schedule::*,
     SilkCommonPlugin, SilkStage,
 };
 use silk_common::{ConnectionAddr, SilkSocket};
 
 pub mod events;
-pub mod schedule;
 pub mod signaler;
-
-pub use schedule::*;
 
 /// The socket server abstraction
 pub struct SilkServerPlugin {
@@ -50,52 +48,45 @@ impl Plugin for SilkServerPlugin {
         .add_event::<SilkServerEvent>()
         .add_event::<SilkBroadcastEvent>();
 
-        app.init_schedule(SilkServerSchedule);
+        app.init_schedule(SilkSchedule);
 
         // it's important here to configure set order
-        app.edit_schedule(SilkServerSchedule, |schedule| {
+        app.edit_schedule(SilkSchedule, |schedule| {
             schedule.configure_sets(SilkStage::sets());
         });
 
         app.add_system(
-            trace_read
-                .before(socket_reader)
-                .in_schedule(SilkServerSchedule),
+            trace_read.before(socket_reader).in_schedule(SilkSchedule),
         )
         .add_system(
             // Read silk events always before servers, who hook into this stage
             socket_reader
                 .before(SilkStage::ReadIn)
-                .in_schedule(SilkServerSchedule),
+                .in_schedule(SilkSchedule),
         )
         .add_system(
             trace_incoming
                 .after(SilkStage::ReadIn)
                 .before(SilkStage::Process)
-                .in_schedule(SilkServerSchedule),
+                .in_schedule(SilkSchedule),
         )
         .add_system(
             trace_update_state
                 .after(SilkStage::Process)
                 .before(SilkStage::Update)
-                .in_schedule(SilkServerSchedule),
+                .in_schedule(SilkSchedule),
         )
         .add_system(
             trace_write
                 .after(SilkStage::Update)
                 .before(SilkStage::WriteOut)
-                .in_schedule(SilkServerSchedule),
+                .in_schedule(SilkSchedule),
         )
         .add_system(
             // Write silk events always after servers, who hook into this stage
             broadcast
                 .after(SilkStage::WriteOut)
-                .in_schedule(SilkServerSchedule),
-        );
-
-        // add scheduler
-        app.add_system(
-            schedule::run_silk_schedule.in_schedule(CoreSchedule::FixedUpdate),
+                .in_schedule(SilkSchedule),
         );
     }
 }
