@@ -1,12 +1,23 @@
-use bevy::prelude::*;
+use bevy::{ecs::system::SystemParam, prelude::*};
 
 mod message;
 mod receive;
 
 pub use message::Message;
-pub use receive::{NetworkQuery, RecvMessages};
+pub use receive::RecvMessages;
 
 use crate::{schedule::SilkSchedule, SilkStage};
+
+#[derive(SystemParam, Debug)]
+pub struct NetworkReader<'w, M: Message> {
+    received: Res<'w, RecvMessages<M>>,
+}
+
+impl<'w, M: Message> NetworkReader<'w, M> {
+    pub fn iter(&mut self) -> std::slice::Iter<'_, M> {
+        self.received.messages.iter()
+    }
+}
 
 pub trait AddNetworkQuery {
     fn add_network_query<T: Message>(&mut self) -> &mut Self;

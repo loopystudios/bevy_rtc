@@ -1,7 +1,7 @@
 use bevy::{log::LogPlugin, prelude::*, utils::HashSet};
 use silk_common::bevy_matchbox::matchbox_socket::Packet;
-use silk_common::demo_packets::{Chat, TestMessage};
-use silk_common::network_queries::{NetworkQuery, RecvMessages};
+use silk_common::demo_packets::TestMessage;
+use silk_common::router::NetworkReader;
 use silk_common::schedule::SilkSchedule;
 use silk_common::{
     bevy_matchbox::prelude::PeerId, demo_packets::PaintingDemoPayload,
@@ -44,7 +44,7 @@ fn main() {
         .run();
 }
 
-fn network_query(mut query: NetworkQuery<TestMessage>) {
+fn network_query(mut query: NetworkReader<TestMessage>) {
     for test_message in query.iter() {
         error!("network queried {:?}", test_message);
     }

@@ -1,17 +1,6 @@
-use bevy::{ecs::system::SystemParam, prelude::*};
+use bevy::prelude::*;
 
 use crate::events::RecvMessageEvent;
-
-#[derive(SystemParam, Debug)]
-pub struct NetworkQuery<'w, M: Message> {
-    received: Res<'w, RecvMessages<M>>,
-}
-
-impl<'w, M: Message> NetworkQuery<'w, M> {
-    pub fn iter(&mut self) -> std::slice::Iter<'_, M> {
-        self.received.messages.iter()
-    }
-}
 
 use super::message::Message;
 #[derive(Default, Debug, Resource)]

@@ -1,4 +1,4 @@
-use crate::network_queries::Message;
+use crate::router::Message;
 use bevy_matchbox::matchbox_socket::Packet;
 use serde::{Deserialize, Serialize};
 
