@@ -12,6 +12,7 @@ pub struct OutgoingMessages<M: Message> {
     pub reliable_to_all: Vec<M>,
     pub reliable_to_all_except: Vec<(PeerId, M)>,
     pub reliable_to_peer: Vec<(PeerId, M)>,
+    pub unreliable_to_peer: Vec<(PeerId, M)>,
     pub reliable_to_host: Vec<M>,
     pub unreliable_to_host: Vec<M>,
 }
@@ -23,6 +24,7 @@ impl<M: Message> OutgoingMessages<M> {
         self.reliable_to_all.clear();
         self.reliable_to_all_except.clear();
         self.reliable_to_peer.clear();
+        self.unreliable_to_peer.clear();
         self.reliable_to_host.clear();
         self.unreliable_to_host.clear();
     }
@@ -69,6 +71,11 @@ impl<M: Message> OutgoingMessages<M> {
                 for (peer, message) in queue.reliable_to_peer.iter() {
                     socket
                         .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
+                        .send(message.to_packet(), *peer)
+                }
+                for (peer, message) in queue.unreliable_to_peer.iter() {
+                    socket
+                        .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
                         .send(message.to_packet(), *peer)
                 }
             }
