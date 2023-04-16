@@ -6,9 +6,9 @@ use super::SilkPacket;
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub struct SilkAuthUserPayload {
-    username: String,
-    password: String,
-    mfa: Option<String>,
+    pub username: String,
+    pub password: String,
+    pub mfa: Option<String>,
 }
 
 impl Message for SilkAuthUserPayload {
@@ -34,7 +34,7 @@ impl Message for SilkAuthUserPayload {
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub struct SilkAuthGuestPayload {
-    username: String,
+    pub username: Option<String>,
 }
 
 impl Message for SilkAuthGuestPayload {
@@ -60,7 +60,7 @@ impl Message for SilkAuthGuestPayload {
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub struct SilkLoginAcceptedPayload {
-    username: String,
+    pub username: String,
 }
 
 impl Message for SilkLoginAcceptedPayload {
@@ -86,7 +86,7 @@ impl Message for SilkLoginAcceptedPayload {
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub struct SilkLoginDeniedPayload {
-    username: String,
+    pub reason: Option<String>,
 }
 
 impl Message for SilkLoginDeniedPayload {

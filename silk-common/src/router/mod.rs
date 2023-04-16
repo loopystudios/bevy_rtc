@@ -1,23 +1,21 @@
-use bevy::prelude::*;
-
 mod message;
 mod receive;
 mod send;
 mod system_params;
 
+use self::send::OutgoingMessages;
+use crate::{schedule::SilkSchedule, socket::socket_reader, SilkStage};
+use bevy::prelude::*;
+
 pub use message::Message;
 pub use receive::IncomingMessages;
 pub use system_params::{NetworkReader, NetworkWriter};
 
-use crate::{schedule::SilkSchedule, socket::socket_reader, SilkStage};
-
-use self::send::OutgoingMessages;
-
-pub trait AddNetworkMessage {
+pub trait AddNetworkMessageExt {
     fn add_network_message<T: Message>(&mut self) -> &mut Self;
 }
 
-impl AddNetworkMessage for App {
+impl AddNetworkMessageExt for App {
     fn add_network_message<T>(&mut self) -> &mut Self
     where
         T: Message,

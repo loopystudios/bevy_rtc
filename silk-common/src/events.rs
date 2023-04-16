@@ -6,14 +6,39 @@ pub struct SocketRecvEvent(pub (PeerId, Packet));
 /// Socket events that are possible to subscribe to in Bevy
 #[derive(Debug, Clone)]
 pub enum SilkSocketEvent {
+    /// The server's peer ID for relay
+    ConnectedToServer(PeerId),
+    /// The socket disconnected from the server
+    DisconnectedFromServer,
+}
+
+/// Socket events that are possible to subscribe to in Bevy
+#[derive(Debug, Clone)]
+pub enum SilkClientEvent {
     /// The signaling server assigned the socket a unique ID
     IdAssigned(PeerId),
     /// The socket has successfully connected to a host
-    ConnectedToHost(PeerId),
+    ConnectedToHost { host: PeerId, username: String },
     /// The socket disconnected from the host
-    DisconnectedFromHost,
-    /// A peer has connected to this server
-    ClientJoined(PeerId),
+    DisconnectedFromHost { reason: Option<String> },
+}
+
+/// Socket events that are possible to subscribe to in Bevy
+#[derive(Debug, Clone)]
+pub enum SilkServerEvent {
+    /// The signaling server assigned the socket a unique ID
+    IdAssigned(PeerId),
+    GuestLoginRequest {
+        peer_id: PeerId,
+        /// Optional username
+        username: Option<String>,
+    },
+    LoginRequest {
+        peer_id: PeerId,
+        username: String,
+        password: String,
+        mfa: Option<String>,
+    },
     /// A peer has left this server
     ClientLeft(PeerId),
 }

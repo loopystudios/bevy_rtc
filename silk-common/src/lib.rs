@@ -3,13 +3,17 @@ use bevy_matchbox::matchbox_socket::{
     ChannelConfig, MessageLoopFuture, MultipleChannels, WebRtcSocket,
     WebRtcSocketBuilder,
 };
-use events::SocketRecvEvent;
+use events::{SilkSocketEvent, SocketRecvEvent};
+use packets::auth::{
+    SilkAuthGuestPayload, SilkAuthUserPayload, SilkLoginAcceptedPayload,
+    SilkLoginDeniedPayload,
+};
 use schedule::SilkSchedule;
 use socket::{handle_socket_events, socket_reader, SocketState};
 use std::net::IpAddr;
 
 pub mod demo_packets;
-mod events;
+pub mod events;
 pub mod packets;
 pub mod router;
 pub mod schedule;
@@ -18,8 +22,7 @@ pub mod stage;
 
 // Re-exports
 pub use bevy_matchbox;
-pub use events::SilkSocketEvent;
-pub use router::AddNetworkMessage;
+pub use router::AddNetworkMessageExt;
 pub use stage::SilkStage;
 
 /// An abstraction over [`matchbox_socket::WebRtcSocket`] to fit Tribrid's
@@ -58,6 +61,18 @@ impl SilkSocket {
     ) -> (WebRtcSocket<MultipleChannels>, MessageLoopFuture) {
         self.builder.build()
     }
+}
+
+#[derive(Debug, Clone)]
+pub enum PlayerAuthentication {
+    Registered {
+        username: String,
+        password: String,
+        mfa: Option<String>,
+    },
+    Guest {
+        username: Option<String>,
+    },
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -107,5 +122,10 @@ impl Plugin for SilkCommonPlugin {
         app.add_system(
             schedule::run_silk_schedule.in_schedule(CoreSchedule::FixedUpdate),
         );
+
+        app.add_network_message::<SilkAuthUserPayload>()
+            .add_network_message::<SilkAuthGuestPayload>()
+            .add_network_message::<SilkLoginAcceptedPayload>()
+            .add_network_message::<SilkLoginDeniedPayload>();
     }
 }

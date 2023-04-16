@@ -1,15 +1,11 @@
 use bevy::{prelude::*, time::fixed_timestep::FixedTime};
-use events::SilkBroadcastEvent;
 use signaler::SilkSignalerPlugin;
-use silk_common::ConnectionAddr;
-use silk_common::{
-    packets::auth::{SilkAuthGuestPayload, SilkAuthUserPayload},
-    schedule::*,
-    AddNetworkMessage, SilkCommonPlugin, SilkSocketEvent, SilkStage,
-};
+use silk_common::events::SilkServerEvent;
+use silk_common::packets::auth::{SilkAuthGuestPayload, SilkAuthUserPayload};
+use silk_common::{schedule::*, SilkCommonPlugin, SilkStage};
+use silk_common::{AddNetworkMessageExt, ConnectionAddr};
 use state::SocketState;
 
-pub mod events;
 pub mod signaler;
 pub(crate) mod state;
 pub(crate) mod systems;
@@ -24,21 +20,18 @@ pub struct SilkServerPlugin {
 
 impl Plugin for SilkServerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(SilkCommonPlugin);
-
         if let ConnectionAddr::Local { port } = self.signaler_addr {
             app.add_plugin(SilkSignalerPlugin { port });
         }
-        app.insert_resource(SocketState {
-            addr: self.signaler_addr,
-            id: None,
-        })
-        .add_network_message::<SilkAuthUserPayload>()
-        .add_network_message::<SilkAuthGuestPayload>()
-        .add_startup_system(systems::init_socket)
-        .insert_resource(FixedTime::new_from_secs(1.0 / self.tick_rate))
-        .add_event::<SilkSocketEvent>()
-        .add_event::<SilkBroadcastEvent>();
+
+        app.add_plugin(SilkCommonPlugin)
+            .add_event::<SilkServerEvent>()
+            .insert_resource(SocketState {
+                addr: self.signaler_addr,
+                id: None,
+            })
+            .add_startup_system(systems::init_socket)
+            .insert_resource(FixedTime::new_from_secs(1.0 / self.tick_rate));
 
         app.add_system(
             trace_read
@@ -48,6 +41,11 @@ impl Plugin for SilkServerPlugin {
         .add_system(
             // Read silk events always before servers, who hook into this stage
             systems::socket_reader
+                .before(SilkStage::ReadIn)
+                .in_schedule(SilkSchedule),
+        )
+        .add_systems(
+            (systems::on_login, systems::on_guest_login)
                 .before(SilkStage::ReadIn)
                 .in_schedule(SilkSchedule),
         )

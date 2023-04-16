@@ -6,24 +6,25 @@ use bevy_matchbox::{
 };
 
 #[derive(Resource, Default)]
-pub struct SocketState {
+pub(crate) struct SocketState {
     /// The ID of the host if this instance is a client
     pub host: Option<PeerId>,
 }
 
-pub fn handle_socket_events(
+pub(crate) fn handle_socket_events(
     mut state: ResMut<SocketState>,
     mut events: EventReader<SilkSocketEvent>,
 ) {
     for event in events.iter() {
         match event {
-            SilkSocketEvent::ConnectedToHost(id) => {
+            SilkSocketEvent::ConnectedToServer(id) => {
+                trace!("received host: {id:?}");
                 state.host.replace(*id);
             }
-            SilkSocketEvent::DisconnectedFromHost => {
+            SilkSocketEvent::DisconnectedFromServer => {
+                trace!("disconnected from host");
                 state.host.take();
             }
-            _ => {}
         }
     }
 }
@@ -34,17 +35,18 @@ pub fn socket_reader(
 ) {
     if let Some(socket) = socket.as_mut() {
         // Collect Unreliable, Reliable messages
-        let reliable_msgs =
-            socket.channel(SilkSocket::RELIABLE_CHANNEL_INDEX).receive();
-        let unreliable_msgs = socket
-            .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
-            .receive();
-
-        event_wtr.send_batch(
-            reliable_msgs
-                .into_iter()
-                .chain(unreliable_msgs)
-                .map(SocketRecvEvent),
-        );
+        let messages = socket
+            .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
+            .receive()
+            .into_iter()
+            .chain(
+                socket
+                    .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
+                    .receive(),
+            )
+            .map(SocketRecvEvent)
+            .collect::<Vec<_>>();
+        trace!("received {} messages", messages.len());
+        event_wtr.send_batch(messages);
     }
 }

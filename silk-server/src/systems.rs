@@ -1,12 +1,14 @@
 use crate::SocketState;
 use bevy::prelude::*;
+use silk_common::packets::auth::{SilkAuthGuestPayload, SilkAuthUserPayload};
+use silk_common::router::NetworkReader;
 use silk_common::SilkSocket;
 use silk_common::{
     bevy_matchbox::{
         matchbox_socket::PeerState, prelude::MultipleChannels, MatchboxSocket,
         OpenSocketExt,
     },
-    SilkSocketEvent,
+    events::SilkServerEvent,
 };
 
 /// Initialize the socket
@@ -22,13 +24,13 @@ pub fn init_socket(mut commands: Commands, state: Res<SocketState>) {
 pub fn socket_reader(
     mut state: ResMut<SocketState>,
     mut socket: ResMut<MatchboxSocket<MultipleChannels>>,
-    mut event_wtr: EventWriter<SilkSocketEvent>,
+    mut event_wtr: EventWriter<SilkServerEvent>,
 ) {
     // Id changed events
     if let Some(id) = socket.id() {
         if state.id.is_none() {
             state.id.replace(id);
-            event_wtr.send(SilkSocketEvent::IdAssigned(id));
+            event_wtr.send(SilkServerEvent::IdAssigned(id));
         }
     }
 
@@ -36,11 +38,45 @@ pub fn socket_reader(
     for (peer, peer_state) in socket.update_peers() {
         match peer_state {
             PeerState::Connected => {
-                event_wtr.send(SilkSocketEvent::ClientJoined(peer));
+                // Authentication happens in another system! Do nothing.
             }
             PeerState::Disconnected => {
-                event_wtr.send(SilkSocketEvent::ClientLeft(peer));
+                event_wtr.send(SilkServerEvent::ClientLeft(peer));
             }
         }
+    }
+}
+
+// Translate login requests to bevy server events
+pub fn on_login(
+    mut login_rdr: NetworkReader<SilkAuthUserPayload>,
+    mut event_wtr: EventWriter<SilkServerEvent>,
+) {
+    for (peer_id, payload) in login_rdr.iter() {
+        let SilkAuthUserPayload {
+            username,
+            password,
+            mfa,
+        } = payload;
+        event_wtr.send(SilkServerEvent::LoginRequest {
+            peer_id: *peer_id,
+            username: username.to_owned(),
+            password: password.to_owned(),
+            mfa: mfa.to_owned(),
+        });
+    }
+}
+
+// Translate guest login requests to bevy server events
+pub fn on_guest_login(
+    mut login_rdr: NetworkReader<SilkAuthGuestPayload>,
+    mut event_wtr: EventWriter<SilkServerEvent>,
+) {
+    for (peer_id, payload) in login_rdr.iter() {
+        let SilkAuthGuestPayload { username } = payload;
+        event_wtr.send(SilkServerEvent::GuestLoginRequest {
+            peer_id: *peer_id,
+            username: username.to_owned(),
+        });
     }
 }

@@ -1,20 +1,20 @@
 use bevy::{log::LogPlugin, prelude::*};
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use painting::PaintingState;
-use silk_client::{ConnectionRequest, SilkClientPlugin};
+use silk_client::events::ConnectionRequest;
+use silk_client::SilkClientPlugin;
 use silk_common::bevy_matchbox::prelude::*;
 use silk_common::demo_packets::{Chat, DrawPoint};
+use silk_common::events::SilkClientEvent;
 use silk_common::router::{NetworkReader, NetworkWriter};
-use silk_common::{AddNetworkMessage, SilkSocketEvent};
-use std::{
-    net::{IpAddr, Ipv4Addr},
-    ops::DerefMut,
-};
+use silk_common::{AddNetworkMessageExt, PlayerAuthentication};
+use std::{net::Ipv4Addr, ops::DerefMut};
 
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash, States)]
 enum ConnectionState {
     #[default]
     Disconnected,
+    LoggingIn,
     Connected,
 }
 
@@ -29,7 +29,7 @@ fn main() {
         DefaultPlugins
             .set(LogPlugin {
                 filter:
-                    "error,silk_client=error,painting_client=debug,wgpu_core=warn,wgpu_hal=warn,matchbox_socket=warn"
+                    "error,silk_client=debug,painting_client=debug,wgpu_core=warn,wgpu_hal=warn,matchbox_socket=warn"
                         .into(),
                 level: bevy::log::Level::DEBUG,
             })
@@ -49,6 +49,8 @@ fn main() {
     .add_system(handle_events)
     .add_system(
         on_disconnected.in_schedule(OnEnter(ConnectionState::Disconnected)),
+    )    .add_system(
+        on_logging_in.in_schedule(OnEnter(ConnectionState::LoggingIn)),
     )
     .add_system(
         on_connected.in_schedule(OnEnter(ConnectionState::Connected)),
@@ -67,8 +69,16 @@ fn setup_cam(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
 }
 
-fn on_disconnected(mut commands: Commands) {
+fn on_disconnected(
+    mut commands: Commands,
+    mut world_state: ResMut<WorldState>,
+) {
     commands.insert_resource(ClearColor(Color::RED));
+    *world_state = WorldState::default();
+}
+
+fn on_logging_in(mut commands: Commands) {
+    commands.insert_resource(ClearColor(Color::ORANGE));
 }
 
 fn on_connected(mut commands: Commands) {
@@ -77,27 +87,25 @@ fn on_connected(mut commands: Commands) {
 
 fn handle_events(
     mut app_state: ResMut<NextState<ConnectionState>>,
-    mut events: EventReader<SilkSocketEvent>,
+    mut events: EventReader<SilkClientEvent>,
     mut world_state: ResMut<WorldState>,
 ) {
     for event in events.iter() {
         match event {
-            SilkSocketEvent::IdAssigned(id) => {
+            SilkClientEvent::IdAssigned(id) => {
                 info!("Got ID from signaling server: {id:?}");
                 world_state.id.replace(*id);
             }
-            SilkSocketEvent::ConnectedToHost(id) => {
+            SilkClientEvent::ConnectedToHost { host, username } => {
                 // Connected to host
-                info!("Connected to host: {id:?}");
+                info!("Connected to host: {host:?} as {username}");
                 app_state.set(ConnectionState::Connected);
             }
-            SilkSocketEvent::DisconnectedFromHost => {
+            SilkClientEvent::DisconnectedFromHost { reason } => {
                 // Disconnected from host
-                error!("Disconnected from host");
+                error!("Disconnected from host, reason: {reason:?}");
                 app_state.set(ConnectionState::Disconnected);
-                *world_state = WorldState::default();
             }
-            _ => {}
         }
     }
 }
@@ -159,19 +167,25 @@ fn painting_ui(
 fn login_ui(
     mut egui_context: EguiContexts,
     mut event_wtr: EventWriter<ConnectionRequest>,
+    mut next_connection_state: ResMut<NextState<ConnectionState>>,
     world_state: Res<WorldState>,
 ) {
     egui::Window::new("Login").show(egui_context.ctx_mut(), |ui| {
         ui.label(format!("{:?}", world_state.id));
         ui.horizontal_wrapped(|ui| {
             if ui.button("Connect").clicked() {
+                let auth = PlayerAuthentication::Guest { username: None };
+                next_connection_state.set(ConnectionState::LoggingIn);
                 event_wtr.send(ConnectionRequest::Connect {
-                    ip: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
+                    ip: Ipv4Addr::LOCALHOST.into(),
                     port: 3536,
+                    auth,
                 });
             }
             if ui.button("Disconnect").clicked() {
-                event_wtr.send(ConnectionRequest::Disconnect);
+                event_wtr.send(ConnectionRequest::Disconnect {
+                    reason: Some("User clicked disconnect".to_string()),
+                });
             }
         });
     });

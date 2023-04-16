@@ -33,7 +33,7 @@ impl<M: Message> OutgoingMessages<M> {
         self.unreliable_to_host.clear();
     }
 
-    pub fn write_system(
+    pub(crate) fn write_system(
         mut queue: ResMut<Self>,
         mut socket: Option<ResMut<MatchboxSocket<MultipleChannels>>>,
         state: Res<SocketState>,
