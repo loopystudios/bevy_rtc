@@ -31,21 +31,26 @@ fn main() {
         )
         .add_network_message::<Chat>()
         .add_network_message::<DrawPoint>()
-        .add_system(network_query)
-        .add_system(read_chat)
+        .add_system(handle_draw_points)
+        .add_system(handle_chats)
         .insert_resource(ServerState::default())
         .add_startup_system(|| info!("Connecting..."))
         .run();
 }
 
-fn network_query(mut query: NetworkReader<DrawPoint>) {
-    for test_message in query.iter() {
-        error!("network queried {:?}", test_message);
+// redirect draw points from clients to other clients
+fn handle_draw_points(
+    mut draw_read: NetworkReader<DrawPoint>,
+    mut draw_send: NetworkWriter<DrawPoint>,
+) {
+    for (peer, draw) in draw_read.iter() {
+        error!("got draw {:?}", draw);
+        draw_send.reliable_to_all_except(*peer, draw);
     }
 }
 
-// read chats from clients
-fn read_chat(
+// redirect chat from clients to other clients
+fn handle_chats(
     mut chat_read: NetworkReader<Chat>,
     mut chat_send: NetworkWriter<Chat>,
 ) {
@@ -64,35 +69,11 @@ fn handle_events(
             SilkSocketEvent::ClientJoined(id) => {
                 world_state.clients.insert(*id);
                 debug!("{id:?} joined");
-                // let packet = PaintingDemoPayload::Chat {
-                //     from: format!("{:?}", world_state.server_id.unwrap()),
-                //     message: format!("Hello {id:?}"),
-                // };
-                // event_wtr
-                //     .send(SilkBroadcastEvent::ReliableSendAll(packet.into()));
             }
             SilkSocketEvent::ClientLeft(id) => {
                 debug!("{id:?} left");
                 world_state.clients.remove(id);
-                // let packet = PaintingDemoPayload::Chat {
-                //     from: format!("{:?}", world_state.server_id.unwrap()),
-                //     message: format!("Goodbye {id:?}"),
-                // };
-                // event_wtr
-                //     .send(SilkBroadcastEvent::ReliableSendAll(packet.into()));
             }
-            // // Message comes from Client
-            // SilkEvent::Message((id, packet)) => {
-            //     let packet: Packet = packet.clone();
-            //     let protocol_message =
-            //         PaintingDemoPayload::from(packet.clone());
-            //     for peer in world_state.clients.iter().filter(|p| p != &id) {
-            //         event_wtr.send(SilkBroadcastEvent::ReliableSend((
-            //             *peer,
-            //             protocol_message.clone().into(),
-            //         )));
-            //     }
-            // }
             SilkSocketEvent::IdAssigned(id) => {
                 world_state.server_id.replace(*id);
                 info!("I am {id:?}")
