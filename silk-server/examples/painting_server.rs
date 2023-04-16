@@ -44,7 +44,7 @@ fn handle_draw_points(
     mut draw_send: NetworkWriter<DrawPoint>,
 ) {
     for (peer, draw) in draw_read.iter() {
-        draw_send.reliable_to_all_except(*peer, draw);
+        draw_send.unreliable_to_all_except(*peer, draw);
     }
 }
 
