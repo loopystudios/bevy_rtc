@@ -1,19 +1,18 @@
 use bevy::{prelude::*, time::fixed_timestep::FixedTime};
 use events::SilkBroadcastEvent;
 use signaler::SilkSignalerPlugin;
+use silk_common::ConnectionAddr;
 use silk_common::{
-    bevy_matchbox::{
-        matchbox_socket::{PeerId, PeerState},
-        prelude::MultipleChannels,
-        MatchboxSocket, OpenSocketExt,
-    },
+    packets::auth::{SilkAuthGuestPayload, SilkAuthUserPayload},
     schedule::*,
-    SilkCommonPlugin, SilkSocketEvent, SilkStage,
+    AddNetworkMessage, SilkCommonPlugin, SilkSocketEvent, SilkStage,
 };
-use silk_common::{ConnectionAddr, SilkSocket};
+use state::SocketState;
 
 pub mod events;
 pub mod signaler;
+pub(crate) mod state;
+pub(crate) mod systems;
 
 /// The socket server abstraction
 pub struct SilkServerPlugin {
@@ -21,15 +20,6 @@ pub struct SilkServerPlugin {
     pub signaler_addr: ConnectionAddr,
     /// Hertz for server tickrate, e.g. 30.0 = 30 times per second
     pub tick_rate: f32,
-}
-
-#[derive(Resource)]
-struct SocketState {
-    /// The socket address, used for connecting/reconnecting
-    pub addr: ConnectionAddr,
-
-    /// The ID the signaling server sees us as
-    pub id: Option<PeerId>,
 }
 
 impl Plugin for SilkServerPlugin {
@@ -43,17 +33,21 @@ impl Plugin for SilkServerPlugin {
             addr: self.signaler_addr,
             id: None,
         })
-        .add_startup_system(init_socket)
+        .add_network_message::<SilkAuthUserPayload>()
+        .add_network_message::<SilkAuthGuestPayload>()
+        .add_startup_system(systems::init_socket)
         .insert_resource(FixedTime::new_from_secs(1.0 / self.tick_rate))
         .add_event::<SilkSocketEvent>()
         .add_event::<SilkBroadcastEvent>();
 
         app.add_system(
-            trace_read.before(socket_reader).in_schedule(SilkSchedule),
+            trace_read
+                .before(systems::socket_reader)
+                .in_schedule(SilkSchedule),
         )
         .add_system(
             // Read silk events always before servers, who hook into this stage
-            socket_reader
+            systems::socket_reader
                 .before(SilkStage::ReadIn)
                 .in_schedule(SilkSchedule),
         )
@@ -92,40 +86,4 @@ fn trace_update_state() {
 
 fn trace_write() {
     trace!("Trace 4: Write");
-}
-
-/// Initialize the socket
-fn init_socket(mut commands: Commands, state: Res<SocketState>) {
-    debug!("address: {:?}", state.addr);
-
-    // Create matchbox socket
-    let silk_socket = SilkSocket::new(state.addr);
-    commands.open_socket(silk_socket.builder());
-}
-
-/// Translates socket events into Bevy events
-fn socket_reader(
-    mut state: ResMut<SocketState>,
-    mut socket: ResMut<MatchboxSocket<MultipleChannels>>,
-    mut event_wtr: EventWriter<SilkSocketEvent>,
-) {
-    // Id changed events
-    if let Some(id) = socket.id() {
-        if state.id.is_none() {
-            state.id.replace(id);
-            event_wtr.send(SilkSocketEvent::IdAssigned(id));
-        }
-    }
-
-    // Check for peer updates
-    for (peer, peer_state) in socket.update_peers() {
-        match peer_state {
-            PeerState::Connected => {
-                event_wtr.send(SilkSocketEvent::ClientJoined(peer));
-            }
-            PeerState::Disconnected => {
-                event_wtr.send(SilkSocketEvent::ClientLeft(peer));
-            }
-        }
-    }
 }
