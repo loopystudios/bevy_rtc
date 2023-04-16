@@ -151,7 +151,7 @@ fn painting_ui(
         painting.ui(ui, &mut out);
         if let Some((x1, y1, x2, y2)) = out {
             let draw_point = DrawPoint { x1, y1, x2, y2 };
-            draw_send.reliable_to_host(&draw_point)
+            draw_send.unreliable_to_host(&draw_point)
         }
     });
 }
