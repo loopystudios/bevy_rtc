@@ -32,6 +32,7 @@ fn main() {
         .add_network_message::<Chat>()
         .add_network_message::<DrawPointMessage>()
         .add_system(network_query)
+        .add_system(read_chat)
         .insert_resource(ServerState::default())
         .add_startup_system(|| info!("Connecting..."))
         .run();
@@ -40,6 +41,12 @@ fn main() {
 fn network_query(mut query: NetworkReader<DrawPointMessage>) {
     for test_message in query.iter() {
         error!("network queried {:?}", test_message);
+    }
+}
+
+fn read_chat(mut net: NetworkReader<Chat>) {
+    for test_message in net.iter() {
+        error!("got chat {:?}", test_message);
     }
 }
 

@@ -57,7 +57,10 @@ pub struct Chat {
 
 impl Message for Chat {
     fn from_packet(packet: &Packet) -> Option<Self> {
-        bincode::deserialize(packet).ok()
+        bincode::deserialize::<SilkPacket<Chat>>(packet)
+            .ok()
+            .filter(|silk_packet| silk_packet.msg_id == Self::id())
+            .and_then(|silk_packet| Some(silk_packet.message))
     }
 
     fn to_packet(&self) -> Packet {
