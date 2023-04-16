@@ -27,8 +27,6 @@ impl<M: Message> IncomingMessages<M> {
     ) {
         for SocketRecvEvent((peer_id, packet)) in events.iter() {
             if let Some(message) = M::from_packet(packet) {
-                error!("router received msg id {}", M::id());
-
                 incoming.messages.push((*peer_id, message));
             }
         }

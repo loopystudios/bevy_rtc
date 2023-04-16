@@ -44,7 +44,6 @@ fn handle_draw_points(
     mut draw_send: NetworkWriter<DrawPoint>,
 ) {
     for (peer, draw) in draw_read.iter() {
-        error!("got draw {:?}", draw);
         draw_send.reliable_to_all_except(*peer, draw);
     }
 }
@@ -55,7 +54,6 @@ fn handle_chats(
     mut chat_send: NetworkWriter<Chat>,
 ) {
     for (peer, chat) in chat_read.iter() {
-        error!("got chat {:?}", chat);
         chat_send.reliable_to_all_except(*peer, chat);
     }
 }
