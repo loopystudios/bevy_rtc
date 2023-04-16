@@ -33,6 +33,10 @@ impl<'w, M: Message> NetworkWriter<'w, M> {
         self.outgoing.reliable_to_all.push(message.clone());
     }
 
+    pub fn unreliable_to_all(&mut self, message: &M) {
+        self.outgoing.unreliable_to_all.push(message.clone());
+    }
+
     pub fn reliable_to_all_except(&mut self, peer: PeerId, message: &M) {
         self.outgoing
             .reliable_to_all_except
