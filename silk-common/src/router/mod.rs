@@ -18,7 +18,7 @@ pub struct NetworkReader<'w, M: Message> {
 }
 
 impl<'w, M: Message> NetworkReader<'w, M> {
-    pub fn iter(&mut self) -> std::slice::Iter<'_, M> {
+    pub fn iter(&mut self) -> std::slice::Iter<'_, (PeerId, M)> {
         self.incoming.messages.iter()
     }
 }
@@ -29,15 +29,21 @@ pub struct NetworkWriter<'w, M: Message> {
 }
 
 impl<'w, M: Message> NetworkWriter<'w, M> {
-    pub fn send_reliable_to_all(&mut self, message: &M) {
+    pub fn reliable_to_all(&mut self, message: &M) {
         self.outgoing.reliable_to_all.push(message.clone());
     }
 
-    pub fn send_reliable_to_peer(&mut self, peer: PeerId, message: &M) {
+    pub fn reliable_to_all_except(&mut self, peer: PeerId, message: &M) {
+        self.outgoing
+            .reliable_to_all_except
+            .push((peer, message.clone()));
+    }
+
+    pub fn reliable_to_peer(&mut self, peer: PeerId, message: &M) {
         self.outgoing.reliable_to_peer.push((peer, message.clone()));
     }
 
-    pub fn send_reliable_to_host(&mut self, message: &M) {
+    pub fn reliable_to_host(&mut self, message: &M) {
         self.outgoing.reliable_to_host.push(message.clone());
     }
 }

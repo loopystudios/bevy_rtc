@@ -142,7 +142,7 @@ fn chatbox_ui(
                     from: format!("{:?}", world_state.id.unwrap()),
                     message: text.to_owned(),
                 };
-                net.send_reliable_to_host(&chat_message);
+                net.reliable_to_host(&chat_message);
             };
         });
         ui.label("Messages");

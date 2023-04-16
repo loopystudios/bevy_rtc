@@ -10,6 +10,7 @@ use super::message::Message;
 #[derive(Default, Debug, Resource)]
 pub struct OutgoingMessages<M: Message> {
     pub reliable_to_all: Vec<M>,
+    pub reliable_to_all_except: Vec<(PeerId, M)>,
     pub reliable_to_peer: Vec<(PeerId, M)>,
     pub reliable_to_host: Vec<M>,
 }
@@ -19,6 +20,7 @@ impl<M: Message> OutgoingMessages<M> {
     /// called once per frame/update.
     pub fn update(&mut self) {
         self.reliable_to_all.clear();
+        self.reliable_to_all_except.clear();
         self.reliable_to_peer.clear();
         self.reliable_to_host.clear();
     }
@@ -47,6 +49,17 @@ impl<M: Message> OutgoingMessages<M> {
                             .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
                             .send(message.to_packet(), peer)
                     })
+                }
+                for (peer, message) in queue.reliable_to_all_except.iter() {
+                    let peers: Vec<PeerId> = socket
+                        .connected_peers()
+                        .filter(|p| p != peer)
+                        .collect();
+                    peers.into_iter().for_each(|peer| {
+                        socket
+                            .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
+                            .send(message.to_packet(), peer)
+                    });
                 }
                 for (peer, message) in queue.reliable_to_peer.iter() {
                     socket

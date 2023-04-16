@@ -49,9 +49,9 @@ fn read_chat(
     mut chat_read: NetworkReader<Chat>,
     mut chat_send: NetworkWriter<Chat>,
 ) {
-    for chat in chat_read.iter() {
+    for (peer, chat) in chat_read.iter() {
         error!("got chat {:?}", chat);
-        chat_send.send_reliable_to_all(&chat);
+        chat_send.reliable_to_all_except(*peer, chat);
     }
 }
 

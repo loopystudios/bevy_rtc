@@ -1,11 +1,12 @@
 use bevy::prelude::*;
+use bevy_matchbox::prelude::PeerId;
 
 use crate::events::SocketRecvEvent;
 
 use super::message::Message;
 #[derive(Default, Debug, Resource)]
 pub struct IncomingMessages<M: Message> {
-    pub messages: Vec<M>,
+    pub messages: Vec<(PeerId, M)>,
 }
 
 impl<M: Message> IncomingMessages<M> {
@@ -24,11 +25,11 @@ impl<M: Message> IncomingMessages<M> {
         mut incoming: ResMut<Self>,
         mut events: EventReader<SocketRecvEvent>,
     ) {
-        for SocketRecvEvent((_peer_id, packet)) in events.iter() {
+        for SocketRecvEvent((peer_id, packet)) in events.iter() {
             if let Some(message) = M::from_packet(packet) {
                 error!("router received msg id {}", M::id());
 
-                incoming.messages.push(message);
+                incoming.messages.push((*peer_id, message));
             }
         }
     }
