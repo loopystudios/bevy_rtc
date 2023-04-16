@@ -1,5 +1,4 @@
-use crate::{packets::SilkPacket, router::Message};
-use bevy_matchbox::matchbox_socket::Packet;
+use crate::router::Message;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Default, Clone, Debug)]
@@ -11,21 +10,6 @@ pub struct DrawPoint {
 }
 
 impl Message for DrawPoint {
-    fn from_packet(packet: &Packet) -> Option<Self> {
-        bincode::deserialize::<SilkPacket<DrawPoint>>(packet)
-            .ok()
-            .filter(|silk_packet| silk_packet.msg_id == Self::id())
-            .map(|silk_packet| silk_packet.data)
-    }
-
-    fn to_packet(&self) -> Packet {
-        let silk_packet = SilkPacket {
-            msg_id: Self::id(),
-            data: self.clone(),
-        };
-        bincode::serialize(&silk_packet).unwrap().into_boxed_slice()
-    }
-
     fn id() -> u16 {
         1
     }
@@ -38,21 +22,6 @@ pub struct Chat {
 }
 
 impl Message for Chat {
-    fn from_packet(packet: &Packet) -> Option<Self> {
-        bincode::deserialize::<SilkPacket<Chat>>(packet)
-            .ok()
-            .filter(|silk_packet| silk_packet.msg_id == Self::id())
-            .map(|silk_packet| silk_packet.data)
-    }
-
-    fn to_packet(&self) -> Packet {
-        let silk_packet = SilkPacket {
-            msg_id: Self::id(),
-            data: self.clone(),
-        };
-        bincode::serialize(&silk_packet).unwrap().into_boxed_slice()
-    }
-
     fn id() -> u16 {
         2
     }
