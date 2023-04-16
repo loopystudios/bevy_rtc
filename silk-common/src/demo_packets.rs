@@ -1,4 +1,4 @@
-use crate::{packets::SilkPacket, router::Message};
+use crate::{packet::SilkPacket, router::Message};
 use bevy_matchbox::matchbox_socket::Packet;
 use serde::{Deserialize, Serialize};
 

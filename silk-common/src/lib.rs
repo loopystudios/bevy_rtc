@@ -10,7 +10,7 @@ use std::net::IpAddr;
 
 pub mod demo_packets;
 mod events;
-pub mod packets;
+pub mod packet;
 pub mod router;
 pub mod schedule;
 pub mod socket;

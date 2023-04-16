@@ -75,12 +75,6 @@ impl Plugin for SilkServerPlugin {
                 .before(SilkStage::WriteOut)
                 .in_schedule(SilkSchedule),
         );
-        // .add_system(
-        //     // Write silk events always after servers, who hook into this stage
-        //     broadcast
-        //         .after(SilkStage::WriteOut)
-        //         .in_schedule(SilkSchedule),
-        // );
     }
 }
 
@@ -135,58 +129,3 @@ fn socket_reader(
         }
     }
 }
-
-// /// Reads and handles server broadcast request events
-// fn broadcast(
-//     mut socket: ResMut<MatchboxSocket<MultipleChannels>>,
-//     mut event_reader: EventReader<SilkBroadcastEvent>,
-// ) {
-//     trace!("Trace 5: Broadcasting {} events", event_reader.len());
-//     while let Some(broadcast) = event_reader.iter().next() {
-//         match broadcast {
-//             // Unreliable operations
-//             SilkBroadcastEvent::UnreliableSendAllExcept((peer, packet)) => {
-//                 let peers: Vec<PeerId> =
-//                     socket.connected_peers().filter(|p| p != peer).collect();
-//                 peers.into_iter().for_each(|peer| {
-//                     socket
-//                         .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
-//                         .send(packet.clone(), peer)
-//                 })
-//             }
-//             SilkBroadcastEvent::UnreliableSendAll(packet) => {
-//                 let peers: Vec<PeerId> = socket.connected_peers().collect();
-//                 peers.into_iter().for_each(|peer| {
-//                     socket
-//                         .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
-//                         .send(packet.clone(), peer)
-//                 })
-//             }
-//             SilkBroadcastEvent::UnreliableSend((peer, packet)) => socket
-//                 .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
-//                 .send(packet.clone(), *peer),
-
-//             // Reliable operations
-//             SilkBroadcastEvent::ReliableSendAllExcept((peer, packet)) => {
-//                 let peers: Vec<PeerId> =
-//                     socket.connected_peers().filter(|p| p != peer).collect();
-//                 peers.into_iter().for_each(|peer| {
-//                     socket
-//                         .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
-//                         .send(packet.clone(), peer)
-//                 })
-//             }
-//             SilkBroadcastEvent::ReliableSendAll(packet) => {
-//                 let peers: Vec<PeerId> = socket.connected_peers().collect();
-//                 peers.into_iter().for_each(|peer| {
-//                     socket
-//                         .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
-//                         .send(packet.clone(), peer)
-//                 })
-//             }
-//             SilkBroadcastEvent::ReliableSend((peer, packet)) => socket
-//                 .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
-//                 .send(packet.clone(), *peer),
-//         }
-//     }
-// }

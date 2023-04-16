@@ -79,7 +79,6 @@ fn handle_events(
     mut app_state: ResMut<NextState<ConnectionState>>,
     mut events: EventReader<SilkSocketEvent>,
     mut world_state: ResMut<WorldState>,
-    // mut painting_state: ResMut<PaintingState>,
 ) {
     for event in events.iter() {
         match event {
