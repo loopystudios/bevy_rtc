@@ -3,8 +3,8 @@ use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use painting::PaintingState;
 use silk_client::{ConnectionRequest, SilkClientPlugin};
 use silk_common::bevy_matchbox::prelude::*;
-use silk_common::demo_packets::{Chat, DrawPointMessage, PaintingDemoPayload};
-use silk_common::router::NetworkWriter;
+use silk_common::demo_packets::{Chat, DrawPointMessage};
+use silk_common::router::{NetworkReader, NetworkWriter};
 use silk_common::{AddNetworkMessage, SilkSocketEvent};
 use std::{
     net::{IpAddr, Ipv4Addr},
@@ -131,8 +131,15 @@ fn chatbox_ui(
     world_state: Res<WorldState>,
     mut messages_state: ResMut<MessagesState>,
     mut text: Local<String>,
-    mut net: NetworkWriter<Chat>,
+    mut chat_send: NetworkWriter<Chat>,
+    mut chat_read: NetworkReader<Chat>,
 ) {
+    for (_, chat) in chat_read.iter() {
+        messages_state
+            .messages
+            .push((chat.from.clone(), chat.message.clone()));
+    }
+
     egui::Window::new("Chat").show(egui_context.ctx_mut(), |ui| {
         ui.label("Send Message");
         ui.horizontal_wrapped(|ui| {
@@ -142,7 +149,7 @@ fn chatbox_ui(
                     from: format!("{:?}", world_state.id.unwrap()),
                     message: text.to_owned(),
                 };
-                net.reliable_to_host(&chat_message);
+                chat_send.reliable_to_host(&chat_message);
             };
         });
         ui.label("Messages");
@@ -155,6 +162,7 @@ fn ui_example_system(
     mut event_wtr: EventWriter<ConnectionRequest>,
     world_state: Res<WorldState>,
     mut painting: ResMut<PaintingState>,
+    mut draw_send: NetworkWriter<DrawPointMessage>,
 ) {
     egui::Window::new("Login").show(egui_context.ctx_mut(), |ui| {
         ui.label(format!("{:?}", world_state.id));
@@ -174,10 +182,8 @@ fn ui_example_system(
         let mut out: Option<(f32, f32, f32, f32)> = None;
         painting.ui(ui, &mut out);
         if let Some((x1, y1, x2, y2)) = out {
-            let payload = PaintingDemoPayload::DrawPoint { x1, y1, x2, y2 };
-            info!("Sending Draw from {:?} to {:?}", (x1, y1), (x2, y2));
-            // TODO
-            // silk_event_wtr.send(SilkSendEvent::ReliableSend(payload.into()));
+            let draw_point = DrawPointMessage { x1, y1, x2, y2 };
+            draw_send.reliable_to_host(&draw_point)
         }
     });
 }
