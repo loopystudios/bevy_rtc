@@ -1,4 +1,3 @@
-mod message;
 mod receive;
 mod send;
 mod system_params;
@@ -6,8 +5,8 @@ mod system_params;
 use self::send::OutgoingMessages;
 use crate::{schedule::SilkSchedule, socket::socket_reader, SilkStage};
 use bevy::prelude::*;
+use silk_net::Message;
 
-pub use message::Message;
 pub use receive::IncomingMessages;
 pub use system_params::{NetworkReader, NetworkWriter};
 

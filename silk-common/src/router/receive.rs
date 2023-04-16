@@ -1,9 +1,8 @@
+use crate::events::SocketRecvEvent;
 use bevy::prelude::*;
 use bevy_matchbox::prelude::PeerId;
+use silk_net::Message;
 
-use crate::events::SocketRecvEvent;
-
-use super::message::Message;
 #[derive(Default, Debug, Resource)]
 pub struct IncomingMessages<M: Message> {
     pub messages: Vec<(PeerId, M)>,

@@ -1,12 +1,11 @@
+use crate::{socket::SocketState, SilkSocket};
 use bevy::prelude::*;
 use bevy_matchbox::{
     prelude::{MultipleChannels, PeerId},
     MatchboxSocket,
 };
+use silk_net::Message;
 
-use crate::{socket::SocketState, SilkSocket};
-
-use super::message::Message;
 #[derive(Default, Debug, Resource)]
 pub struct OutgoingMessages<M: Message> {
     pub reliable_to_all: Vec<M>,

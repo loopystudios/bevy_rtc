@@ -1,5 +1,11 @@
 [workspace]
-members = ["silk-server", "silk-client", "silk-common"]
+members = [
+  "silk-server",
+  "silk-client",
+  "silk-common",
+  "silk-macros",
+  "silk-net",
+]
 resolver = "2"
 
 [workspace.dependencies]

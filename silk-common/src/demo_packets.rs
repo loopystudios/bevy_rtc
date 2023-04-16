@@ -1,7 +1,7 @@
-use crate::router::Message;
+use proc_macro_payload::Payload;
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize, Default, Clone, Debug)]
+#[derive(Payload, Serialize, Deserialize, Debug, Clone, Default)]
 pub struct DrawPoint {
     pub x1: f32,
     pub y1: f32,
@@ -9,20 +9,8 @@ pub struct DrawPoint {
     pub y2: f32,
 }
 
-impl Message for DrawPoint {
-    fn id() -> u16 {
-        1
-    }
-}
-
-#[derive(Deserialize, Serialize, Default, Clone, Debug)]
+#[derive(Payload, Serialize, Deserialize, Debug, Clone, Default)]
 pub struct Chat {
     pub from: String,
     pub message: String,
-}
-
-impl Message for Chat {
-    fn id() -> u16 {
-        2
-    }
 }
