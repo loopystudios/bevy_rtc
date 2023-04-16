@@ -3,13 +3,13 @@ use bevy_matchbox::matchbox_socket::{
     ChannelConfig, MessageLoopFuture, MultipleChannels, WebRtcSocket,
     WebRtcSocketBuilder,
 };
-use events::{SilkSocketEvent, SocketRecvEvent};
+use events::SocketRecvEvent;
 use packets::auth::{
     SilkAuthGuestPayload, SilkAuthUserPayload, SilkLoginAcceptedPayload,
     SilkLoginDeniedPayload,
 };
 use schedule::SilkSchedule;
-use socket::{handle_socket_events, socket_reader, SocketState};
+use socket::{socket_reader, SocketState};
 use std::net::IpAddr;
 
 pub mod demo_packets;
@@ -109,8 +109,6 @@ impl Plugin for SilkCommonPlugin {
 
         app.init_resource::<SocketState>()
             .add_event::<SocketRecvEvent>()
-            .add_event::<SilkSocketEvent>()
-            .add_system(handle_socket_events)
             .add_system(
                 // Read silk events always before servers, who hook into this stage
                 socket_reader
