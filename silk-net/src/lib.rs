@@ -10,14 +10,7 @@ pub struct SilkPacket<M: Message> {
 }
 
 pub trait Message:
-    Debug
-    + Clone
-    + Default
-    + Send
-    + Sync
-    + for<'a> Deserialize<'a>
-    + Serialize
-    + 'static
+    Debug + Clone + Send + Sync + for<'a> Deserialize<'a> + Serialize + 'static
 {
     fn id() -> u16;
 

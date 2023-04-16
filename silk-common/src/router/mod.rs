@@ -20,7 +20,7 @@ impl AddNetworkMessageExt for App {
         T: Message,
     {
         if !self.world.contains_resource::<IncomingMessages<T>>() {
-            self.init_resource::<IncomingMessages<T>>()
+            self.insert_resource(IncomingMessages::<T> { messages: vec![] })
                 .add_system(
                     IncomingMessages::<T>::read_system
                         .before(SilkStage::ReadIn)
@@ -33,7 +33,17 @@ impl AddNetworkMessageExt for App {
                 );
         }
         if !self.world.contains_resource::<OutgoingMessages<T>>() {
-            self.init_resource::<OutgoingMessages<T>>().add_system(
+            self.insert_resource(OutgoingMessages::<T> {
+                reliable_to_all: vec![],
+                unreliable_to_all: vec![],
+                reliable_to_all_except: vec![],
+                unreliable_to_all_except: vec![],
+                reliable_to_peer: vec![],
+                unreliable_to_peer: vec![],
+                reliable_to_host: vec![],
+                unreliable_to_host: vec![],
+            })
+            .add_system(
                 OutgoingMessages::<T>::write_system
                     .after(SilkStage::WriteOut)
                     .in_schedule(SilkSchedule),
