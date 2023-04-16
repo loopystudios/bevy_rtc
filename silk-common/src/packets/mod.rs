@@ -1,9 +1,10 @@
+use crate::router::Message;
 use serde::{Deserialize, Serialize};
 
-use crate::router::Message;
+pub mod auth;
 
 #[derive(Deserialize, Serialize)]
 pub struct SilkPacket<M: Message> {
     pub msg_id: u16,
-    pub message: M,
+    pub data: M,
 }
