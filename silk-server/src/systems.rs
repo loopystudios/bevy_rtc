@@ -1,7 +1,7 @@
+use crate::system_params::NetworkReader;
 use crate::SocketState;
 use bevy::prelude::*;
 use silk_common::packets::auth::SilkLoginRequestPayload;
-use silk_common::router::NetworkReader;
 use silk_common::SilkSocket;
 use silk_common::{
     bevy_matchbox::{

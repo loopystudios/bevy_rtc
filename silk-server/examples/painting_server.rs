@@ -2,11 +2,11 @@ use bevy::{log::LogPlugin, prelude::*, utils::HashSet};
 use silk_common::demo_packets::{Chat, DrawPoint};
 use silk_common::events::SilkServerEvent;
 use silk_common::packets::auth::SilkLoginResponsePayload;
-use silk_common::router::{NetworkReader, NetworkWriter};
 use silk_common::schedule::SilkSchedule;
 use silk_common::{bevy_matchbox::prelude::PeerId, ConnectionAddr};
 use silk_common::{AddNetworkMessageExt, SilkStage};
 use silk_server::SilkServerPlugin;
+use silk_server::{NetworkReader, NetworkWriter};
 
 #[derive(Resource, Debug, Default, Clone)]
 struct ServerState {

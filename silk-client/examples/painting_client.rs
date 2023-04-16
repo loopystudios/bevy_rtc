@@ -3,10 +3,10 @@ use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use painting::PaintingState;
 use silk_client::events::ConnectionRequest;
 use silk_client::SilkClientPlugin;
+use silk_client::{NetworkReader, NetworkWriter};
 use silk_common::bevy_matchbox::prelude::*;
 use silk_common::demo_packets::{Chat, DrawPoint};
 use silk_common::events::SilkClientEvent;
-use silk_common::router::{NetworkReader, NetworkWriter};
 use silk_common::{AddNetworkMessageExt, PlayerAuthentication};
 use std::{net::Ipv4Addr, ops::DerefMut};
 

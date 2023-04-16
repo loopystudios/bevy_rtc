@@ -7,8 +7,10 @@ use silk_common::events::SilkClientEvent;
 use silk_common::schedule::SilkSchedule;
 use silk_common::{SilkCommonPlugin, SilkStage};
 use state::{ClientState, ConnectionState};
+pub use system_params::{NetworkReader, NetworkWriter};
 
 pub mod events;
+mod system_params;
 
 /// The socket client abstraction
 pub struct SilkClientPlugin;

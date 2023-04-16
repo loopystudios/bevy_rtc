@@ -1,12 +1,12 @@
 use crate::events::ConnectionRequest;
 use crate::state::{ClientState, ConnectionState};
+use crate::system_params::{NetworkReader, NetworkWriter};
 use bevy::prelude::*;
 use silk_common::bevy_matchbox::{matchbox_socket, prelude::*};
 use silk_common::events::SilkClientEvent;
 use silk_common::packets::auth::{
     SilkLoginRequestPayload, SilkLoginResponsePayload,
 };
-use silk_common::router::{NetworkReader, NetworkWriter};
 use silk_common::SilkSocket;
 use silk_common::{ConnectionAddr, PlayerAuthentication};
 
