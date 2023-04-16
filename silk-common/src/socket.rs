@@ -46,7 +46,6 @@ pub fn socket_reader(
             )
             .map(SocketRecvEvent)
             .collect::<Vec<_>>();
-        trace!("received {} messages", messages.len());
         event_wtr.send_batch(messages);
     }
 }
