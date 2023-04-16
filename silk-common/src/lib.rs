@@ -24,6 +24,9 @@ pub mod stage;
 pub use bevy_matchbox;
 pub use router::AddNetworkMessageExt;
 pub use stage::SilkStage;
+pub mod macros {
+    pub use proc_macro_payload::Payload;
+}
 
 /// An abstraction over [`matchbox_socket::WebRtcSocket`] to fit Tribrid's
 /// Client-Server architecture.

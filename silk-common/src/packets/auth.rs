@@ -1,4 +1,4 @@
-use proc_macro_payload::Payload;
+use crate::macros::Payload;
 use serde::{Deserialize, Serialize};
 
 #[derive(Payload, Serialize, Deserialize, Debug, Clone, Default)]
