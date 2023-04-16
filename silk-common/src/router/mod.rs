@@ -46,6 +46,10 @@ impl<'w, M: Message> NetworkWriter<'w, M> {
     pub fn reliable_to_host(&mut self, message: &M) {
         self.outgoing.reliable_to_host.push(message.clone());
     }
+
+    pub fn unreliable_to_host(&mut self, message: &M) {
+        self.outgoing.unreliable_to_host.push(message.clone());
+    }
 }
 
 pub trait AddNetworkMessage {

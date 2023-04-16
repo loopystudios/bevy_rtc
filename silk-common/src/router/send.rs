@@ -13,6 +13,7 @@ pub struct OutgoingMessages<M: Message> {
     pub reliable_to_all_except: Vec<(PeerId, M)>,
     pub reliable_to_peer: Vec<(PeerId, M)>,
     pub reliable_to_host: Vec<M>,
+    pub unreliable_to_host: Vec<M>,
 }
 
 impl<M: Message> OutgoingMessages<M> {
@@ -23,6 +24,7 @@ impl<M: Message> OutgoingMessages<M> {
         self.reliable_to_all_except.clear();
         self.reliable_to_peer.clear();
         self.reliable_to_host.clear();
+        self.unreliable_to_host.clear();
     }
 
     pub fn write_system(
@@ -34,10 +36,13 @@ impl<M: Message> OutgoingMessages<M> {
             if let Some(host) = state.host {
                 // Client is sending
                 for message in queue.reliable_to_host.iter() {
-                    info!("Sending message to host {:?}", message);
-
                     socket
                         .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
+                        .send(message.to_packet(), host)
+                }
+                for message in queue.unreliable_to_host.iter() {
+                    socket
+                        .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
                         .send(message.to_packet(), host)
                 }
             } else {
