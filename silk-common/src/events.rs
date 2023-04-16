@@ -5,15 +5,6 @@ pub struct SocketRecvEvent(pub (PeerId, Packet));
 
 /// Socket events that are possible to subscribe to in Bevy
 #[derive(Debug, Clone)]
-pub enum SilkSocketEvent {
-    /// The server's peer ID for relay
-    ConnectedToServer(PeerId),
-    /// The socket disconnected from the server
-    DisconnectedFromServer,
-}
-
-/// Socket events that are possible to subscribe to in Bevy
-#[derive(Debug, Clone)]
 pub enum SilkClientEvent {
     /// The signaling server assigned the socket a unique ID
     IdAssigned(PeerId),

@@ -2,7 +2,7 @@ use crate::events::ConnectionRequest;
 use crate::state::{ClientState, ConnectionState};
 use bevy::prelude::*;
 use silk_common::bevy_matchbox::{matchbox_socket, prelude::*};
-use silk_common::events::{SilkClientEvent, SilkSocketEvent};
+use silk_common::events::SilkClientEvent;
 use silk_common::packets::auth::{
     SilkAuthGuestPayload, SilkAuthUserPayload, SilkLoginAcceptedPayload,
     SilkLoginDeniedPayload,
@@ -42,7 +42,6 @@ pub(crate) fn connection_event_reader(
     mut state: ResMut<ClientState>,
     mut next_connection_state: ResMut<NextState<ConnectionState>>,
     current_connection_state: Res<State<ConnectionState>>,
-    mut socket_wtr: EventWriter<SilkSocketEvent>,
     mut event_wtr: EventWriter<SilkClientEvent>,
 ) {
     match cxn_event_reader.iter().next() {
@@ -67,7 +66,6 @@ pub(crate) fn connection_event_reader(
                 "set state: disconnected"
             );
             next_connection_state.set(ConnectionState::Disconnected);
-            socket_wtr.send(SilkSocketEvent::DisconnectedFromServer);
             event_wtr.send(SilkClientEvent::DisconnectedFromHost {
                 reason: reason.to_owned(),
             });
@@ -79,9 +77,9 @@ pub(crate) fn connection_event_reader(
 /// Translates socket updates into bevy events
 pub(crate) fn socket_reader(
     mut state: ResMut<ClientState>,
+    mut common_state: ResMut<silk_common::socket::SocketState>,
     mut socket: Option<ResMut<MatchboxSocket<MultipleChannels>>>,
     mut event_wtr: EventWriter<SilkClientEvent>,
-    mut socket_wtr: EventWriter<SilkSocketEvent>,
     mut login_wtr: NetworkWriter<SilkAuthUserPayload>,
     mut guest_login_wtr: NetworkWriter<SilkAuthGuestPayload>,
     mut next_connection_state: ResMut<NextState<ConnectionState>>,
@@ -101,7 +99,7 @@ pub(crate) fn socket_reader(
             match peer_state {
                 matchbox_socket::PeerState::Connected => {
                     state.host_id.replace(id);
-                    socket_wtr.send(SilkSocketEvent::ConnectedToServer(id));
+                    common_state.host.replace(id);
                     let Some(auth) = state.auth.take() else { panic!("no auth set") };
                     match auth {
                         PlayerAuthentication::Registered {
@@ -122,8 +120,8 @@ pub(crate) fn socket_reader(
                 }
                 matchbox_socket::PeerState::Disconnected => {
                     state.host_id.take();
+                    common_state.host.take();
                     next_connection_state.set(ConnectionState::Disconnected);
-                    socket_wtr.send(SilkSocketEvent::DisconnectedFromServer);
                     event_wtr.send(SilkClientEvent::DisconnectedFromHost {
                         reason: Some("Server reset".to_string()),
                     });

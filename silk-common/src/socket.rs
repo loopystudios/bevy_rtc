@@ -1,4 +1,4 @@
-use crate::{events::SocketRecvEvent, SilkSocket, SilkSocketEvent};
+use crate::{events::SocketRecvEvent, SilkSocket};
 use bevy::prelude::*;
 use bevy_matchbox::{
     prelude::{MultipleChannels, PeerId},
@@ -6,27 +6,9 @@ use bevy_matchbox::{
 };
 
 #[derive(Resource, Default)]
-pub(crate) struct SocketState {
+pub struct SocketState {
     /// The ID of the host if this instance is a client
     pub host: Option<PeerId>,
-}
-
-pub(crate) fn handle_socket_events(
-    mut state: ResMut<SocketState>,
-    mut events: EventReader<SilkSocketEvent>,
-) {
-    for event in events.iter() {
-        match event {
-            SilkSocketEvent::ConnectedToServer(id) => {
-                trace!("received host: {id:?}");
-                state.host.replace(*id);
-            }
-            SilkSocketEvent::DisconnectedFromServer => {
-                trace!("disconnected from host");
-                state.host.take();
-            }
-        }
-    }
 }
 
 pub fn socket_reader(
