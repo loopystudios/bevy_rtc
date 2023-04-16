@@ -1,9 +1,8 @@
 use bevy::{prelude::*, time::fixed_timestep::FixedTime};
 use signaler::SilkSignalerPlugin;
 use silk_common::events::SilkServerEvent;
-use silk_common::packets::auth::{SilkAuthGuestPayload, SilkAuthUserPayload};
+use silk_common::ConnectionAddr;
 use silk_common::{schedule::*, SilkCommonPlugin, SilkStage};
-use silk_common::{AddNetworkMessageExt, ConnectionAddr};
 use state::SocketState;
 
 pub mod signaler;
