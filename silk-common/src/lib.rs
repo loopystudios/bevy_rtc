@@ -4,10 +4,7 @@ use bevy_matchbox::matchbox_socket::{
     WebRtcSocketBuilder,
 };
 use events::SocketRecvEvent;
-use packets::auth::{
-    SilkAuthGuestPayload, SilkAuthUserPayload, SilkLoginAcceptedPayload,
-    SilkLoginDeniedPayload,
-};
+use packets::auth::{SilkLoginRequestPayload, SilkLoginResponsePayload};
 use schedule::SilkSchedule;
 use socket::{socket_reader, SocketState};
 use std::net::IpAddr;
@@ -124,9 +121,7 @@ impl Plugin for SilkCommonPlugin {
             schedule::run_silk_schedule.in_schedule(CoreSchedule::FixedUpdate),
         );
 
-        app.add_network_message::<SilkAuthUserPayload>()
-            .add_network_message::<SilkAuthGuestPayload>()
-            .add_network_message::<SilkLoginAcceptedPayload>()
-            .add_network_message::<SilkLoginDeniedPayload>();
+        app.add_network_message::<SilkLoginRequestPayload>()
+            .add_network_message::<SilkLoginResponsePayload>();
     }
 }

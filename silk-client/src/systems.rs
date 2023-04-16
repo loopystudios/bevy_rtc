@@ -4,8 +4,7 @@ use bevy::prelude::*;
 use silk_common::bevy_matchbox::{matchbox_socket, prelude::*};
 use silk_common::events::SilkClientEvent;
 use silk_common::packets::auth::{
-    SilkAuthGuestPayload, SilkAuthUserPayload, SilkLoginAcceptedPayload,
-    SilkLoginDeniedPayload,
+    SilkLoginRequestPayload, SilkLoginResponsePayload,
 };
 use silk_common::router::{NetworkReader, NetworkWriter};
 use silk_common::SilkSocket;
@@ -80,8 +79,7 @@ pub(crate) fn socket_reader(
     mut common_state: ResMut<silk_common::socket::SocketState>,
     mut socket: Option<ResMut<MatchboxSocket<MultipleChannels>>>,
     mut event_wtr: EventWriter<SilkClientEvent>,
-    mut login_wtr: NetworkWriter<SilkAuthUserPayload>,
-    mut guest_login_wtr: NetworkWriter<SilkAuthGuestPayload>,
+    mut login_send: NetworkWriter<SilkLoginRequestPayload>,
     mut next_connection_state: ResMut<NextState<ConnectionState>>,
 ) {
     // Create socket events for Silk
@@ -106,16 +104,17 @@ pub(crate) fn socket_reader(
                             username,
                             password,
                             mfa,
-                        } => login_wtr.reliable_to_host(&SilkAuthUserPayload {
-                            username,
-                            password,
-                            mfa,
-                        }),
-                        PlayerAuthentication::Guest { username } => {
-                            guest_login_wtr.reliable_to_host(
-                                &SilkAuthGuestPayload { username },
-                            )
-                        }
+                        } => login_send.reliable_to_host(
+                            &SilkLoginRequestPayload::RegisteredUser {
+                                username,
+                                password,
+                                mfa,
+                            },
+                        ),
+                        PlayerAuthentication::Guest { username } => login_send
+                            .reliable_to_host(
+                                &SilkLoginRequestPayload::Guest { username },
+                            ),
                     }
                 }
                 matchbox_socket::PeerState::Disconnected => {
@@ -131,37 +130,30 @@ pub(crate) fn socket_reader(
     }
 }
 
-// Translate login acceptance to bevy client events
+// Translate login to bevy client events
 pub(crate) fn on_login_accepted(
     state: Res<ClientState>,
     mut next_connection_state: ResMut<NextState<ConnectionState>>,
-    mut login_rdr: NetworkReader<SilkLoginAcceptedPayload>,
+    mut login_read: NetworkReader<SilkLoginResponsePayload>,
     mut event_wtr: EventWriter<SilkClientEvent>,
 ) {
-    for (_peer_id, payload) in login_rdr.iter() {
-        let SilkLoginAcceptedPayload { username } = payload;
-        info!("authenticated as {username}");
-        next_connection_state.set(ConnectionState::Connected);
-        event_wtr.send(SilkClientEvent::ConnectedToHost {
-            host: state.host_id.unwrap(),
-            username: username.to_owned(),
-        });
-    }
-}
-
-// Translate login denial to bevy client events
-pub(crate) fn on_login_denied(
-    mut next_connection_state: ResMut<NextState<ConnectionState>>,
-    mut login_rdr: NetworkReader<SilkLoginDeniedPayload>,
-    mut event_wtr: EventWriter<SilkClientEvent>,
-) {
-    for (_peer_id, payload) in login_rdr.iter() {
-        let SilkLoginDeniedPayload { reason } = payload;
-        error!("login denied, reason: {reason:?}");
-
-        next_connection_state.set(ConnectionState::Disconnected);
-        event_wtr.send(SilkClientEvent::DisconnectedFromHost {
-            reason: reason.to_owned(),
-        });
+    for (_peer_id, payload) in login_read.iter() {
+        match payload {
+            SilkLoginResponsePayload::Accepted { username } => {
+                info!("authenticated as {username}");
+                next_connection_state.set(ConnectionState::Connected);
+                event_wtr.send(SilkClientEvent::ConnectedToHost {
+                    host: state.host_id.unwrap(),
+                    username: username.to_owned(),
+                });
+            }
+            SilkLoginResponsePayload::Denied { reason } => {
+                error!("login denied, reason: {reason:?}");
+                next_connection_state.set(ConnectionState::Disconnected);
+                event_wtr.send(SilkClientEvent::DisconnectedFromHost {
+                    reason: reason.to_owned(),
+                });
+            }
+        }
     }
 }

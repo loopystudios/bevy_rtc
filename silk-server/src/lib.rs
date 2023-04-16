@@ -43,8 +43,8 @@ impl Plugin for SilkServerPlugin {
                 .before(SilkStage::ReadIn)
                 .in_schedule(SilkSchedule),
         )
-        .add_systems(
-            (systems::on_login, systems::on_guest_login)
+        .add_system(
+            systems::on_login
                 .in_base_set(SilkStage::ReadIn)
                 .in_schedule(SilkSchedule),
         )

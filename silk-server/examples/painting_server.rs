@@ -1,7 +1,7 @@
 use bevy::{log::LogPlugin, prelude::*, utils::HashSet};
 use silk_common::demo_packets::{Chat, DrawPoint};
 use silk_common::events::SilkServerEvent;
-use silk_common::packets::auth::SilkLoginAcceptedPayload;
+use silk_common::packets::auth::SilkLoginResponsePayload;
 use silk_common::router::{NetworkReader, NetworkWriter};
 use silk_common::schedule::SilkSchedule;
 use silk_common::{bevy_matchbox::prelude::PeerId, ConnectionAddr};
@@ -62,7 +62,7 @@ fn handle_chats(
 
 fn handle_events(
     mut guest_count: Local<u16>,
-    mut accept_wtr: NetworkWriter<SilkLoginAcceptedPayload>,
+    mut accept_wtr: NetworkWriter<SilkLoginResponsePayload>,
     mut event_rdr: EventReader<SilkServerEvent>,
     mut world_state: ResMut<ServerState>,
 ) {
@@ -79,7 +79,7 @@ fn handle_events(
                 world_state.clients.insert(*peer_id);
                 accept_wtr.reliable_to_peer(
                     *peer_id,
-                    &SilkLoginAcceptedPayload { username },
+                    &SilkLoginResponsePayload::Accepted { username },
                 );
             }
             SilkServerEvent::ClientLeft(id) => {

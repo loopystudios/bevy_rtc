@@ -40,8 +40,8 @@ impl Plugin for SilkClientPlugin {
                     .before(SilkStage::ReadIn)
                     .in_schedule(SilkSchedule),
             )
-            .add_systems(
-                (systems::on_login_accepted, systems::on_login_denied)
+            .add_system(
+                systems::on_login_accepted
                     .in_base_set(SilkStage::ReadIn)
                     .in_schedule(SilkSchedule),
             )

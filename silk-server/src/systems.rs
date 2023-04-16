@@ -1,6 +1,6 @@
 use crate::SocketState;
 use bevy::prelude::*;
-use silk_common::packets::auth::{SilkAuthGuestPayload, SilkAuthUserPayload};
+use silk_common::packets::auth::SilkLoginRequestPayload;
 use silk_common::router::NetworkReader;
 use silk_common::SilkSocket;
 use silk_common::{
@@ -49,34 +49,27 @@ pub fn socket_reader(
 
 // Translate login requests to bevy server events
 pub fn on_login(
-    mut login_rdr: NetworkReader<SilkAuthUserPayload>,
+    mut login_read: NetworkReader<SilkLoginRequestPayload>,
     mut event_wtr: EventWriter<SilkServerEvent>,
 ) {
-    for (peer_id, payload) in login_rdr.iter() {
-        let SilkAuthUserPayload {
-            username,
-            password,
-            mfa,
-        } = payload;
-        event_wtr.send(SilkServerEvent::LoginRequest {
-            peer_id: *peer_id,
-            username: username.to_owned(),
-            password: password.to_owned(),
-            mfa: mfa.to_owned(),
-        });
-    }
-}
-
-// Translate guest login requests to bevy server events
-pub fn on_guest_login(
-    mut login_rdr: NetworkReader<SilkAuthGuestPayload>,
-    mut event_wtr: EventWriter<SilkServerEvent>,
-) {
-    for (peer_id, payload) in login_rdr.iter() {
-        let SilkAuthGuestPayload { username } = payload;
-        event_wtr.send(SilkServerEvent::GuestLoginRequest {
-            peer_id: *peer_id,
-            username: username.to_owned(),
-        });
+    for (peer_id, payload) in login_read.iter() {
+        match payload {
+            SilkLoginRequestPayload::RegisteredUser {
+                username,
+                password,
+                mfa,
+            } => event_wtr.send(SilkServerEvent::LoginRequest {
+                peer_id: *peer_id,
+                username: username.to_owned(),
+                password: password.to_owned(),
+                mfa: mfa.to_owned(),
+            }),
+            SilkLoginRequestPayload::Guest { username } => {
+                event_wtr.send(SilkServerEvent::GuestLoginRequest {
+                    peer_id: *peer_id,
+                    username: username.to_owned(),
+                })
+            }
+        }
     }
 }
