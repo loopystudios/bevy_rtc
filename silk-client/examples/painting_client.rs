@@ -3,7 +3,7 @@ use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use painting::PaintingState;
 use silk_client::{ConnectionRequest, SilkClientPlugin};
 use silk_common::bevy_matchbox::prelude::*;
-use silk_common::demo_packets::{Chat, DrawPointMessage};
+use silk_common::demo_packets::{Chat, DrawPoint};
 use silk_common::router::{NetworkReader, NetworkWriter};
 use silk_common::{AddNetworkMessage, SilkSocketEvent};
 use std::{
@@ -43,7 +43,7 @@ fn main() {
     )
     .add_plugin(SilkClientPlugin)
     .add_network_message::<Chat>()
-    .add_network_message::<DrawPointMessage>()
+    .add_network_message::<DrawPoint>()
     .add_state::<ConnectionState>()
     .insert_resource(WorldState::default())
     .add_system(handle_events)
@@ -55,8 +55,9 @@ fn main() {
     )
     .add_startup_system(setup_cam)
     .add_plugin(EguiPlugin)
-    .add_system(ui_example_system)
+    .add_system(login_ui)
     .add_system(chatbox_ui.in_set(OnUpdate(ConnectionState::Connected)))
+    .add_system(painting_ui.in_set(OnUpdate(ConnectionState::Connected)))
     .insert_resource(MessagesState::default())
     .insert_resource(PaintingState::default())
     .run();
@@ -78,7 +79,6 @@ fn handle_events(
     mut app_state: ResMut<NextState<ConnectionState>>,
     mut events: EventReader<SilkSocketEvent>,
     mut world_state: ResMut<WorldState>,
-    // mut messages_state: ResMut<MessagesState>,
     // mut painting_state: ResMut<PaintingState>,
 ) {
     for event in events.iter() {
@@ -98,30 +98,7 @@ fn handle_events(
                 app_state.set(ConnectionState::Disconnected);
                 *world_state = WorldState::default();
             }
-            _ => {} // SilkEvent::Message((peer, data)) => {
-                    //     let packet: Packet = data.clone();
-                    //     let protocol_message =
-                    //         PaintingDemoPayload::from(packet.clone());
-                    //     match protocol_message {
-                    //         PaintingDemoPayload::Chat { from, message } => {
-                    //             let peer = *peer;
-                    //             info!("{peer:?}: {}", message);
-                    //             messages_state
-                    //                 .messages
-                    //                 .push((format!("{from:?}"), message));
-                    //         }
-                    //         PaintingDemoPayload::DrawPoint { x1, y1, x2, y2 } => {
-                    //             info!(
-                    //                 "{peer:?}: Draw from {:?} to {:?}",
-                    //                 (x1, y1),
-                    //                 (x2, y2)
-                    //             );
-                    //             painting_state
-                    //                 .lines
-                    //                 .push(vec![Pos2::new(x1, y1), Pos2::new(x2, y2)]);
-                    //         }
-                    //     }
-                    // }
+            _ => {}
         }
     }
 }
@@ -157,12 +134,33 @@ fn chatbox_ui(
     });
 }
 
-fn ui_example_system(
+fn painting_ui(
+    mut egui_context: EguiContexts,
+    mut painting: ResMut<PaintingState>,
+    mut draw_read: NetworkReader<DrawPoint>,
+    mut draw_send: NetworkWriter<DrawPoint>,
+) {
+    for (_, draw) in draw_read.iter() {
+        painting.lines.push(vec![
+            Pos2::new(draw.x1, draw.y1),
+            Pos2::new(draw.x2, draw.y2),
+        ]);
+    }
+
+    egui::Window::new("Painter").show(egui_context.ctx_mut(), |ui| {
+        let mut out: Option<(f32, f32, f32, f32)> = None;
+        painting.ui(ui, &mut out);
+        if let Some((x1, y1, x2, y2)) = out {
+            let draw_point = DrawPoint { x1, y1, x2, y2 };
+            draw_send.reliable_to_host(&draw_point)
+        }
+    });
+}
+
+fn login_ui(
     mut egui_context: EguiContexts,
     mut event_wtr: EventWriter<ConnectionRequest>,
     world_state: Res<WorldState>,
-    mut painting: ResMut<PaintingState>,
-    mut draw_send: NetworkWriter<DrawPointMessage>,
 ) {
     egui::Window::new("Login").show(egui_context.ctx_mut(), |ui| {
         ui.label(format!("{:?}", world_state.id));
@@ -177,14 +175,6 @@ fn ui_example_system(
                 event_wtr.send(ConnectionRequest::Disconnect);
             }
         });
-    });
-    egui::Window::new("Painter").show(egui_context.ctx_mut(), |ui| {
-        let mut out: Option<(f32, f32, f32, f32)> = None;
-        painting.ui(ui, &mut out);
-        if let Some((x1, y1, x2, y2)) = out {
-            let draw_point = DrawPointMessage { x1, y1, x2, y2 };
-            draw_send.reliable_to_host(&draw_point)
-        }
     });
 }
 

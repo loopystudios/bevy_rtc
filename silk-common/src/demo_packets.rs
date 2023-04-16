@@ -21,16 +21,16 @@ impl From<Packet> for PaintingDemoPayload {
 }
 
 #[derive(Deserialize, Serialize, Default, Clone, Debug)]
-pub struct DrawPointMessage {
+pub struct DrawPoint {
     pub x1: f32,
     pub y1: f32,
     pub x2: f32,
     pub y2: f32,
 }
 
-impl Message for DrawPointMessage {
-    fn from_packet(packet: &Packet) -> Option<DrawPointMessage> {
-        bincode::deserialize::<SilkPacket<DrawPointMessage>>(packet)
+impl Message for DrawPoint {
+    fn from_packet(packet: &Packet) -> Option<DrawPoint> {
+        bincode::deserialize::<SilkPacket<DrawPoint>>(packet)
             .ok()
             .filter(|silk_packet| silk_packet.msg_id == Self::id())
             .and_then(|silk_packet| Some(silk_packet.message))

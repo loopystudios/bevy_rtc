@@ -1,5 +1,5 @@
 use bevy::{log::LogPlugin, prelude::*, utils::HashSet};
-use silk_common::demo_packets::{Chat, DrawPointMessage};
+use silk_common::demo_packets::{Chat, DrawPoint};
 use silk_common::router::{NetworkReader, NetworkWriter};
 use silk_common::schedule::SilkSchedule;
 use silk_common::{bevy_matchbox::prelude::PeerId, ConnectionAddr};
@@ -30,7 +30,7 @@ fn main() {
                 .in_schedule(SilkSchedule),
         )
         .add_network_message::<Chat>()
-        .add_network_message::<DrawPointMessage>()
+        .add_network_message::<DrawPoint>()
         .add_system(network_query)
         .add_system(read_chat)
         .insert_resource(ServerState::default())
@@ -38,7 +38,7 @@ fn main() {
         .run();
 }
 
-fn network_query(mut query: NetworkReader<DrawPointMessage>) {
+fn network_query(mut query: NetworkReader<DrawPoint>) {
     for test_message in query.iter() {
         error!("network queried {:?}", test_message);
     }
