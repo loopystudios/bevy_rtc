@@ -1,6 +1,6 @@
 use bevy::{log::LogPlugin, prelude::*, utils::HashSet};
 use silk_common::demo_packets::{Chat, DrawPointMessage};
-use silk_common::router::NetworkReader;
+use silk_common::router::{NetworkReader, NetworkWriter};
 use silk_common::schedule::SilkSchedule;
 use silk_common::{bevy_matchbox::prelude::PeerId, ConnectionAddr};
 use silk_common::{AddNetworkMessage, SilkSocketEvent, SilkStage};
@@ -44,9 +44,14 @@ fn network_query(mut query: NetworkReader<DrawPointMessage>) {
     }
 }
 
-fn read_chat(mut net: NetworkReader<Chat>) {
-    for test_message in net.iter() {
-        error!("got chat {:?}", test_message);
+// read chats from clients
+fn read_chat(
+    mut chat_read: NetworkReader<Chat>,
+    mut chat_send: NetworkWriter<Chat>,
+) {
+    for chat in chat_read.iter() {
+        error!("got chat {:?}", chat);
+        chat_send.send_reliable_to_all(&chat);
     }
 }
 
