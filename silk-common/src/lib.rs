@@ -107,7 +107,8 @@ impl Plugin for SilkCommonPlugin {
         app.init_resource::<SocketState>()
             .add_event::<SocketRecvEvent>()
             .add_system(
-                // Read silk events always before servers, who hook into this stage
+                // Read silk events always before servers, who hook into this
+                // stage
                 socket_reader
                     .before(SilkStage::ReadIn)
                     .in_schedule(SilkSchedule),

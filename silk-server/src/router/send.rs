@@ -1,9 +1,12 @@
 use bevy::prelude::*;
-use silk_common::bevy_matchbox::{
-    prelude::{MultipleChannels, PeerId},
-    MatchboxSocket,
+use silk_common::{
+    bevy_matchbox::{
+        prelude::{MultipleChannels, PeerId},
+        MatchboxSocket,
+    },
+    socket::SocketState,
+    SilkSocket,
 };
-use silk_common::{socket::SocketState, SilkSocket};
 use silk_net::Message;
 
 #[derive(Default, Debug, Resource)]
@@ -19,8 +22,8 @@ pub struct OutgoingMessages<M: Message> {
 }
 
 impl<M: Message> OutgoingMessages<M> {
-    /// Swaps the event buffers and clears the oldest event buffer. In general, this should be
-    /// called once per frame/update.
+    /// Swaps the event buffers and clears the oldest event buffer. In general,
+    /// this should be called once per frame/update.
     pub fn update(&mut self) {
         self.reliable_to_all.clear();
         self.unreliable_to_all.clear();

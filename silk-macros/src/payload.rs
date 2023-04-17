@@ -1,12 +1,12 @@
 extern crate proc_macro;
 
-use std::collections::hash_map::DefaultHasher;
-use std::hash::Hash;
-use std::hash::Hasher;
+use std::{
+    collections::hash_map::DefaultHasher,
+    hash::{Hash, Hasher},
+};
 
 use proc_macro::TokenStream;
-use quote::quote;
-use quote::ToTokens;
+use quote::{quote, ToTokens};
 use syn::{parse_macro_input, DeriveInput};
 
 #[proc_macro_derive(Payload)]

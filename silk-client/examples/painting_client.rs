@@ -1,13 +1,17 @@
 use bevy::{log::LogPlugin, prelude::*};
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use painting::PaintingState;
-use silk_client::events::ConnectionRequest;
-use silk_client::{AddNetworkMessageExt, SilkClientPlugin};
-use silk_client::{ClientRecv, ClientSend};
-use silk_common::bevy_matchbox::prelude::*;
-use silk_common::demo_packets::{Chat, DrawPoint};
-use silk_common::events::SilkClientEvent;
-use silk_common::PlayerAuthentication;
+use silk_client::{
+    events::ConnectionRequest, AddNetworkMessageExt, ClientRecv, ClientSend,
+    SilkClientPlugin,
+};
+use silk_common::{
+    bevy_matchbox::prelude::*,
+    demo_packets::{Chat, DrawPoint},
+    events::SilkClientEvent,
+    schedule::SilkSchedule,
+    PlayerAuthentication, SilkStage,
+};
 use std::{net::Ipv4Addr, ops::DerefMut};
 
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash, States)]
@@ -29,7 +33,7 @@ fn main() {
         DefaultPlugins
             .set(LogPlugin {
                 filter:
-                    "error,silk_client=debug,painting_client=debug,wgpu_core=warn,wgpu_hal=warn,matchbox_socket=warn"
+                    "error,painting_client=trace,silk_client=debug,wgpu_core=warn,wgpu_hal=warn,matchbox_socket=warn"
                         .into(),
                 level: bevy::log::Level::DEBUG,
             })
@@ -46,7 +50,14 @@ fn main() {
     .add_network_message::<DrawPoint>()
     .add_state::<ConnectionState>()
     .insert_resource(WorldState::default())
-    .add_system(handle_events)
+    .add_system(
+        handle_events
+            .in_base_set(SilkStage::Update)
+            .in_schedule(SilkSchedule)
+    )
+    .add_system(login_ui)
+    .add_system(chatbox_ui.in_set(OnUpdate(ConnectionState::Connected)))
+    .add_system(painting_ui.in_set(OnUpdate(ConnectionState::Connected)))
     .add_system(
         on_disconnected.in_schedule(OnEnter(ConnectionState::Disconnected)),
     )    .add_system(
@@ -57,9 +68,6 @@ fn main() {
     )
     .add_startup_system(setup_cam)
     .add_plugin(EguiPlugin)
-    .add_system(login_ui)
-    .add_system(chatbox_ui.in_set(OnUpdate(ConnectionState::Connected)))
-    .add_system(painting_ui.in_set(OnUpdate(ConnectionState::Connected)))
     .insert_resource(MessagesState::default())
     .insert_resource(PaintingState::default())
     .run();
@@ -90,8 +98,9 @@ fn handle_events(
     mut events: EventReader<SilkClientEvent>,
     mut world_state: ResMut<WorldState>,
 ) {
-    for event in events.iter() {
-        match event {
+    for ev in events.iter() {
+        debug!("event: {ev:?}");
+        match ev {
             SilkClientEvent::IdAssigned(id) => {
                 info!("Got ID from signaling server: {id:?}");
                 world_state.id.replace(*id);

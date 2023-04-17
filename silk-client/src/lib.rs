@@ -4,12 +4,12 @@ mod systems;
 use bevy::prelude::*;
 use events::ConnectionRequest;
 pub use router::{AddNetworkMessageExt, IncomingMessages, OutgoingMessages};
-use silk_common::events::SilkClientEvent;
-use silk_common::packets::auth::{
-    SilkLoginRequestPayload, SilkLoginResponsePayload,
+use silk_common::{
+    events::SilkClientEvent,
+    packets::auth::{SilkLoginRequestPayload, SilkLoginResponsePayload},
+    schedule::SilkSchedule,
+    SilkCommonPlugin, SilkStage,
 };
-use silk_common::schedule::SilkSchedule;
-use silk_common::{SilkCommonPlugin, SilkStage};
 use state::{ClientState, ConnectionState};
 pub use system_params::{ClientRecv, ClientSend};
 
@@ -42,16 +42,19 @@ impl Plugin for SilkClientPlugin {
             .add_system(
                 trace_read
                     .before(systems::socket_reader)
-                    .in_schedule(SilkSchedule),
-            )
-            .add_system(
-                systems::socket_reader
-                    .before(SilkStage::ReadIn)
+                    .before(systems::on_login_accepted)
                     .in_schedule(SilkSchedule),
             )
             .add_system(
                 systems::on_login_accepted
-                    .in_base_set(SilkStage::ReadIn)
+                    .before(SilkStage::ReadIn)
+                    .before(systems::socket_reader)
+                    .in_schedule(SilkSchedule),
+            )
+            .add_system(
+                systems::socket_reader
+                    .after(systems::on_login_accepted)
+                    .before(SilkStage::ReadIn)
                     .in_schedule(SilkSchedule),
             )
             .add_system(

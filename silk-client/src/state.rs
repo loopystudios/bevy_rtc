@@ -1,6 +1,7 @@
 use bevy::prelude::*;
-use silk_common::bevy_matchbox::prelude::PeerId;
-use silk_common::{ConnectionAddr, PlayerAuthentication};
+use silk_common::{
+    bevy_matchbox::prelude::PeerId, ConnectionAddr, PlayerAuthentication,
+};
 
 /// State of the socket
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash, States)]

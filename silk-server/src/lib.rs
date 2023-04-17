@@ -1,12 +1,12 @@
 use bevy::{prelude::*, time::fixed_timestep::FixedTime};
 pub use router::{AddNetworkMessageExt, IncomingMessages, OutgoingMessages};
 use signaler::SilkSignalerPlugin;
-use silk_common::events::SilkServerEvent;
-use silk_common::packets::auth::{
-    SilkLoginRequestPayload, SilkLoginResponsePayload,
+use silk_common::{
+    events::SilkServerEvent,
+    packets::auth::{SilkLoginRequestPayload, SilkLoginResponsePayload},
+    schedule::*,
+    ConnectionAddr, SilkCommonPlugin, SilkStage,
 };
-use silk_common::ConnectionAddr;
-use silk_common::{schedule::*, SilkCommonPlugin, SilkStage};
 use state::SocketState;
 pub use system_params::{ServerRecv, ServerSend};
 
@@ -43,18 +43,20 @@ impl Plugin for SilkServerPlugin {
 
         app.add_system(
             trace_read
+                .before(systems::on_login)
                 .before(systems::socket_reader)
+                .in_schedule(SilkSchedule),
+        )
+        .add_system(
+            systems::on_login
+                .before(SilkStage::ReadIn)
                 .in_schedule(SilkSchedule),
         )
         .add_system(
             // Read silk events always before servers, who hook into this stage
             systems::socket_reader
                 .before(SilkStage::ReadIn)
-                .in_schedule(SilkSchedule),
-        )
-        .add_system(
-            systems::on_login
-                .in_base_set(SilkStage::ReadIn)
+                .after(systems::on_login)
                 .in_schedule(SilkSchedule),
         )
         .add_system(

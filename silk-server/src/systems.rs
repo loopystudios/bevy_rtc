@@ -1,14 +1,13 @@
-use crate::system_params::ServerRecv;
-use crate::SocketState;
+use crate::{system_params::ServerRecv, SocketState};
 use bevy::prelude::*;
-use silk_common::packets::auth::SilkLoginRequestPayload;
-use silk_common::SilkSocket;
 use silk_common::{
     bevy_matchbox::{
         matchbox_socket::PeerState, prelude::MultipleChannels, MatchboxSocket,
         OpenSocketExt,
     },
     events::SilkServerEvent,
+    packets::auth::SilkLoginRequestPayload,
+    SilkSocket,
 };
 
 /// Initialize the socket

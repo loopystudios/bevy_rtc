@@ -1,10 +1,12 @@
 use bevy::{log::LogPlugin, prelude::*, utils::HashSet};
-use silk_common::demo_packets::{Chat, DrawPoint};
-use silk_common::events::SilkServerEvent;
-use silk_common::packets::auth::SilkLoginResponsePayload;
-use silk_common::schedule::SilkSchedule;
-use silk_common::SilkStage;
-use silk_common::{bevy_matchbox::prelude::PeerId, ConnectionAddr};
+use silk_common::{
+    bevy_matchbox::prelude::PeerId,
+    demo_packets::{Chat, DrawPoint},
+    events::SilkServerEvent,
+    packets::auth::SilkLoginResponsePayload,
+    schedule::SilkSchedule,
+    ConnectionAddr, SilkStage,
+};
 use silk_server::{
     AddNetworkMessageExt, ServerRecv, ServerSend, SilkServerPlugin,
 };
@@ -19,7 +21,7 @@ fn main() {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins)
         .add_plugin(LogPlugin {
-            filter: "warn,silk=trace,painting_server=debug,wgpu_core=warn,wgpu_hal=warn,matchbox_socket=warn"
+            filter: "warn,painting_server=debug,silk=trace,wgpu_core=warn,wgpu_hal=warn,matchbox_socket=warn"
                 .into(),
             level: bevy::log::Level::DEBUG,
         })
@@ -29,7 +31,7 @@ fn main() {
         })
         .add_system(
             handle_events
-                .in_base_set(SilkStage::WriteOut)
+                .in_base_set(SilkStage::Update)
                 .in_schedule(SilkSchedule),
         )
         .add_network_message::<Chat>()
@@ -67,7 +69,8 @@ fn handle_events(
     mut event_rdr: EventReader<SilkServerEvent>,
     mut world_state: ResMut<ServerState>,
 ) {
-    while let Some(ev) = event_rdr.iter().next() {
+    for ev in event_rdr.iter() {
+        debug!("event: {ev:?}");
         match ev {
             SilkServerEvent::GuestLoginRequest { peer_id, .. }
             | SilkServerEvent::LoginRequest { peer_id, .. } => {

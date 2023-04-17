@@ -1,14 +1,15 @@
-use crate::events::ConnectionRequest;
-use crate::state::{ClientState, ConnectionState};
-use crate::system_params::{ClientRecv, ClientSend};
-use bevy::prelude::*;
-use silk_common::bevy_matchbox::{matchbox_socket, prelude::*};
-use silk_common::events::SilkClientEvent;
-use silk_common::packets::auth::{
-    SilkLoginRequestPayload, SilkLoginResponsePayload,
+use crate::{
+    events::ConnectionRequest,
+    state::{ClientState, ConnectionState},
+    system_params::{ClientRecv, ClientSend},
 };
-use silk_common::SilkSocket;
-use silk_common::{ConnectionAddr, PlayerAuthentication};
+use bevy::prelude::*;
+use silk_common::{
+    bevy_matchbox::{matchbox_socket, prelude::*},
+    events::SilkClientEvent,
+    packets::auth::{SilkLoginRequestPayload, SilkLoginResponsePayload},
+    ConnectionAddr, PlayerAuthentication, SilkSocket,
+};
 
 /// Initialize the socket
 pub(crate) fn init_socket(

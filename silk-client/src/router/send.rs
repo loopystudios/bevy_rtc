@@ -13,8 +13,8 @@ pub struct OutgoingMessages<M: Message> {
 }
 
 impl<M: Message> OutgoingMessages<M> {
-    /// Swaps the event buffers and clears the oldest event buffer. In general, this should be
-    /// called once per frame/update.
+    /// Swaps the event buffers and clears the oldest event buffer. In general,
+    /// this should be called once per frame/update.
     pub fn update(&mut self) {
         self.reliable_to_host.clear();
         self.unreliable_to_host.clear();
