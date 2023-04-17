@@ -6,6 +6,8 @@ use strum_macros::{Display, EnumIter};
 )]
 #[system_set(base)]
 pub enum SilkStage {
+    /// Do not use this system, it flushes previous network buffers since we do not consume on read for network traffic.
+    Flush,
     /// An exclusive system to read network traffic
     NetworkRead,
     /// A system to process network traffic.
@@ -22,6 +24,7 @@ impl SilkStage {
     pub fn sets() -> SystemSetConfigs {
         // Define the ordering of systems here
         (
+            Self::Flush,
             Self::NetworkRead,
             Self::Process,
             Self::SilkEvents,

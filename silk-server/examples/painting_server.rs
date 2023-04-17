@@ -31,20 +31,28 @@ fn main() {
         })
         .add_system(
             handle_events
-                .in_base_set(SilkStage::Update)
+                .in_base_set(SilkStage::SilkEvents)
                 .in_schedule(SilkSchedule),
         )
         .add_network_message::<Chat>()
         .add_network_message::<DrawPoint>()
-        .add_system(handle_draw_points)
-        .add_system(handle_chats)
+        .add_system(
+            send_draw_points
+                .in_base_set(SilkStage::NetworkWrite)
+                .in_schedule(SilkSchedule)
+        )
+        .add_system(
+            send_chats
+                .in_base_set(SilkStage::NetworkWrite)
+                .in_schedule(SilkSchedule)
+        )
         .insert_resource(ServerState::default())
         .add_startup_system(|| info!("Connecting..."))
         .run();
 }
 
 // redirect draw points from clients to other clients
-fn handle_draw_points(
+fn send_draw_points(
     mut draw_read: ServerRecv<DrawPoint>,
     mut draw_send: ServerSend<DrawPoint>,
 ) {
@@ -54,7 +62,7 @@ fn handle_draw_points(
 }
 
 // redirect chat from clients to other clients
-fn handle_chats(
+fn send_chats(
     mut chat_read: ServerRecv<Chat>,
     mut chat_send: ServerSend<Chat>,
 ) {
