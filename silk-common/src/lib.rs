@@ -5,7 +5,7 @@ use bevy_matchbox::matchbox_socket::{
 };
 use events::SocketRecvEvent;
 use schedule::SilkSchedule;
-use socket::client_socket_reader;
+use socket::common_socket_reader;
 use std::net::IpAddr;
 
 pub mod demo_packets;
@@ -107,7 +107,7 @@ impl Plugin for SilkCommonPlugin {
         app.add_event::<SocketRecvEvent>().add_system(
             // Read silk events always before servers, who hook into this
             // stage
-            client_socket_reader
+            common_socket_reader
                 .in_base_set(SilkStage::ReadIn)
                 .in_schedule(SilkSchedule),
         );

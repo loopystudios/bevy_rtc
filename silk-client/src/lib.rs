@@ -41,12 +41,12 @@ impl Plugin for SilkClientPlugin {
             )
             .add_system(
                 trace_read
-                    .before(systems::socket_reader)
+                    .before(systems::client_socket_reader)
                     .before(systems::on_login_accepted)
                     .in_schedule(SilkSchedule),
             )
             .add_system(
-                systems::socket_reader
+                systems::client_socket_reader
                     .in_base_set(SilkStage::ReadIn)
                     .in_schedule(SilkSchedule),
             )

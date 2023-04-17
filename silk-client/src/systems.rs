@@ -75,7 +75,7 @@ pub(crate) fn connection_event_reader(
 }
 
 /// Translates socket updates into bevy events
-pub(crate) fn socket_reader(
+pub(crate) fn client_socket_reader(
     mut state: ResMut<ClientState>,
     mut socket: Option<ResMut<MatchboxSocket<MultipleChannels>>>,
     mut event_wtr: EventWriter<SilkClientEvent>,
