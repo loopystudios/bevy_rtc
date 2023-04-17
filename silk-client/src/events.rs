@@ -1,6 +1,5 @@
-use std::net::IpAddr;
-
 use silk_common::PlayerAuthentication;
+use std::net::IpAddr;
 
 pub enum ConnectionRequest {
     /// A request to connect to the server through the signaling server; the
