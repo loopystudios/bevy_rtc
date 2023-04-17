@@ -7,6 +7,7 @@ edition = "2021"
 [dependencies]
 bevy = { workspace = true }
 silk-common = { path = "../silk-common" }
+silk-net = { path = "../silk-net" }
 anyhow = { workspace = true }
 matchbox_signaling = { workspace = true }
 async-compat = "0.2"

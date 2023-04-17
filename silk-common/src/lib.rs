@@ -4,7 +4,6 @@ use bevy_matchbox::matchbox_socket::{
     WebRtcSocketBuilder,
 };
 use events::SocketRecvEvent;
-use packets::auth::{SilkLoginRequestPayload, SilkLoginResponsePayload};
 use schedule::SilkSchedule;
 use socket::{socket_reader, SocketState};
 use std::net::IpAddr;
@@ -12,14 +11,12 @@ use std::net::IpAddr;
 pub mod demo_packets;
 pub mod events;
 pub mod packets;
-pub mod router;
 pub mod schedule;
 pub mod socket;
 pub mod stage;
 
 // Re-exports
 pub use bevy_matchbox;
-pub use router::AddNetworkMessageExt;
 pub use stage::SilkStage;
 pub mod macros {
     pub use proc_macro_payload::Payload;
@@ -120,8 +117,5 @@ impl Plugin for SilkCommonPlugin {
         app.add_system(
             schedule::run_silk_schedule.in_schedule(CoreSchedule::FixedUpdate),
         );
-
-        app.add_network_message::<SilkLoginRequestPayload>()
-            .add_network_message::<SilkLoginResponsePayload>();
     }
 }

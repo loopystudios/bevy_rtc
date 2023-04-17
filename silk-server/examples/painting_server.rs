@@ -3,10 +3,11 @@ use silk_common::demo_packets::{Chat, DrawPoint};
 use silk_common::events::SilkServerEvent;
 use silk_common::packets::auth::SilkLoginResponsePayload;
 use silk_common::schedule::SilkSchedule;
+use silk_common::SilkStage;
 use silk_common::{bevy_matchbox::prelude::PeerId, ConnectionAddr};
-use silk_common::{AddNetworkMessageExt, SilkStage};
-use silk_server::SilkServerPlugin;
-use silk_server::{NetworkReader, NetworkWriter};
+use silk_server::{
+    AddNetworkMessageExt, ServerRecv, ServerSend, SilkServerPlugin,
+};
 
 #[derive(Resource, Debug, Default, Clone)]
 struct ServerState {
@@ -42,27 +43,27 @@ fn main() {
 
 // redirect draw points from clients to other clients
 fn handle_draw_points(
-    mut draw_read: NetworkReader<DrawPoint>,
-    mut draw_send: NetworkWriter<DrawPoint>,
+    mut draw_read: ServerRecv<DrawPoint>,
+    mut draw_send: ServerSend<DrawPoint>,
 ) {
     for (peer, draw) in draw_read.iter() {
-        draw_send.unreliable_to_all_except(*peer, draw);
+        draw_send.unreliable_to_all_except(*peer, draw.clone());
     }
 }
 
 // redirect chat from clients to other clients
 fn handle_chats(
-    mut chat_read: NetworkReader<Chat>,
-    mut chat_send: NetworkWriter<Chat>,
+    mut chat_read: ServerRecv<Chat>,
+    mut chat_send: ServerSend<Chat>,
 ) {
     for (peer, chat) in chat_read.iter() {
-        chat_send.reliable_to_all_except(*peer, chat);
+        chat_send.reliable_to_all_except(*peer, chat.clone());
     }
 }
 
 fn handle_events(
     mut guest_count: Local<u16>,
-    mut accept_wtr: NetworkWriter<SilkLoginResponsePayload>,
+    mut accept_wtr: ServerSend<SilkLoginResponsePayload>,
     mut event_rdr: EventReader<SilkServerEvent>,
     mut world_state: ResMut<ServerState>,
 ) {
@@ -79,7 +80,7 @@ fn handle_events(
                 world_state.clients.insert(*peer_id);
                 accept_wtr.reliable_to_peer(
                     *peer_id,
-                    &SilkLoginResponsePayload::Accepted { username },
+                    SilkLoginResponsePayload::Accepted { username },
                 );
             }
             SilkServerEvent::ClientLeft(id) => {

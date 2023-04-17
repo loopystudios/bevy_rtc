@@ -1,8 +1,8 @@
 mod receive;
 mod send;
 
-use crate::{schedule::SilkSchedule, socket::socket_reader, SilkStage};
 use bevy::prelude::*;
+use silk_common::{schedule::SilkSchedule, socket::socket_reader, SilkStage};
 pub use silk_net::Message;
 
 pub use receive::IncomingMessages;

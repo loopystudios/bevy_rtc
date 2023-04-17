@@ -1,11 +1,16 @@
 use bevy::{prelude::*, time::fixed_timestep::FixedTime};
+pub use router::{AddNetworkMessageExt, IncomingMessages, OutgoingMessages};
 use signaler::SilkSignalerPlugin;
 use silk_common::events::SilkServerEvent;
+use silk_common::packets::auth::{
+    SilkLoginRequestPayload, SilkLoginResponsePayload,
+};
 use silk_common::ConnectionAddr;
 use silk_common::{schedule::*, SilkCommonPlugin, SilkStage};
 use state::SocketState;
-pub use system_params::{NetworkReader, NetworkWriter};
+pub use system_params::{ServerRecv, ServerSend};
 
+mod router;
 pub mod signaler;
 pub(crate) mod state;
 mod system_params;
@@ -26,6 +31,8 @@ impl Plugin for SilkServerPlugin {
         }
 
         app.add_plugin(SilkCommonPlugin)
+            .add_network_message::<SilkLoginRequestPayload>()
+            .add_network_message::<SilkLoginResponsePayload>()
             .add_event::<SilkServerEvent>()
             .insert_resource(SocketState {
                 addr: self.signaler_addr,

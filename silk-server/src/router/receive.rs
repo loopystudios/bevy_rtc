@@ -1,6 +1,6 @@
-use crate::events::SocketRecvEvent;
 use bevy::prelude::*;
-use bevy_matchbox::prelude::PeerId;
+use silk_common::bevy_matchbox::prelude::PeerId;
+use silk_common::events::SocketRecvEvent;
 use silk_net::Message;
 
 #[derive(Default, Debug, Resource)]

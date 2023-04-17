@@ -1,9 +1,9 @@
-use crate::{socket::SocketState, SilkSocket};
 use bevy::prelude::*;
-use bevy_matchbox::{
+use silk_common::bevy_matchbox::{
     prelude::{MultipleChannels, PeerId},
     MatchboxSocket,
 };
+use silk_common::{socket::SocketState, SilkSocket};
 use silk_net::Message;
 
 #[derive(Default, Debug, Resource)]

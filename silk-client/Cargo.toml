@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 bevy = { workspace = true }
 silk-common = { path = "../silk-common" }
+silk-net = { path = "../silk-net" }
 
 [dev-dependencies]
 bevy_egui = "0.20"

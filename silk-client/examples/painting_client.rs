@@ -2,12 +2,12 @@ use bevy::{log::LogPlugin, prelude::*};
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use painting::PaintingState;
 use silk_client::events::ConnectionRequest;
-use silk_client::SilkClientPlugin;
-use silk_client::{NetworkReader, NetworkWriter};
+use silk_client::{AddNetworkMessageExt, SilkClientPlugin};
+use silk_client::{ClientRecv, ClientSend};
 use silk_common::bevy_matchbox::prelude::*;
 use silk_common::demo_packets::{Chat, DrawPoint};
 use silk_common::events::SilkClientEvent;
-use silk_common::{AddNetworkMessageExt, PlayerAuthentication};
+use silk_common::PlayerAuthentication;
 use std::{net::Ipv4Addr, ops::DerefMut};
 
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash, States)]
@@ -115,10 +115,10 @@ fn chatbox_ui(
     world_state: Res<WorldState>,
     mut messages_state: ResMut<MessagesState>,
     mut text: Local<String>,
-    mut chat_send: NetworkWriter<Chat>,
-    mut chat_read: NetworkReader<Chat>,
+    mut chat_send: ClientSend<Chat>,
+    mut chat_read: ClientRecv<Chat>,
 ) {
-    for (_, chat) in chat_read.iter() {
+    for chat in chat_read.iter() {
         messages_state
             .messages
             .push((chat.from.clone(), chat.message.clone()));
@@ -133,7 +133,7 @@ fn chatbox_ui(
                     from: format!("{:?}", world_state.id.unwrap()),
                     message: text.to_owned(),
                 };
-                chat_send.reliable_to_host(&chat_message);
+                chat_send.reliable_to_host(chat_message);
             };
         });
         ui.label("Messages");
@@ -144,10 +144,10 @@ fn chatbox_ui(
 fn painting_ui(
     mut egui_context: EguiContexts,
     mut painting: ResMut<PaintingState>,
-    mut draw_read: NetworkReader<DrawPoint>,
-    mut draw_send: NetworkWriter<DrawPoint>,
+    mut draw_read: ClientRecv<DrawPoint>,
+    mut draw_send: ClientSend<DrawPoint>,
 ) {
-    for (_, draw) in draw_read.iter() {
+    for draw in draw_read.iter() {
         painting.lines.push(vec![
             Pos2::new(draw.x1, draw.y1),
             Pos2::new(draw.x2, draw.y2),
@@ -159,7 +159,7 @@ fn painting_ui(
         painting.ui(ui, &mut out);
         if let Some((x1, y1, x2, y2)) = out {
             let draw_point = DrawPoint { x1, y1, x2, y2 };
-            draw_send.unreliable_to_host(&draw_point)
+            draw_send.unreliable_to_host(draw_point)
         }
     });
 }
