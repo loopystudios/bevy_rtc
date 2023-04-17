@@ -106,7 +106,13 @@ impl Plugin for SilkCommonPlugin {
 
         app.add_event::<SocketRecvEvent>()
             .add_system(
+                trace_flush
+                    .before(SilkStage::Flush)
+                    .in_schedule(SilkSchedule),
+            )
+            .add_system(
                 trace_network_read
+                    .after(SilkStage::Flush)
                     .before(SilkStage::NetworkRead)
                     .in_schedule(SilkSchedule),
             )
@@ -148,6 +154,10 @@ impl Plugin for SilkCommonPlugin {
             schedule::run_silk_schedule.in_schedule(CoreSchedule::FixedUpdate),
         );
     }
+}
+
+fn trace_flush() {
+    trace!("System start: {}", SilkStage::Flush);
 }
 
 fn trace_network_read() {
