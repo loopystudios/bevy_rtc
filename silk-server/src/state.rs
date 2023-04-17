@@ -2,7 +2,7 @@ use bevy::prelude::Resource;
 use silk_common::{bevy_matchbox::prelude::PeerId, ConnectionAddr};
 
 #[derive(Resource)]
-pub struct SocketState {
+pub struct ServerState {
     /// The socket address, used for connecting/reconnecting
     pub addr: ConnectionAddr,
 

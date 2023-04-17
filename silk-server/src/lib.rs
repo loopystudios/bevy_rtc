@@ -7,7 +7,7 @@ use silk_common::{
     schedule::*,
     ConnectionAddr, SilkCommonPlugin, SilkStage,
 };
-use state::SocketState;
+use state::ServerState;
 pub use system_params::{ServerRecv, ServerSend};
 
 mod router;
@@ -34,7 +34,7 @@ impl Plugin for SilkServerPlugin {
             .add_network_message::<SilkLoginRequestPayload>()
             .add_network_message::<SilkLoginResponsePayload>()
             .add_event::<SilkServerEvent>()
-            .insert_resource(SocketState {
+            .insert_resource(ServerState {
                 addr: self.signaler_addr,
                 id: None,
             })

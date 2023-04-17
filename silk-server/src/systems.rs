@@ -1,4 +1,4 @@
-use crate::{system_params::ServerRecv, SocketState};
+use crate::{system_params::ServerRecv, ServerState};
 use bevy::prelude::*;
 use silk_common::{
     bevy_matchbox::{
@@ -11,7 +11,7 @@ use silk_common::{
 };
 
 /// Initialize the socket
-pub fn init_socket(mut commands: Commands, state: Res<SocketState>) {
+pub fn init_socket(mut commands: Commands, state: Res<ServerState>) {
     debug!("address: {:?}", state.addr);
 
     // Create matchbox socket
@@ -21,7 +21,7 @@ pub fn init_socket(mut commands: Commands, state: Res<SocketState>) {
 
 /// Translates socket events into Bevy events
 pub fn server_socket_reader(
-    mut state: ResMut<SocketState>,
+    mut state: ResMut<ServerState>,
     mut socket: ResMut<MatchboxSocket<MultipleChannels>>,
     mut event_wtr: EventWriter<SilkServerEvent>,
 ) {
