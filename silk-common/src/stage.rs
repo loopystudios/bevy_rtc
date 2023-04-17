@@ -17,10 +17,24 @@ pub enum SilkStage {
 
 impl SilkStage {
     pub fn iter() -> impl Iterator<Item = Self> {
-        [Self::Events, Self::Process, Self::Update, Self::WriteOut].into_iter()
+        [
+            Self::ReadIn,
+            Self::Events,
+            Self::Process,
+            Self::Update,
+            Self::WriteOut,
+        ]
+        .into_iter()
     }
 
     pub fn sets() -> SystemSetConfigs {
-        (Self::Events, Self::Process, Self::Update, Self::WriteOut).chain()
+        (
+            Self::ReadIn,
+            Self::Events,
+            Self::Process,
+            Self::Update,
+            Self::WriteOut,
+        )
+            .chain()
     }
 }
