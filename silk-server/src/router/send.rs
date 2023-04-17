@@ -35,17 +35,6 @@ impl<M: Message> OutgoingMessages<M> {
         mut socket: Option<ResMut<MatchboxSocket<MultipleChannels>>>,
     ) {
         if let Some(socket) = socket.as_mut() {
-            trace!(
-                "sending {} {} packets",
-                queue.reliable_to_all.len()
-                    + queue.unreliable_to_all.len()
-                    + queue.reliable_to_all_except.len()
-                    + queue.unreliable_to_all_except.len()
-                    + queue.reliable_to_peer.len()
-                    + queue.unreliable_to_peer.len(),
-                M::reflect_name()
-            );
-
             // Server is sending
             for message in queue.reliable_to_all.iter() {
                 let peers: Vec<PeerId> = socket.connected_peers().collect();
@@ -55,6 +44,13 @@ impl<M: Message> OutgoingMessages<M> {
                         .send(message.to_packet(), peer);
                 })
             }
+            if !queue.reliable_to_all.is_empty() {
+                trace!(
+                    "sent {} [R;N] {} packets",
+                    queue.reliable_to_all.len(),
+                    M::reflect_name()
+                );
+            }
             for message in queue.unreliable_to_all.iter() {
                 let peers: Vec<PeerId> = socket.connected_peers().collect();
                 peers.into_iter().for_each(|peer| {
@@ -62,6 +58,13 @@ impl<M: Message> OutgoingMessages<M> {
                         .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
                         .send(message.to_packet(), peer)
                 })
+            }
+            if !queue.unreliable_to_all.is_empty() {
+                trace!(
+                    "sent {} [U;N] {} packets",
+                    queue.unreliable_to_all.len(),
+                    M::reflect_name()
+                );
             }
             for (peer, message) in queue.reliable_to_all_except.iter() {
                 let peers: Vec<PeerId> =
@@ -72,6 +75,13 @@ impl<M: Message> OutgoingMessages<M> {
                         .send(message.to_packet(), peer)
                 });
             }
+            if !queue.reliable_to_all_except.is_empty() {
+                trace!(
+                    "sent {} [R;N-1] {} packets",
+                    queue.reliable_to_all_except.len(),
+                    M::reflect_name()
+                );
+            }
             for (peer, message) in queue.unreliable_to_all_except.iter() {
                 let peers: Vec<PeerId> =
                     socket.connected_peers().filter(|p| p != peer).collect();
@@ -81,15 +91,36 @@ impl<M: Message> OutgoingMessages<M> {
                         .send(message.to_packet(), peer)
                 });
             }
+            if !queue.unreliable_to_all_except.is_empty() {
+                trace!(
+                    "sent {} [U;N-1] {} packets",
+                    queue.unreliable_to_all_except.len(),
+                    M::reflect_name()
+                );
+            }
             for (peer, message) in queue.reliable_to_peer.iter() {
                 socket
                     .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
                     .send(message.to_packet(), *peer)
             }
+            if !queue.reliable_to_peer.is_empty() {
+                trace!(
+                    "sent {} [R] {} packets",
+                    queue.reliable_to_peer.len(),
+                    M::reflect_name()
+                );
+            }
             for (peer, message) in queue.unreliable_to_peer.iter() {
                 socket
                     .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
                     .send(message.to_packet(), *peer)
+            }
+            if !queue.unreliable_to_peer.is_empty() {
+                trace!(
+                    "sent {} [U] {} packets",
+                    queue.unreliable_to_peer.len(),
+                    M::reflect_name()
+                );
             }
 
             queue.flush();

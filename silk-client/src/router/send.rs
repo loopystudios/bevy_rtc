@@ -27,26 +27,30 @@ impl<M: Message> OutgoingMessages<M> {
     ) {
         if let Some(socket) = socket.as_mut() {
             if let Some(host) = state.host_id {
-                if !queue.reliable_to_host.is_empty()
-                    || !queue.unreliable_to_host.is_empty()
-                {
-                    trace!(
-                        "sending {} {} packets",
-                        queue.reliable_to_host.len()
-                            + queue.unreliable_to_host.len(),
-                        M::reflect_name()
-                    );
-                }
                 // Client is sending
                 for message in queue.reliable_to_host.iter() {
                     socket
                         .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
                         .send(message.to_packet(), host)
                 }
+                if !queue.reliable_to_host.is_empty() {
+                    trace!(
+                        "sent {} [R] {} packets",
+                        queue.reliable_to_host.len(),
+                        M::reflect_name()
+                    );
+                }
                 for message in queue.unreliable_to_host.iter() {
                     socket
                         .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
                         .send(message.to_packet(), host)
+                }
+                if !queue.unreliable_to_host.is_empty() {
+                    trace!(
+                        "sent {} [U] {} packets",
+                        queue.unreliable_to_host.len(),
+                        M::reflect_name()
+                    );
                 }
             }
             queue.flush();

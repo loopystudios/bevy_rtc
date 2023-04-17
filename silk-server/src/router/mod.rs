@@ -26,14 +26,14 @@ impl AddNetworkMessageExt for App {
         }
         self.insert_resource(IncomingMessages::<M> { messages: vec![] })
             .add_system(
-                IncomingMessages::<M>::read_system
-                    .before(SilkStage::SilkEvents)
-                    .after(common_socket_reader)
+                IncomingMessages::<M>::flush
+                    .before(common_socket_reader)
                     .in_schedule(SilkSchedule),
             )
             .add_system(
-                IncomingMessages::<M>::flush
-                    .before(common_socket_reader)
+                IncomingMessages::<M>::read_system
+                    .before(SilkStage::SilkEvents)
+                    .after(common_socket_reader)
                     .in_schedule(SilkSchedule),
             )
             .insert_resource(OutgoingMessages::<M> {

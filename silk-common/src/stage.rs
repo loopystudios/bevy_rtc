@@ -1,7 +1,9 @@
 use bevy::{ecs::schedule::SystemSetConfigs, prelude::*};
-use strum_macros::EnumIter;
+use strum_macros::{Display, EnumIter};
 
-#[derive(Debug, Hash, PartialEq, Eq, Clone, Copy, SystemSet, EnumIter)]
+#[derive(
+    Debug, Hash, PartialEq, Eq, Clone, Copy, SystemSet, Display, EnumIter,
+)]
 #[system_set(base)]
 pub enum SilkStage {
     /// An exclusive system to read network traffic

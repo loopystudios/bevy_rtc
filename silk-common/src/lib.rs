@@ -104,17 +104,68 @@ impl Plugin for SilkCommonPlugin {
             schedule.configure_sets(SilkStage::sets());
         });
 
-        app.add_event::<SocketRecvEvent>().add_system(
-            // Read silk events always before servers, who hook into this
-            // stage
-            common_socket_reader
-                .in_base_set(SilkStage::NetworkRead)
-                .in_schedule(SilkSchedule),
-        );
+        app.add_event::<SocketRecvEvent>()
+            .add_system(
+                trace_network_read
+                    .before(SilkStage::NetworkRead)
+                    .in_schedule(SilkSchedule),
+            )
+            .add_system(
+                // Read silk events always before servers, who hook into this
+                // stage
+                common_socket_reader
+                    .after(trace_network_read)
+                    .before(SilkStage::NetworkRead)
+                    .in_schedule(SilkSchedule),
+            )
+            .add_system(
+                trace_process
+                    .after(SilkStage::NetworkRead)
+                    .before(SilkStage::Process)
+                    .in_schedule(SilkSchedule),
+            )
+            .add_system(
+                trace_silk_events
+                    .after(SilkStage::Process)
+                    .before(SilkStage::SilkEvents)
+                    .in_schedule(SilkSchedule),
+            )
+            .add_system(
+                trace_update
+                    .after(SilkStage::SilkEvents)
+                    .before(SilkStage::Update)
+                    .in_schedule(SilkSchedule),
+            )
+            .add_system(
+                trace_network_write
+                    .after(SilkStage::Update)
+                    .before(SilkStage::NetworkWrite)
+                    .in_schedule(SilkSchedule),
+            );
 
         // add scheduler
         app.add_system(
             schedule::run_silk_schedule.in_schedule(CoreSchedule::FixedUpdate),
         );
     }
+}
+
+fn trace_network_read() {
+    trace!("System start: {}", SilkStage::NetworkRead);
+}
+
+fn trace_process() {
+    trace!("System start: {}", SilkStage::Process);
+}
+
+fn trace_silk_events() {
+    trace!("System start: {}", SilkStage::SilkEvents);
+}
+
+fn trace_update() {
+    trace!("System start: {}", SilkStage::Update);
+}
+
+fn trace_network_write() {
+    trace!("System start: {}", SilkStage::NetworkWrite);
 }
