@@ -14,6 +14,8 @@ pub trait Message:
 {
     fn id() -> u16;
 
+    fn reflect_name() -> &'static str;
+
     fn from_packet(packet: &Packet) -> Option<Self> {
         bincode::deserialize::<SilkPacket<Self>>(packet)
             .ok()

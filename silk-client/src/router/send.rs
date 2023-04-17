@@ -15,7 +15,7 @@ pub struct OutgoingMessages<M: Message> {
 impl<M: Message> OutgoingMessages<M> {
     /// Swaps the event buffers and clears the oldest event buffer. In general,
     /// this should be called once per frame/update.
-    pub fn update(&mut self) {
+    pub fn flush(&mut self) {
         self.reliable_to_host.clear();
         self.unreliable_to_host.clear();
     }
@@ -27,6 +27,16 @@ impl<M: Message> OutgoingMessages<M> {
     ) {
         if let Some(socket) = socket.as_mut() {
             if let Some(host) = state.host_id {
+                if !queue.reliable_to_host.is_empty()
+                    || !queue.unreliable_to_host.is_empty()
+                {
+                    trace!(
+                        "sending {} {} packets",
+                        queue.reliable_to_host.len()
+                            + queue.unreliable_to_host.len(),
+                        M::reflect_name()
+                    );
+                }
                 // Client is sending
                 for message in queue.reliable_to_host.iter() {
                     socket
@@ -39,7 +49,7 @@ impl<M: Message> OutgoingMessages<M> {
                         .send(message.to_packet(), host)
                 }
             }
-            queue.update();
+            queue.flush();
         }
     }
 }

@@ -26,7 +26,7 @@ impl AddNetworkMessageExt for App {
                         .in_schedule(SilkSchedule),
                 )
                 .add_system(
-                    IncomingMessages::<T>::update_system
+                    IncomingMessages::<T>::flush
                         .before(SilkStage::ReadIn)
                         .in_schedule(SilkSchedule),
                 );
@@ -39,8 +39,6 @@ impl AddNetworkMessageExt for App {
                 unreliable_to_all_except: vec![],
                 reliable_to_peer: vec![],
                 unreliable_to_peer: vec![],
-                reliable_to_host: vec![],
-                unreliable_to_host: vec![],
             })
             .add_system(
                 OutgoingMessages::<T>::write_system

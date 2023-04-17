@@ -1,15 +1,6 @@
 use crate::{events::SocketRecvEvent, SilkSocket};
 use bevy::prelude::*;
-use bevy_matchbox::{
-    prelude::{MultipleChannels, PeerId},
-    MatchboxSocket,
-};
-
-#[derive(Resource, Default)]
-pub struct SocketState {
-    /// The ID of the host if this instance is a client
-    pub host: Option<PeerId>,
-}
+use bevy_matchbox::{prelude::MultipleChannels, MatchboxSocket};
 
 pub fn socket_reader(
     mut socket: Option<ResMut<MatchboxSocket<MultipleChannels>>>,

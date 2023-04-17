@@ -16,10 +16,14 @@ pub fn derive_payload_fn(item: TokenStream) -> TokenStream {
     let mut s = DefaultHasher::new();
     name.to_string().hash(&mut s);
     let id = s.finish() as u16;
+    let reflect_name = ident.to_string();
     quote! {
         impl ::silk_net::Message for #name {
             fn id() -> u16 {
                 #id
+            }
+            fn reflect_name() -> &'static str {
+                #reflect_name
             }
         }
     }
