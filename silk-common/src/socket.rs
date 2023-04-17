@@ -2,7 +2,7 @@ use crate::{events::SocketRecvEvent, SilkSocket};
 use bevy::prelude::*;
 use bevy_matchbox::{prelude::MultipleChannels, MatchboxSocket};
 
-pub fn socket_reader(
+pub fn client_socket_reader(
     mut socket: Option<ResMut<MatchboxSocket<MultipleChannels>>>,
     mut event_wtr: EventWriter<SocketRecvEvent>,
 ) {

@@ -20,7 +20,7 @@ pub fn init_socket(mut commands: Commands, state: Res<SocketState>) {
 }
 
 /// Translates socket events into Bevy events
-pub fn socket_reader(
+pub fn server_socket_reader(
     mut state: ResMut<SocketState>,
     mut socket: ResMut<MatchboxSocket<MultipleChannels>>,
     mut event_wtr: EventWriter<SilkServerEvent>,

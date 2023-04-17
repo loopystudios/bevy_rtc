@@ -2,7 +2,9 @@ mod receive;
 mod send;
 
 use bevy::prelude::*;
-use silk_common::{schedule::SilkSchedule, socket::socket_reader, SilkStage};
+use silk_common::{
+    schedule::SilkSchedule, socket::client_socket_reader, SilkStage,
+};
 pub use silk_net::Message;
 
 pub use receive::IncomingMessages;
@@ -22,7 +24,7 @@ impl AddNetworkMessageExt for App {
                 .add_system(
                     IncomingMessages::<T>::read_system
                         .before(SilkStage::ReadIn)
-                        .after(socket_reader)
+                        .after(client_socket_reader)
                         .in_schedule(SilkSchedule),
                 )
                 .add_system(

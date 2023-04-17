@@ -44,7 +44,7 @@ impl Plugin for SilkServerPlugin {
         app.add_system(
             trace_read
                 .before(systems::on_login)
-                .before(systems::socket_reader)
+                .before(systems::server_socket_reader)
                 .in_schedule(SilkSchedule),
         )
         .add_system(
@@ -55,7 +55,7 @@ impl Plugin for SilkServerPlugin {
         )
         .add_system(
             // Read silk events always before servers, who hook into this stage
-            systems::socket_reader
+            systems::server_socket_reader
                 .before(SilkStage::Events)
                 .after(systems::on_login)
                 .in_schedule(SilkSchedule),

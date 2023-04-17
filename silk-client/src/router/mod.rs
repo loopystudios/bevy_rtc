@@ -3,7 +3,7 @@ mod send;
 
 use bevy::prelude::*;
 use silk_common::{
-    schedule::SilkSchedule, socket::socket_reader, stage::SilkStage,
+    schedule::SilkSchedule, socket::client_socket_reader, stage::SilkStage,
 };
 pub use silk_net::Message;
 
@@ -24,12 +24,12 @@ impl AddNetworkMessageExt for App {
                 .add_system(
                     IncomingMessages::<T>::read_system
                         .before(SilkStage::Events)
-                        .after(socket_reader)
+                        .after(client_socket_reader)
                         .in_schedule(SilkSchedule),
                 )
                 .add_system(
                     IncomingMessages::<T>::flush
-                        .before(socket_reader)
+                        .before(client_socket_reader)
                         .in_schedule(SilkSchedule),
                 );
         }
