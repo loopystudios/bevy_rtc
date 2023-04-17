@@ -2,9 +2,6 @@ use bevy::{ecs::system::SystemParam, prelude::*};
 use silk_net::Message;
 
 use crate::router::{IncomingMessages, OutgoingMessages};
-use bevy_matchbox::prelude::PeerId;
-
-use silk_common::bevy_matchbox;
 
 #[derive(SystemParam, Debug)]
 pub struct ClientRecv<'w, M: Message> {

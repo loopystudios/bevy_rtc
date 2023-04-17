@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use silk_common::bevy_matchbox::prelude::PeerId;
 use silk_common::events::SocketRecvEvent;
 use silk_net::Message;
 
