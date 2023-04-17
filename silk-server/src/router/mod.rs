@@ -27,7 +27,8 @@ impl AddNetworkMessageExt for App {
                 )
                 .add_system(
                     IncomingMessages::<T>::update_system
-                        .in_base_set(CoreSet::Last),
+                        .before(SilkStage::ReadIn)
+                        .in_schedule(SilkSchedule),
                 );
         }
         if !self.world.contains_resource::<OutgoingMessages<T>>() {
