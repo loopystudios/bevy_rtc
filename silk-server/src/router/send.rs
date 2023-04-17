@@ -45,13 +45,14 @@ impl<M: Message> OutgoingMessages<M> {
                     + queue.unreliable_to_peer.len(),
                 M::reflect_name()
             );
+
             // Server is sending
             for message in queue.reliable_to_all.iter() {
                 let peers: Vec<PeerId> = socket.connected_peers().collect();
                 peers.into_iter().for_each(|peer| {
                     socket
                         .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
-                        .send(message.to_packet(), peer)
+                        .send(message.to_packet(), peer);
                 })
             }
             for message in queue.unreliable_to_all.iter() {

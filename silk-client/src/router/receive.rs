@@ -18,13 +18,15 @@ impl<M: Message> IncomingMessages<M> {
         mut incoming: ResMut<Self>,
         mut events: EventReader<SocketRecvEvent>,
     ) {
-        if !events.is_empty() {
-            trace!("received {} {} packets", events.len(), M::reflect_name());
-        }
-        for SocketRecvEvent((_, packet)) in events.iter() {
+        let mut read = 0;
+        for SocketRecvEvent((_peer_id, packet)) in events.iter() {
             if let Some(message) = M::from_packet(packet) {
                 incoming.messages.push(message);
+                read += 1;
             }
+        }
+        if read > 0 {
+            trace!("received {} {} packets", read, M::reflect_name());
         }
     }
 }

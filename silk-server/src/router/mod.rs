@@ -23,13 +23,13 @@ impl AddNetworkMessageExt for App {
             self.insert_resource(IncomingMessages::<T> { messages: vec![] })
                 .add_system(
                     IncomingMessages::<T>::read_system
-                        .before(SilkStage::ReadIn)
+                        .before(SilkStage::Events)
                         .after(common_socket_reader)
                         .in_schedule(SilkSchedule),
                 )
                 .add_system(
                     IncomingMessages::<T>::flush
-                        .before(SilkStage::ReadIn)
+                        .before(common_socket_reader)
                         .in_schedule(SilkSchedule),
                 );
         }
