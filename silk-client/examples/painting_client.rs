@@ -1,4 +1,4 @@
-use bevy::{log::LogPlugin, prelude::*};
+use bevy::{log::LogPlugin, prelude::*, window::WindowResolution};
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use painting::PaintingState;
 use silk_client::{
@@ -40,6 +40,7 @@ fn main() {
             .set(WindowPlugin {
                 primary_window: Some(bevy::window::Window {
                     fit_canvas_to_parent: true, // behave on wasm
+                    resolution: WindowResolution::new(350., 650.),
                     ..default()
                 }),
                 ..default()
