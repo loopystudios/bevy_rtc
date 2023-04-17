@@ -29,7 +29,7 @@ impl AddNetworkMessageExt for App {
                 )
                 .add_system(
                     IncomingMessages::<T>::update_system
-                        .before(SilkStage::ReadIn)
+                        .before(socket_reader)
                         .in_schedule(SilkSchedule),
                 );
         }

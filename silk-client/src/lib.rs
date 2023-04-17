@@ -46,16 +46,13 @@ impl Plugin for SilkClientPlugin {
                     .in_schedule(SilkSchedule),
             )
             .add_system(
-                systems::on_login_accepted
-                    .after(SilkStage::ReadIn)
-                    .before(SilkStage::Events)
-                    .before(systems::socket_reader)
+                systems::socket_reader
+                    .in_base_set(SilkStage::ReadIn)
                     .in_schedule(SilkSchedule),
             )
             .add_system(
-                systems::socket_reader
-                    .after(systems::on_login_accepted)
-                    .before(SilkStage::Events)
+                systems::on_login_accepted
+                    .in_base_set(SilkStage::Events)
                     .in_schedule(SilkSchedule),
             )
             .add_system(

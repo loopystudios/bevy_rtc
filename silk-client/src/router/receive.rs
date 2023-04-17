@@ -25,6 +25,7 @@ impl<M: Message> IncomingMessages<M> {
     ) {
         for SocketRecvEvent((_, packet)) in events.iter() {
             if let Some(message) = M::from_packet(packet) {
+                error!("read in");
                 incoming.messages.push(message);
             }
         }
