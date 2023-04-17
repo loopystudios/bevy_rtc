@@ -28,7 +28,7 @@ impl AddNetworkMessageExt for App {
                         .in_schedule(SilkSchedule),
                 )
                 .add_system(
-                    IncomingMessages::<T>::update_system
+                    IncomingMessages::<T>::flush
                         .before(socket_reader)
                         .in_schedule(SilkSchedule),
                 );

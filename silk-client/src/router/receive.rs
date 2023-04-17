@@ -15,7 +15,7 @@ impl<M: Message> IncomingMessages<M> {
     }
 
     /// A system that calls [`Events::update`] once per frame.
-    pub fn update_system(mut incoming: ResMut<Self>) {
+    pub fn flush(mut incoming: ResMut<Self>) {
         incoming.update();
     }
 
