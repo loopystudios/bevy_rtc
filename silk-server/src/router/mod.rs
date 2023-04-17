@@ -32,7 +32,7 @@ impl AddNetworkMessageExt for App {
             )
             .add_system(
                 IncomingMessages::<M>::read_system
-                    .before(SilkStage::SilkEvents)
+                    .before(SilkStage::NetworkRead)
                     .after(common_socket_reader)
                     .in_schedule(SilkSchedule),
             )
