@@ -108,7 +108,7 @@ impl Plugin for SilkCommonPlugin {
             // Read silk events always before servers, who hook into this
             // stage
             common_socket_reader
-                .in_base_set(SilkStage::ReadIn)
+                .in_base_set(SilkStage::NetworkRead)
                 .in_schedule(SilkSchedule),
         );
 

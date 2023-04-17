@@ -1,39 +1,30 @@
 use bevy::{ecs::schedule::SystemSetConfigs, prelude::*};
+use strum_macros::EnumIter;
 
-#[derive(Debug, Hash, PartialEq, Eq, Clone, Copy, SystemSet)]
+#[derive(Debug, Hash, PartialEq, Eq, Clone, Copy, SystemSet, EnumIter)]
 #[system_set(base)]
 pub enum SilkStage {
     /// An exclusive system to read network traffic
-    ReadIn,
-    /// An exclusive system to read Silk events.
-    Events,
-    /// A system to process messages we read.
+    NetworkRead,
+    /// A system to process network traffic.
     Process,
+    /// An exclusive system to receive Silk events
+    SilkEvents,
     /// Default stage for game updates.
     Update,
     /// The last opportunity to write network traffic
-    WriteOut,
+    NetworkWrite,
 }
 
 impl SilkStage {
-    pub fn iter() -> impl Iterator<Item = Self> {
-        [
-            Self::ReadIn,
-            Self::Events,
-            Self::Process,
-            Self::Update,
-            Self::WriteOut,
-        ]
-        .into_iter()
-    }
-
     pub fn sets() -> SystemSetConfigs {
+        // Define the ordering of systems here
         (
-            Self::ReadIn,
-            Self::Events,
+            Self::NetworkRead,
             Self::Process,
+            Self::SilkEvents,
             Self::Update,
-            Self::WriteOut,
+            Self::NetworkWrite,
         )
             .chain()
     }

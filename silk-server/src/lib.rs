@@ -49,20 +49,20 @@ impl Plugin for SilkServerPlugin {
         )
         .add_system(
             systems::on_login
-                .after(SilkStage::ReadIn)
-                .before(SilkStage::Events)
+                .after(SilkStage::NetworkRead)
+                .before(SilkStage::SilkEvents)
                 .in_schedule(SilkSchedule),
         )
         .add_system(
             // Read silk events always before servers, who hook into this stage
             systems::server_socket_reader
-                .before(SilkStage::Events)
+                .before(SilkStage::SilkEvents)
                 .after(systems::on_login)
                 .in_schedule(SilkSchedule),
         )
         .add_system(
             trace_incoming
-                .after(SilkStage::Events)
+                .after(SilkStage::SilkEvents)
                 .before(SilkStage::Process)
                 .in_schedule(SilkSchedule),
         )
@@ -75,7 +75,7 @@ impl Plugin for SilkServerPlugin {
         .add_system(
             trace_write
                 .after(SilkStage::Update)
-                .before(SilkStage::WriteOut)
+                .before(SilkStage::NetworkWrite)
                 .in_schedule(SilkSchedule),
         );
     }

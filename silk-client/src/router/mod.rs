@@ -26,7 +26,7 @@ impl AddNetworkMessageExt for App {
         self.insert_resource(IncomingMessages::<M> { messages: vec![] })
             .add_system(
                 IncomingMessages::<M>::read_system
-                    .before(SilkStage::Events)
+                    .before(SilkStage::SilkEvents)
                     .after(common_socket_reader)
                     .in_schedule(SilkSchedule),
             )
@@ -41,7 +41,7 @@ impl AddNetworkMessageExt for App {
             })
             .add_system(
                 OutgoingMessages::<M>::write_system
-                    .after(SilkStage::WriteOut)
+                    .after(SilkStage::NetworkWrite)
                     .in_schedule(SilkSchedule),
             );
         self

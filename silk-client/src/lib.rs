@@ -47,17 +47,17 @@ impl Plugin for SilkClientPlugin {
             )
             .add_system(
                 systems::client_socket_reader
-                    .in_base_set(SilkStage::ReadIn)
+                    .in_base_set(SilkStage::NetworkRead)
                     .in_schedule(SilkSchedule),
             )
             .add_system(
                 systems::on_login_accepted
-                    .in_base_set(SilkStage::Events)
+                    .in_base_set(SilkStage::SilkEvents)
                     .in_schedule(SilkSchedule),
             )
             .add_system(
                 trace_incoming
-                    .after(SilkStage::Events)
+                    .after(SilkStage::SilkEvents)
                     .before(SilkStage::Process)
                     .in_schedule(SilkSchedule),
             )
@@ -70,7 +70,7 @@ impl Plugin for SilkClientPlugin {
             .add_system(
                 trace_write
                     .after(SilkStage::Update)
-                    .before(SilkStage::WriteOut)
+                    .before(SilkStage::NetworkWrite)
                     .in_schedule(SilkSchedule),
             );
     }

@@ -52,7 +52,7 @@ fn main() {
     .insert_resource(WorldState::default())
     .add_system(
         handle_events
-            .in_base_set(SilkStage::Events)
+            .in_base_set(SilkStage::SilkEvents)
             .in_schedule(SilkSchedule)
     )
     .add_system(login_ui)
