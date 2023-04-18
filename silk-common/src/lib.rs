@@ -137,14 +137,26 @@ impl Plugin for SilkCommonPlugin {
                     .in_schedule(SilkSchedule),
             )
             .add_system(
-                trace_update
+                trace_pre_update
                     .after(SilkStage::SilkEvents)
+                    .before(SilkStage::PreUpdate)
+                    .in_schedule(SilkSchedule),
+            )
+            .add_system(
+                trace_update
+                    .after(SilkStage::PreUpdate)
                     .before(SilkStage::Update)
                     .in_schedule(SilkSchedule),
             )
             .add_system(
-                trace_network_write
+                trace_post_update
                     .after(SilkStage::Update)
+                    .before(SilkStage::PostUpdate)
+                    .in_schedule(SilkSchedule),
+            )
+            .add_system(
+                trace_network_write
+                    .after(SilkStage::PostUpdate)
                     .before(SilkStage::NetworkWrite)
                     .in_schedule(SilkSchedule),
             );
@@ -172,8 +184,16 @@ fn trace_silk_events() {
     trace!("System start: {}", SilkStage::SilkEvents);
 }
 
+fn trace_pre_update() {
+    trace!("System start: {}", SilkStage::PreUpdate);
+}
+
 fn trace_update() {
     trace!("System start: {}", SilkStage::Update);
+}
+
+fn trace_post_update() {
+    trace!("System start: {}", SilkStage::PostUpdate);
 }
 
 fn trace_network_write() {

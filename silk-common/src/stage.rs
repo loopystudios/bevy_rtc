@@ -14,8 +14,12 @@ pub enum SilkStage {
     Process,
     /// An exclusive system to receive Silk events
     SilkEvents,
+    /// Apply updates before the main update
+    PreUpdate,
     /// Default stage for game updates.
     Update,
+    /// Apply updates after the main update
+    PostUpdate,
     /// The last opportunity to write network traffic
     NetworkWrite,
 }
@@ -28,7 +32,9 @@ impl SilkStage {
             Self::NetworkRead,
             Self::Process,
             Self::SilkEvents,
+            Self::PreUpdate,
             Self::Update,
+            Self::PostUpdate,
             Self::NetworkWrite,
         )
             .chain()
