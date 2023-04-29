@@ -8,7 +8,7 @@ use silk_common::{
     bevy_matchbox::{matchbox_socket, prelude::*},
     events::SilkClientEvent,
     packets::auth::{SilkLoginRequestPayload, SilkLoginResponsePayload},
-    ConnectionAddr, PlayerAuthentication, SilkSocket,
+    AuthenticationRequest, ConnectionAddr, SilkSocket,
 };
 
 /// Initialize the socket
@@ -99,18 +99,14 @@ pub(crate) fn client_socket_reader(
                     state.host_id.replace(id);
                     let Some(auth) = state.auth.take() else { panic!("no auth set") };
                     match auth {
-                        PlayerAuthentication::Registered {
-                            username,
-                            password,
-                            mfa,
-                        } => login_send.reliable_to_host(
-                            SilkLoginRequestPayload::RegisteredUser {
-                                username,
-                                password,
-                                mfa,
-                            },
-                        ),
-                        PlayerAuthentication::Guest { username } => login_send
+                        AuthenticationRequest::Registered { access_token } => {
+                            login_send.reliable_to_host(
+                                SilkLoginRequestPayload::RegisteredUser {
+                                    access_token,
+                                },
+                            )
+                        }
+                        AuthenticationRequest::Guest { username } => login_send
                             .reliable_to_host(SilkLoginRequestPayload::Guest {
                                 username,
                             }),
@@ -138,11 +134,11 @@ pub(crate) fn on_login_accepted(
     for payload in login_read.iter() {
         match payload {
             SilkLoginResponsePayload::Accepted { username } => {
-                info!("authenticated as {username}");
+                info!("authenticated user: {username}");
                 next_connection_state.set(ConnectionState::Connected);
                 event_wtr.send(SilkClientEvent::ConnectedToHost {
                     host: state.host_id.unwrap(),
-                    username: username.to_owned(),
+                    username: username.to_string(),
                 });
             }
             SilkLoginResponsePayload::Denied { reason } => {

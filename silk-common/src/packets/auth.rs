@@ -1,16 +1,11 @@
 use crate::macros::Payload;
 use serde::{Deserialize, Serialize};
+use std::fmt::Debug;
 
 #[derive(Payload, Serialize, Deserialize, Debug, Clone)]
 pub enum SilkLoginRequestPayload {
-    RegisteredUser {
-        username: String,
-        password: String,
-        mfa: Option<String>,
-    },
-    Guest {
-        username: Option<String>,
-    },
+    RegisteredUser { access_token: String },
+    Guest { username: Option<String> },
 }
 
 #[derive(Payload, Serialize, Deserialize, Debug, Clone)]

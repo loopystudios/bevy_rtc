@@ -53,16 +53,12 @@ pub fn on_login(
 ) {
     for (peer_id, payload) in login_read.iter() {
         match payload {
-            SilkLoginRequestPayload::RegisteredUser {
-                username,
-                password,
-                mfa,
-            } => event_wtr.send(SilkServerEvent::LoginRequest {
-                peer_id: *peer_id,
-                username: username.to_owned(),
-                password: password.to_owned(),
-                mfa: mfa.to_owned(),
-            }),
+            SilkLoginRequestPayload::RegisteredUser { access_token } => {
+                event_wtr.send(SilkServerEvent::LoginRequest {
+                    peer_id: *peer_id,
+                    access_token: access_token.to_string(),
+                })
+            }
             SilkLoginRequestPayload::Guest { username } => {
                 event_wtr.send(SilkServerEvent::GuestLoginRequest {
                     peer_id: *peer_id,

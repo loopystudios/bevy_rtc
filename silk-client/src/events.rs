@@ -1,4 +1,4 @@
-use silk_common::PlayerAuthentication;
+use silk_common::AuthenticationRequest;
 use std::net::IpAddr;
 
 pub enum ConnectionRequest {
@@ -7,7 +7,7 @@ pub enum ConnectionRequest {
     Connect {
         ip: IpAddr,
         port: u16,
-        auth: PlayerAuthentication,
+        auth: AuthenticationRequest,
     },
     /// A request to disconnect from the signaling server; this will also
     /// disconnect from the server

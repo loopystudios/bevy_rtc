@@ -10,7 +10,7 @@ use silk_common::{
     demo_packets::{Chat, DrawPoint},
     events::SilkClientEvent,
     schedule::SilkSchedule,
-    PlayerAuthentication, SilkStage,
+    AuthenticationRequest, SilkStage,
 };
 use std::{net::Ipv4Addr, ops::DerefMut};
 
@@ -184,7 +184,7 @@ fn login_ui(
         ui.label(format!("{:?}", world_state.id));
         ui.horizontal_wrapped(|ui| {
             if ui.button("Connect").clicked() {
-                let auth = PlayerAuthentication::Guest { username: None };
+                let auth = AuthenticationRequest::Guest { username: None };
                 next_connection_state.set(ConnectionState::LoggingIn);
                 event_wtr.send(ConnectionRequest::Connect {
                     ip: Ipv4Addr::LOCALHOST.into(),

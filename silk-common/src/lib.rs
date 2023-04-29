@@ -61,15 +61,9 @@ impl SilkSocket {
 }
 
 #[derive(Debug, Clone)]
-pub enum PlayerAuthentication {
-    Registered {
-        username: String,
-        password: String,
-        mfa: Option<String>,
-    },
-    Guest {
-        username: Option<String>,
-    },
+pub enum AuthenticationRequest {
+    Registered { access_token: String },
+    Guest { username: Option<String> },
 }
 
 #[derive(Debug, Clone, Copy)]

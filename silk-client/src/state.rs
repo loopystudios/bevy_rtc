@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use silk_common::{
-    bevy_matchbox::prelude::PeerId, ConnectionAddr, PlayerAuthentication,
+    bevy_matchbox::prelude::PeerId, AuthenticationRequest, ConnectionAddr,
 };
 
 /// State of the socket
@@ -18,7 +18,7 @@ pub struct ClientState {
     /// The socket address, used for connecting/reconnecting
     pub addr: Option<ConnectionAddr>,
     /// The authentication used for connecting/reconnecting
-    pub auth: Option<PlayerAuthentication>,
+    pub auth: Option<AuthenticationRequest>,
     /// The ID of the host
     pub host_id: Option<PeerId>,
     /// The ID given by the signaling server
