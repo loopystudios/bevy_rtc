@@ -65,6 +65,11 @@ pub enum AuthenticationRequest {
     Registered { access_token: String },
     Guest { username: Option<String> },
 }
+impl Default for AuthenticationRequest {
+    fn default() -> Self {
+        AuthenticationRequest::Guest { username: None }
+    }
+}
 
 #[derive(Debug, Clone, Copy)]
 pub enum ConnectionAddr {
