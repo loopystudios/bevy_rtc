@@ -99,13 +99,15 @@ pub(crate) fn client_socket_reader(
                     state.host_id.replace(id);
                     let Some(auth) = state.auth.take() else { panic!("no auth set") };
                     match auth {
-                        AuthenticationRequest::Registered { access_token } => {
-                            login_send.reliable_to_host(
-                                SilkLoginRequestPayload::RegisteredUser {
-                                    access_token,
-                                },
-                            )
-                        }
+                        AuthenticationRequest::Registered {
+                            access_token,
+                            character,
+                        } => login_send.reliable_to_host(
+                            SilkLoginRequestPayload::RegisteredUser {
+                                access_token,
+                                character,
+                            },
+                        ),
                         AuthenticationRequest::Guest { username } => login_send
                             .reliable_to_host(SilkLoginRequestPayload::Guest {
                                 username,

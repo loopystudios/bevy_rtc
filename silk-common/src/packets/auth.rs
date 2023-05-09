@@ -4,8 +4,13 @@ use std::fmt::Debug;
 
 #[derive(Payload, Serialize, Deserialize, Debug, Clone)]
 pub enum SilkLoginRequestPayload {
-    RegisteredUser { access_token: String },
-    Guest { username: Option<String> },
+    RegisteredUser {
+        access_token: String,
+        character: String,
+    },
+    Guest {
+        username: Option<String>,
+    },
 }
 
 #[derive(Payload, Serialize, Deserialize, Debug, Clone)]

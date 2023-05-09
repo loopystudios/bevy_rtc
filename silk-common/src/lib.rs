@@ -62,8 +62,13 @@ impl SilkSocket {
 
 #[derive(Debug, Clone)]
 pub enum AuthenticationRequest {
-    Registered { access_token: String },
-    Guest { username: Option<String> },
+    Registered {
+        access_token: String,
+        character: String,
+    },
+    Guest {
+        username: Option<String>,
+    },
 }
 impl Default for AuthenticationRequest {
     fn default() -> Self {

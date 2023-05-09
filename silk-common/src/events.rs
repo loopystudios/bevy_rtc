@@ -27,6 +27,7 @@ pub enum SilkServerEvent {
     LoginRequest {
         peer_id: PeerId,
         access_token: String,
+        character: String,
     },
     /// A peer has left this server
     ClientLeft(PeerId),
