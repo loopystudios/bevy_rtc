@@ -2,8 +2,8 @@ use bevy::{log::LogPlugin, prelude::*, window::WindowResolution};
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use painting::PaintingState;
 use silk_client::{
-    events::ConnectionRequest, AddNetworkMessageExt, ClientRecv, ClientSend,
-    SilkClientPlugin,
+    events::ConnectionRequest, AddNetworkMessageExt, NetworkReader,
+    NetworkWriter, SilkClientPlugin,
 };
 use silk_common::{
     bevy_matchbox::prelude::*,
@@ -125,8 +125,8 @@ fn chatbox_ui(
     world_state: Res<WorldState>,
     mut messages_state: ResMut<MessagesState>,
     mut text: Local<String>,
-    mut chat_send: ClientSend<Chat>,
-    mut chat_read: ClientRecv<Chat>,
+    mut chat_send: NetworkWriter<Chat>,
+    mut chat_read: NetworkReader<Chat>,
 ) {
     for chat in chat_read.iter() {
         messages_state
@@ -154,8 +154,8 @@ fn chatbox_ui(
 fn painting_ui(
     mut egui_context: EguiContexts,
     mut painting: ResMut<PaintingState>,
-    mut draw_read: ClientRecv<DrawPoint>,
-    mut draw_send: ClientSend<DrawPoint>,
+    mut draw_read: NetworkReader<DrawPoint>,
+    mut draw_send: NetworkWriter<DrawPoint>,
 ) {
     for draw in draw_read.iter() {
         painting.lines.push(vec![

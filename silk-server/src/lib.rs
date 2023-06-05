@@ -8,7 +8,7 @@ use silk_common::{
     ConnectionAddr, SilkCommonPlugin, SilkStage,
 };
 use state::ServerState;
-pub use system_params::{ServerRecv, ServerSend};
+pub use system_params::{NetworkReader, NetworkWriter};
 
 mod router;
 pub mod signaler;

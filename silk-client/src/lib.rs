@@ -11,7 +11,7 @@ use silk_common::{
     SilkCommonPlugin, SilkStage,
 };
 use state::{ClientState, ConnectionState};
-pub use system_params::{ClientRecv, ClientSend};
+pub use system_params::{NetworkReader, NetworkWriter};
 
 pub mod events;
 mod router;

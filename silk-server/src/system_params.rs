@@ -8,22 +8,22 @@ use silk_net::Message;
 use silk_common::bevy_matchbox;
 
 #[derive(SystemParam, Debug)]
-pub struct ServerRecv<'w, M: Message> {
+pub struct NetworkReader<'w, M: Message> {
     incoming: Res<'w, IncomingMessages<M>>,
 }
 
-impl<'w, M: Message> ServerRecv<'w, M> {
+impl<'w, M: Message> NetworkReader<'w, M> {
     pub fn iter(&mut self) -> std::slice::Iter<'_, (PeerId, M)> {
         self.incoming.messages.iter()
     }
 }
 
 #[derive(SystemParam, Debug)]
-pub struct ServerSend<'w, M: Message> {
+pub struct NetworkWriter<'w, M: Message> {
     outgoing: ResMut<'w, OutgoingMessages<M>>,
 }
 
-impl<'w, M: Message> ServerSend<'w, M> {
+impl<'w, M: Message> NetworkWriter<'w, M> {
     pub fn reliable_to_all(&mut self, message: M) {
         self.outgoing.reliable_to_all.push(message);
     }

@@ -1,7 +1,7 @@
 use crate::{
     events::ConnectionRequest,
     state::{ClientState, ConnectionState},
-    system_params::{ClientRecv, ClientSend},
+    system_params::{NetworkReader, NetworkWriter},
 };
 use bevy::prelude::*;
 use silk_common::{
@@ -79,7 +79,7 @@ pub(crate) fn client_socket_reader(
     mut state: ResMut<ClientState>,
     mut socket: Option<ResMut<MatchboxSocket<MultipleChannels>>>,
     mut event_wtr: EventWriter<SilkClientEvent>,
-    mut login_send: ClientSend<SilkLoginRequestPayload>,
+    mut login_send: NetworkWriter<SilkLoginRequestPayload>,
     mut next_connection_state: ResMut<NextState<ConnectionState>>,
 ) {
     // Create socket events for Silk
@@ -130,7 +130,7 @@ pub(crate) fn client_socket_reader(
 pub(crate) fn on_login_accepted(
     state: Res<ClientState>,
     mut next_connection_state: ResMut<NextState<ConnectionState>>,
-    mut login_read: ClientRecv<SilkLoginResponsePayload>,
+    mut login_read: NetworkReader<SilkLoginResponsePayload>,
     mut event_wtr: EventWriter<SilkClientEvent>,
 ) {
     for payload in login_read.iter() {

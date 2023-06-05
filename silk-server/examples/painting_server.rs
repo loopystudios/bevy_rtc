@@ -8,7 +8,7 @@ use silk_common::{
     ConnectionAddr, SilkStage,
 };
 use silk_server::{
-    AddNetworkMessageExt, ServerRecv, ServerSend, SilkServerPlugin,
+    AddNetworkMessageExt, NetworkReader, NetworkWriter, SilkServerPlugin,
 };
 
 #[derive(Resource, Debug, Default, Clone)]
@@ -53,8 +53,8 @@ fn main() {
 
 // redirect draw points from clients to other clients
 fn send_draw_points(
-    mut draw_read: ServerRecv<DrawPoint>,
-    mut draw_send: ServerSend<DrawPoint>,
+    mut draw_read: NetworkReader<DrawPoint>,
+    mut draw_send: NetworkWriter<DrawPoint>,
 ) {
     for (peer, draw) in draw_read.iter() {
         draw_send.unreliable_to_all_except(*peer, draw.clone());
@@ -63,8 +63,8 @@ fn send_draw_points(
 
 // redirect chat from clients to other clients
 fn send_chats(
-    mut chat_read: ServerRecv<Chat>,
-    mut chat_send: ServerSend<Chat>,
+    mut chat_read: NetworkReader<Chat>,
+    mut chat_send: NetworkWriter<Chat>,
 ) {
     for (peer, chat) in chat_read.iter() {
         chat_send.reliable_to_all_except(*peer, chat.clone());
@@ -73,7 +73,7 @@ fn send_chats(
 
 fn handle_events(
     mut guest_count: Local<u16>,
-    mut accept_wtr: ServerSend<SilkLoginResponsePayload>,
+    mut accept_wtr: NetworkWriter<SilkLoginResponsePayload>,
     mut event_rdr: EventReader<SilkServerEvent>,
     mut world_state: ResMut<ServerState>,
 ) {

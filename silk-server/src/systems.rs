@@ -1,4 +1,4 @@
-use crate::{system_params::ServerRecv, ServerState};
+use crate::{system_params::NetworkReader, ServerState};
 use bevy::prelude::*;
 use silk_common::{
     bevy_matchbox::{
@@ -48,7 +48,7 @@ pub fn server_socket_reader(
 
 // Translate login requests to bevy server events
 pub fn on_login(
-    mut login_read: ServerRecv<SilkLoginRequestPayload>,
+    mut login_read: NetworkReader<SilkLoginRequestPayload>,
     mut event_wtr: EventWriter<SilkServerEvent>,
 ) {
     for (peer_id, payload) in login_read.iter() {
