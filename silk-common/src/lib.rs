@@ -88,7 +88,7 @@ impl ConnectionAddr {
     pub fn to_url(&self) -> String {
         match self {
             ConnectionAddr::Local { port } => {
-                format!("ws://0.0.0.0:{port}/")
+                format!("ws://localhost:{port}/")
             }
             ConnectionAddr::Remote { ip, port } => {
                 format!("ws://{ip}:{port}/")
