@@ -46,7 +46,8 @@ impl Plugin for SilkClientPlugin {
             )
             .add_system(
                 systems::on_login_accepted
-                    .in_base_set(SilkStage::SilkEvents)
+                    .before(SilkStage::SilkEvents)
+                    .after(SilkStage::Process)
                     .in_schedule(SilkSchedule),
             );
     }
