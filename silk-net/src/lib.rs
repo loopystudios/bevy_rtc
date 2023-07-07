@@ -4,12 +4,12 @@ use std::fmt::Debug;
 
 #[derive(Deserialize, Serialize)]
 #[serde(bound = "M: DeserializeOwned")]
-pub struct SilkPacket<M: Message> {
+pub struct SilkPacket<M: Payload> {
     pub msg_id: u16,
     pub data: M,
 }
 
-pub trait Message:
+pub trait Payload:
     Debug + Clone + Send + Sync + for<'a> Deserialize<'a> + Serialize + 'static
 {
     fn id() -> u16;

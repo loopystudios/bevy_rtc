@@ -6,6 +6,7 @@ use bevy_matchbox::matchbox_socket::{
 use events::SocketRecvEvent;
 use schedule::SilkSchedule;
 use socket::common_socket_reader;
+use stage::SilkStage;
 use std::net::IpAddr;
 
 pub mod demo_packets;
@@ -17,10 +18,8 @@ pub mod stage;
 
 // Re-exports
 pub use bevy_matchbox;
-pub use stage::SilkStage;
-pub mod macros {
-    pub use proc_macro_payload::Payload;
-}
+pub use proc_macro_payload::Payload;
+pub use silk_net::Payload;
 
 /// An abstraction over [`matchbox_socket::WebRtcSocket`] to fit Tribrid's
 /// Client-Server architecture.

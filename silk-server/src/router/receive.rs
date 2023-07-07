@@ -1,13 +1,13 @@
 use bevy::prelude::*;
 use silk_common::{bevy_matchbox::prelude::PeerId, events::SocketRecvEvent};
-use silk_net::Message;
+use silk_net::Payload;
 
 #[derive(Default, Debug, Resource)]
-pub struct IncomingMessages<M: Message> {
+pub struct IncomingMessages<M: Payload> {
     pub messages: Vec<(PeerId, M)>,
 }
 
-impl<M: Message> IncomingMessages<M> {
+impl<M: Payload> IncomingMessages<M> {
     /// Swaps the event buffers and clears the oldest event buffer. In general,
     /// this should be called once per frame/update.
     pub fn flush(mut incoming: ResMut<Self>) {

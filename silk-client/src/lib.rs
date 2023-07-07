@@ -8,7 +8,8 @@ use silk_common::{
     events::SilkClientEvent,
     packets::auth::{SilkLoginRequestPayload, SilkLoginResponsePayload},
     schedule::SilkSchedule,
-    SilkCommonPlugin, SilkStage,
+    stage::SilkStage,
+    SilkCommonPlugin,
 };
 use state::{ClientState, ConnectionState};
 pub use system_params::{NetworkReader, NetworkWriter};

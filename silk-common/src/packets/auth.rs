@@ -1,4 +1,4 @@
-use crate::macros::Payload;
+use crate::Payload;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 

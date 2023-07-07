@@ -3,21 +3,21 @@ mod send;
 
 use bevy::prelude::*;
 use silk_common::{
-    schedule::SilkSchedule, socket::common_socket_reader, SilkStage,
+    schedule::SilkSchedule, socket::common_socket_reader, stage::SilkStage,
 };
-pub use silk_net::Message;
+pub use silk_net::Payload;
 
 pub use receive::IncomingMessages;
 pub use send::OutgoingMessages;
 
 pub trait AddNetworkMessageExt {
-    fn add_network_message<M: Message>(&mut self) -> &mut Self;
+    fn add_network_message<M: Payload>(&mut self) -> &mut Self;
 }
 
 impl AddNetworkMessageExt for App {
     fn add_network_message<M>(&mut self) -> &mut Self
     where
-        M: Message,
+        M: Payload,
     {
         if self.world.contains_resource::<IncomingMessages<M>>()
             || self.world.contains_resource::<OutgoingMessages<M>>()

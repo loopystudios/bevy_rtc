@@ -5,7 +5,8 @@ use silk_common::{
     events::SilkServerEvent,
     packets::auth::SilkLoginResponsePayload,
     schedule::SilkSchedule,
-    ConnectionAddr, SilkStage,
+    stage::SilkStage,
+    ConnectionAddr,
 };
 use silk_server::{
     AddNetworkMessageExt, NetworkReader, NetworkWriter, SilkServerPlugin,

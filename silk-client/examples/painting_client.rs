@@ -10,7 +10,8 @@ use silk_common::{
     demo_packets::{Chat, DrawPoint},
     events::SilkClientEvent,
     schedule::SilkSchedule,
-    AuthenticationRequest, SilkStage,
+    stage::SilkStage,
+    AuthenticationRequest,
 };
 use std::{net::Ipv4Addr, ops::DerefMut};
 
