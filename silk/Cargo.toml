@@ -1,0 +1,15 @@
+[package]
+name = "silk"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+silk-server = { optional = true, path = "../silk-server" }
+silk-client = { optional = true, path = "../silk-client" }
+silk-net = { path = "../silk-net" }
+silk-common = { path = "../silk-common" }
+
+[features]
+default = []
+client = ["silk-client"]
+server = ["silk-server"]
