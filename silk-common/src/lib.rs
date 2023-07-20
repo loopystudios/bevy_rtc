@@ -5,16 +5,16 @@ use bevy_matchbox::matchbox_socket::{
 };
 use events::SocketRecvEvent;
 use schedule::SilkSchedule;
+use sets::SilkSet;
 use socket::common_socket_reader;
-use stage::SilkSet;
 use std::net::IpAddr;
 
 pub mod demo_packets;
 pub mod events;
 pub mod packets;
 pub mod schedule;
+pub mod sets;
 pub mod socket;
-pub mod stage;
 
 // Re-exports
 pub use bevy_matchbox;

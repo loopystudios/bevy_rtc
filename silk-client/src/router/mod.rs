@@ -5,7 +5,7 @@ use bevy::prelude::*;
 pub use receive::IncomingMessages;
 pub use send::OutgoingMessages;
 use silk_common::{
-    schedule::SilkSchedule, socket::common_socket_reader, stage::SilkSet,
+    schedule::SilkSchedule, sets::SilkSet, socket::common_socket_reader,
 };
 pub use silk_net::Payload;
 

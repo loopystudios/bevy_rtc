@@ -10,7 +10,7 @@ use silk_common::{
     demo_packets::{Chat, DrawPoint},
     events::SilkClientEvent,
     schedule::SilkSchedule,
-    stage::SilkSet,
+    sets::SilkSet,
     AuthenticationRequest,
 };
 use std::{net::Ipv4Addr, ops::DerefMut};
@@ -41,7 +41,7 @@ fn main() {
             .set(WindowPlugin {
                 primary_window: Some(bevy::window::Window {
                     fit_canvas_to_parent: true, // behave on wasm
-                    resolution: WindowResolution::new(350., 650.),
+                    resolution: WindowResolution::new(400., 700.),
                     ..default()
                 }),
                 ..default()

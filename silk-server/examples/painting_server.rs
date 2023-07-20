@@ -5,7 +5,7 @@ use silk_common::{
     events::SilkServerEvent,
     packets::auth::SilkLoginResponsePayload,
     schedule::SilkSchedule,
-    stage::SilkSet,
+    sets::SilkSet,
     ConnectionAddr,
 };
 use silk_server::{

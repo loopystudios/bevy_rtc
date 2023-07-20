@@ -8,7 +8,7 @@ use silk_common::{
     events::SilkClientEvent,
     packets::auth::{SilkLoginRequestPayload, SilkLoginResponsePayload},
     schedule::SilkSchedule,
-    stage::SilkSet,
+    sets::SilkSet,
     SilkCommonPlugin,
 };
 use state::{ClientState, ConnectionState};
@@ -39,14 +39,13 @@ impl Plugin for SilkClientPlugin {
             OnEnter(ConnectionState::Disconnected),
             systems::reset_socket,
         )
-        .add_systems(Update, systems::connection_event_reader)
         .add_systems(
             SilkSchedule,
             systems::client_socket_reader.in_set(SilkSet::NetworkRead),
         )
         .add_systems(
             SilkSchedule,
-            systems::on_login_accepted
+            (systems::connection_event_reader, systems::on_login_accepted)
                 .before(SilkSet::SilkEvents)
                 .after(SilkSet::Process),
         );
