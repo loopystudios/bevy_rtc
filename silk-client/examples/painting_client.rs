@@ -145,7 +145,7 @@ fn chatbox_ui(
             ui.text_edit_singleline(text.deref_mut());
             if ui.button("Send").clicked() {
                 let chat_message = Chat {
-                    from: format!("{:?}", world_state.id.unwrap()),
+                    from: format!("{}", world_state.id.unwrap()),
                     message: text.to_owned(),
                 };
                 chat_send.reliable_to_host(chat_message);
@@ -223,7 +223,7 @@ impl MessagesState {
             |ui, items| {
                 for i in items {
                     let (from, message) = &self.messages[i];
-                    let text = format!("<-- {from:?}: {message}");
+                    let text = format!("<-- {from}: {message}");
                     ui.label(text);
                 }
             },

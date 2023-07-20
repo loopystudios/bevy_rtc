@@ -83,12 +83,12 @@ fn handle_events(
         match ev {
             SilkServerEvent::GuestLoginRequest { peer_id, .. }
             | SilkServerEvent::LoginRequest { peer_id, .. } => {
-                debug!("{peer_id:?} joined");
+                debug!("{peer_id} joined");
 
                 *guest_count += 1;
                 let username = format!("Guest-{}", *guest_count);
 
-                debug!("{peer_id:?} : {username} joined");
+                debug!("{peer_id} : {username} joined");
                 world_state.clients.insert(*peer_id);
                 accept_wtr.reliable_to_peer(
                     *peer_id,
