@@ -5,7 +5,7 @@ use silk_common::{
     events::SilkServerEvent,
     packets::auth::SilkLoginResponsePayload,
     schedule::SilkSchedule,
-    stage::SilkStage,
+    sets::SilkSet,
     ConnectionAddr,
 };
 use silk_server::{
@@ -21,34 +21,34 @@ struct ServerState {
 fn main() {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins)
-        .add_plugin(LogPlugin {
+        .add_plugins(LogPlugin {
             filter: "warn,painting_server=debug,silk=trace,wgpu_core=warn,wgpu_hal=warn,matchbox_socket=warn"
                 .into(),
             level: bevy::log::Level::DEBUG,
         })
-        .add_plugin(SilkServerPlugin {
+        .add_plugins(SilkServerPlugin {
             signaler_addr: ConnectionAddr::Local { port: 3536 },
             tick_rate: 1.0,
         })
-        .add_system(
+        .add_systems(
+            SilkSchedule,
             handle_events
-                .in_base_set(SilkStage::SilkEvents)
-                .in_schedule(SilkSchedule),
+                .in_set(SilkSet::SilkEvents),
         )
         .add_network_message::<Chat>()
         .add_network_message::<DrawPoint>()
-        .add_system(
+        .add_systems(
+            SilkSchedule,
             send_draw_points
-                .in_base_set(SilkStage::NetworkWrite)
-                .in_schedule(SilkSchedule)
+                .in_set(SilkSet::NetworkWrite)
         )
-        .add_system(
+        .add_systems(
+            SilkSchedule,
             send_chats
-                .in_base_set(SilkStage::NetworkWrite)
-                .in_schedule(SilkSchedule)
+                .in_set(SilkSet::NetworkWrite)
         )
         .insert_resource(ServerState::default())
-        .add_startup_system(|| info!("Connecting..."))
+        .add_systems(Startup, || info!("Connecting..."))
         .run();
 }
 
@@ -83,12 +83,12 @@ fn handle_events(
         match ev {
             SilkServerEvent::GuestLoginRequest { peer_id, .. }
             | SilkServerEvent::LoginRequest { peer_id, .. } => {
-                debug!("{peer_id:?} joined");
+                debug!("{peer_id} joined");
 
                 *guest_count += 1;
                 let username = format!("Guest-{}", *guest_count);
 
-                debug!("{peer_id:?} : {username} joined");
+                debug!("{peer_id} : {username} joined");
                 world_state.clients.insert(*peer_id);
                 accept_wtr.reliable_to_peer(
                     *peer_id,

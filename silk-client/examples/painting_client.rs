@@ -10,7 +10,7 @@ use silk_common::{
     demo_packets::{Chat, DrawPoint},
     events::SilkClientEvent,
     schedule::SilkSchedule,
-    stage::SilkStage,
+    sets::SilkSet,
     AuthenticationRequest,
 };
 use std::{net::Ipv4Addr, ops::DerefMut};
@@ -41,35 +41,39 @@ fn main() {
             .set(WindowPlugin {
                 primary_window: Some(bevy::window::Window {
                     fit_canvas_to_parent: true, // behave on wasm
-                    resolution: WindowResolution::new(350., 650.),
+                    resolution: WindowResolution::new(400., 700.),
                     ..default()
                 }),
                 ..default()
             }),
     )
-    .add_plugin(SilkClientPlugin)
+    .add_plugins(EguiPlugin)
+    .add_plugins(SilkClientPlugin)
     .add_network_message::<Chat>()
     .add_network_message::<DrawPoint>()
     .add_state::<ConnectionState>()
     .insert_resource(WorldState::default())
-    .add_system(
+    .add_systems(
+        SilkSchedule,
         handle_events
-            .in_base_set(SilkStage::SilkEvents)
-            .in_schedule(SilkSchedule)
+            .in_set(SilkSet::SilkEvents)
     )
-    .add_system(login_ui)
-    .add_system(chatbox_ui.in_set(OnUpdate(ConnectionState::Connected)))
-    .add_system(painting_ui.in_set(OnUpdate(ConnectionState::Connected)))
-    .add_system(
-        on_disconnected.in_schedule(OnEnter(ConnectionState::Disconnected)),
-    )    .add_system(
-        on_logging_in.in_schedule(OnEnter(ConnectionState::LoggingIn)),
+    .add_systems(Update, login_ui)
+    .add_systems(Update, chatbox_ui.run_if(in_state(ConnectionState::Connected)))
+    .add_systems(Update, painting_ui.run_if(in_state(ConnectionState::Connected)))
+    .add_systems(
+        OnEnter(ConnectionState::Disconnected),
+        on_disconnected,
     )
-    .add_system(
-        on_connected.in_schedule(OnEnter(ConnectionState::Connected)),
+    .add_systems(
+        OnEnter(ConnectionState::LoggingIn),
+        on_logging_in,
     )
-    .add_startup_system(setup_cam)
-    .add_plugin(EguiPlugin)
+    .add_systems(
+        OnEnter(ConnectionState::Connected),
+        on_connected,
+    )
+    .add_systems(Startup, setup_cam)
     .insert_resource(MessagesState::default())
     .insert_resource(PaintingState::default())
     .run();
@@ -141,7 +145,7 @@ fn chatbox_ui(
             ui.text_edit_singleline(text.deref_mut());
             if ui.button("Send").clicked() {
                 let chat_message = Chat {
-                    from: format!("{:?}", world_state.id.unwrap()),
+                    from: format!("{}", world_state.id.unwrap()),
                     message: text.to_owned(),
                 };
                 chat_send.reliable_to_host(chat_message);
@@ -219,7 +223,7 @@ impl MessagesState {
             |ui, items| {
                 for i in items {
                     let (from, message) = &self.messages[i];
-                    let text = format!("<-- {from:?}: {message}");
+                    let text = format!("<-- {from}: {message}");
                     ui.label(text);
                 }
             },

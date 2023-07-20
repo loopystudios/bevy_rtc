@@ -4,8 +4,7 @@ use strum_macros::{Display, EnumIter};
 #[derive(
     Debug, Hash, PartialEq, Eq, Clone, Copy, SystemSet, Display, EnumIter,
 )]
-#[system_set(base)]
-pub enum SilkStage {
+pub enum SilkSet {
     /// Do not use this system, it flushes previous network buffers since we do not consume on read for network traffic.
     Flush,
     /// An exclusive system to read network traffic
@@ -24,7 +23,7 @@ pub enum SilkStage {
     NetworkWrite,
 }
 
-impl SilkStage {
+impl SilkSet {
     pub fn sets() -> SystemSetConfigs {
         // Define the ordering of systems here
         (

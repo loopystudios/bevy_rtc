@@ -3,12 +3,12 @@ mod send;
 
 use bevy::prelude::*;
 use silk_common::{
-    schedule::SilkSchedule, socket::common_socket_reader, stage::SilkStage,
+    schedule::SilkSchedule, sets::SilkSet, socket::common_socket_reader,
 };
-pub use silk_net::Payload;
 
 pub use receive::IncomingMessages;
 pub use send::OutgoingMessages;
+pub use silk_net::Payload;
 
 pub trait AddNetworkMessageExt {
     fn add_network_message<M: Payload>(&mut self) -> &mut Self;
@@ -25,16 +25,15 @@ impl AddNetworkMessageExt for App {
             panic!("server already contains resource: {}", M::reflect_name());
         }
         self.insert_resource(IncomingMessages::<M> { messages: vec![] })
-            .add_system(
-                IncomingMessages::<M>::flush
-                    .in_base_set(SilkStage::Flush)
-                    .in_schedule(SilkSchedule),
+            .add_systems(
+                SilkSchedule,
+                IncomingMessages::<M>::flush.in_set(SilkSet::Flush),
             )
-            .add_system(
+            .add_systems(
+                SilkSchedule,
                 IncomingMessages::<M>::read_system
-                    .before(SilkStage::NetworkRead)
-                    .after(common_socket_reader)
-                    .in_schedule(SilkSchedule),
+                    .before(SilkSet::NetworkRead)
+                    .after(common_socket_reader),
             )
             .insert_resource(OutgoingMessages::<M> {
                 reliable_to_all: vec![],
@@ -44,10 +43,10 @@ impl AddNetworkMessageExt for App {
                 reliable_to_peer: vec![],
                 unreliable_to_peer: vec![],
             })
-            .add_system(
+            .add_systems(
+                SilkSchedule,
                 OutgoingMessages::<M>::write_system
-                    .after(SilkStage::NetworkWrite)
-                    .in_schedule(SilkSchedule),
+                    .after(SilkSet::NetworkWrite),
             );
 
         self

@@ -1,10 +1,11 @@
+use bevy::prelude::Event;
 use bevy_matchbox::matchbox_socket::{Packet, PeerId};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Event)]
 pub struct SocketRecvEvent(pub (PeerId, Packet));
 
 /// Socket events that are possible to subscribe to in Bevy
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Event)]
 pub enum SilkClientEvent {
     /// The signaling server assigned the socket a unique ID
     IdAssigned(PeerId),
@@ -15,7 +16,7 @@ pub enum SilkClientEvent {
 }
 
 /// Socket events that are possible to subscribe to in Bevy
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Event)]
 pub enum SilkServerEvent {
     /// The signaling server assigned the socket a unique ID
     IdAssigned(PeerId),
