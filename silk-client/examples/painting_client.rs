@@ -47,29 +47,33 @@ fn main() {
                 ..default()
             }),
     )
-    .add_plugin(SilkClientPlugin)
+    .add_plugins(EguiPlugin)
+    .add_plugins(SilkClientPlugin)
     .add_network_message::<Chat>()
     .add_network_message::<DrawPoint>()
     .add_state::<ConnectionState>()
     .insert_resource(WorldState::default())
-    .add_system(
+    .add_systems(
+        SilkSchedule,
         handle_events
-            .in_base_set(SilkStage::SilkEvents)
-            .in_schedule(SilkSchedule)
+            .in_set(SilkStage::SilkEvents)
     )
-    .add_system(login_ui)
-    .add_system(chatbox_ui.in_set(OnUpdate(ConnectionState::Connected)))
-    .add_system(painting_ui.in_set(OnUpdate(ConnectionState::Connected)))
-    .add_system(
-        on_disconnected.in_schedule(OnEnter(ConnectionState::Disconnected)),
-    )    .add_system(
-        on_logging_in.in_schedule(OnEnter(ConnectionState::LoggingIn)),
+    .add_systems(Update, login_ui)
+    .add_systems(Update, chatbox_ui.run_if(in_state(ConnectionState::Connected)))
+    .add_systems(Update, painting_ui.run_if(in_state(ConnectionState::Connected)))
+    .add_systems(
+        OnEnter(ConnectionState::Disconnected),
+        on_disconnected,
     )
-    .add_system(
-        on_connected.in_schedule(OnEnter(ConnectionState::Connected)),
+    .add_systems(
+        OnEnter(ConnectionState::LoggingIn),
+        on_logging_in,
     )
-    .add_startup_system(setup_cam)
-    .add_plugin(EguiPlugin)
+    .add_systems(
+        OnEnter(ConnectionState::Connected),
+        on_connected,
+    )
+    .add_systems(Startup, setup_cam)
     .insert_resource(MessagesState::default())
     .insert_resource(PaintingState::default())
     .run();

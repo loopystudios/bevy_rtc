@@ -108,66 +108,60 @@ impl Plugin for SilkCommonPlugin {
         });
 
         app.add_event::<SocketRecvEvent>()
-            .add_system(
-                trace_flush
-                    .before(SilkStage::Flush)
-                    .in_schedule(SilkSchedule),
-            )
-            .add_system(
+            .add_systems(SilkSchedule, trace_flush.before(SilkStage::Flush))
+            .add_systems(
+                SilkSchedule,
                 trace_network_read
                     .after(SilkStage::Flush)
-                    .before(SilkStage::NetworkRead)
-                    .in_schedule(SilkSchedule),
+                    .before(SilkStage::NetworkRead),
             )
-            .add_system(
+            .add_systems(
+                SilkSchedule,
                 // Read silk events always before servers, who hook into this
                 // stage
                 common_socket_reader
                     .after(trace_network_read)
-                    .before(SilkStage::NetworkRead)
-                    .in_schedule(SilkSchedule),
+                    .before(SilkStage::NetworkRead),
             )
-            .add_system(
+            .add_systems(
+                SilkSchedule,
                 trace_process
                     .after(SilkStage::NetworkRead)
-                    .before(SilkStage::Process)
-                    .in_schedule(SilkSchedule),
+                    .before(SilkStage::Process),
             )
-            .add_system(
+            .add_systems(
+                SilkSchedule,
                 trace_silk_events
                     .after(SilkStage::Process)
-                    .before(SilkStage::SilkEvents)
-                    .in_schedule(SilkSchedule),
+                    .before(SilkStage::SilkEvents),
             )
-            .add_system(
+            .add_systems(
+                SilkSchedule,
                 trace_pre_update
                     .after(SilkStage::SilkEvents)
-                    .before(SilkStage::PreUpdate)
-                    .in_schedule(SilkSchedule),
+                    .before(SilkStage::PreUpdate),
             )
-            .add_system(
+            .add_systems(
+                SilkSchedule,
                 trace_update
                     .after(SilkStage::PreUpdate)
-                    .before(SilkStage::Update)
-                    .in_schedule(SilkSchedule),
+                    .before(SilkStage::Update),
             )
-            .add_system(
+            .add_systems(
+                SilkSchedule,
                 trace_post_update
                     .after(SilkStage::Update)
-                    .before(SilkStage::PostUpdate)
-                    .in_schedule(SilkSchedule),
+                    .before(SilkStage::PostUpdate),
             )
-            .add_system(
+            .add_systems(
+                SilkSchedule,
                 trace_network_write
                     .after(SilkStage::PostUpdate)
-                    .before(SilkStage::NetworkWrite)
-                    .in_schedule(SilkSchedule),
+                    .before(SilkStage::NetworkWrite),
             );
 
         // add scheduler
-        app.add_system(
-            schedule::run_silk_schedule.in_schedule(CoreSchedule::FixedUpdate),
-        );
+        app.add_systems(FixedUpdate, schedule::run_silk_schedule);
     }
 }
 

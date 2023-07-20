@@ -1,10 +1,21 @@
-use bevy::{ecs::schedule::SystemSetConfigs, prelude::*};
+use bevy::{
+    ecs::schedule::{ScheduleLabel, SystemSetConfigs},
+    prelude::*,
+};
 use strum_macros::{Display, EnumIter};
 
 #[derive(
-    Debug, Hash, PartialEq, Eq, Clone, Copy, SystemSet, Display, EnumIter,
+    Debug,
+    Hash,
+    PartialEq,
+    Eq,
+    Clone,
+    Copy,
+    SystemSet,
+    Display,
+    EnumIter,
+    ScheduleLabel,
 )]
-#[system_set(base)]
 pub enum SilkStage {
     /// Do not use this system, it flushes previous network buffers since we do not consume on read for network traffic.
     Flush,

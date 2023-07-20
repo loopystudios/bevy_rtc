@@ -28,10 +28,10 @@ pub struct SilkServerPlugin {
 impl Plugin for SilkServerPlugin {
     fn build(&self, app: &mut App) {
         if let ConnectionAddr::Local { port } = self.signaler_addr {
-            app.add_plugin(SilkSignalerPlugin { port });
+            app.add_plugins(SilkSignalerPlugin { port });
         }
 
-        app.add_plugin(SilkCommonPlugin)
+        app.add_plugins(SilkCommonPlugin)
             .add_network_message::<SilkLoginRequestPayload>()
             .add_network_message::<SilkLoginResponsePayload>()
             .add_event::<SilkServerEvent>()
@@ -39,21 +39,21 @@ impl Plugin for SilkServerPlugin {
                 addr: self.signaler_addr,
                 id: None,
             })
-            .add_startup_system(systems::init_socket)
+            .add_systems(Startup, systems::init_socket)
             .insert_resource(FixedTime::new_from_secs(1.0 / self.tick_rate));
 
-        app.add_system(
+        app.add_systems(
+            SilkSchedule,
             systems::on_login
                 .after(SilkStage::NetworkRead)
-                .before(SilkStage::SilkEvents)
-                .in_schedule(SilkSchedule),
+                .before(SilkStage::SilkEvents),
         )
-        .add_system(
+        .add_systems(
+            SilkSchedule,
             // Read silk events always before servers, who hook into this stage
             systems::server_socket_reader
                 .before(SilkStage::SilkEvents)
-                .after(systems::on_login)
-                .in_schedule(SilkSchedule),
+                .after(systems::on_login),
         );
     }
 }
