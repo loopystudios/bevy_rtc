@@ -5,7 +5,7 @@ use silk_common::{
     events::SilkServerEvent,
     packets::auth::SilkLoginResponsePayload,
     schedule::SilkSchedule,
-    stage::SilkStage,
+    stage::SilkSet,
     ConnectionAddr,
 };
 use silk_server::{
@@ -33,19 +33,19 @@ fn main() {
         .add_systems(
             SilkSchedule,
             handle_events
-                .in_set(SilkStage::SilkEvents),
+                .in_set(SilkSet::SilkEvents),
         )
         .add_network_message::<Chat>()
         .add_network_message::<DrawPoint>()
         .add_systems(
             SilkSchedule,
             send_draw_points
-                .in_set(SilkStage::NetworkWrite)
+                .in_set(SilkSet::NetworkWrite)
         )
         .add_systems(
             SilkSchedule,
             send_chats
-                .in_set(SilkStage::NetworkWrite)
+                .in_set(SilkSet::NetworkWrite)
         )
         .insert_resource(ServerState::default())
         .add_systems(Startup, || info!("Connecting..."))

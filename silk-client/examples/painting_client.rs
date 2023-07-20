@@ -10,7 +10,7 @@ use silk_common::{
     demo_packets::{Chat, DrawPoint},
     events::SilkClientEvent,
     schedule::SilkSchedule,
-    stage::SilkStage,
+    stage::SilkSet,
     AuthenticationRequest,
 };
 use std::{net::Ipv4Addr, ops::DerefMut};
@@ -56,7 +56,7 @@ fn main() {
     .add_systems(
         SilkSchedule,
         handle_events
-            .in_set(SilkStage::SilkEvents)
+            .in_set(SilkSet::SilkEvents)
     )
     .add_systems(Update, login_ui)
     .add_systems(Update, chatbox_ui.run_if(in_state(ConnectionState::Connected)))

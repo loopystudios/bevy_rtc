@@ -3,7 +3,7 @@ mod send;
 
 use bevy::prelude::*;
 use silk_common::{
-    schedule::SilkSchedule, socket::common_socket_reader, stage::SilkStage,
+    schedule::SilkSchedule, socket::common_socket_reader, stage::SilkSet,
 };
 
 pub use receive::IncomingMessages;
@@ -27,12 +27,12 @@ impl AddNetworkMessageExt for App {
         self.insert_resource(IncomingMessages::<M> { messages: vec![] })
             .add_systems(
                 SilkSchedule,
-                IncomingMessages::<M>::flush.in_set(SilkStage::Flush),
+                IncomingMessages::<M>::flush.in_set(SilkSet::Flush),
             )
             .add_systems(
                 SilkSchedule,
                 IncomingMessages::<M>::read_system
-                    .before(SilkStage::NetworkRead)
+                    .before(SilkSet::NetworkRead)
                     .after(common_socket_reader),
             )
             .insert_resource(OutgoingMessages::<M> {
@@ -46,7 +46,7 @@ impl AddNetworkMessageExt for App {
             .add_systems(
                 SilkSchedule,
                 OutgoingMessages::<M>::write_system
-                    .after(SilkStage::NetworkWrite),
+                    .after(SilkSet::NetworkWrite),
             );
 
         self

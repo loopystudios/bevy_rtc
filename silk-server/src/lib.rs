@@ -5,7 +5,7 @@ use silk_common::{
     events::SilkServerEvent,
     packets::auth::{SilkLoginRequestPayload, SilkLoginResponsePayload},
     schedule::*,
-    stage::SilkStage,
+    stage::SilkSet,
     ConnectionAddr, SilkCommonPlugin,
 };
 use state::ServerState;
@@ -45,14 +45,14 @@ impl Plugin for SilkServerPlugin {
         app.add_systems(
             SilkSchedule,
             systems::on_login
-                .after(SilkStage::NetworkRead)
-                .before(SilkStage::SilkEvents),
+                .after(SilkSet::NetworkRead)
+                .before(SilkSet::SilkEvents),
         )
         .add_systems(
             SilkSchedule,
             // Read silk events always before servers, who hook into this stage
             systems::server_socket_reader
-                .before(SilkStage::SilkEvents)
+                .before(SilkSet::SilkEvents)
                 .after(systems::on_login),
         );
     }
