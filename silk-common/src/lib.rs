@@ -90,7 +90,7 @@ impl ConnectionAddr {
                 format!("ws://localhost:{port}/")
             }
             ConnectionAddr::Remote { ip, port } => {
-                format!("ws://{ip}:{port}/")
+                format!("wss://{ip}:{port}/")
             }
         }
     }
