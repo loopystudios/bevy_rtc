@@ -195,6 +195,7 @@ fn login_ui(
                     ip: Ipv4Addr::LOCALHOST.into(),
                     port: 3536,
                     auth,
+                    secure: false,
                 });
             }
             if ui.button("Disconnect").clicked() {

@@ -45,13 +45,19 @@ pub(crate) fn connection_event_reader(
     mut event_wtr: EventWriter<SilkClientEvent>,
 ) {
     match cxn_event_reader.iter().next() {
-        Some(ConnectionRequest::Connect { ip, port, auth }) => {
+        Some(ConnectionRequest::Connect {
+            ip,
+            port,
+            secure,
+            auth,
+        }) => {
             if let ConnectionState::Disconnected =
                 current_connection_state.get()
             {
                 let addr = ConnectionAddr::Remote {
                     ip: *ip,
                     port: *port,
+                    secure: *secure,
                 };
                 debug!(
                     previous = format!("{current_connection_state:?}"),

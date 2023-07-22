@@ -27,7 +27,8 @@ pub struct SilkServerPlugin {
 
 impl Plugin for SilkServerPlugin {
     fn build(&self, app: &mut App) {
-        if let ConnectionAddr::Local { port } = self.signaler_addr {
+        // TODO: Use TLS for secure
+        if let ConnectionAddr::Local { port, secure } = self.signaler_addr {
             app.add_plugins(SilkSignalerPlugin { port });
         }
 

@@ -27,7 +27,7 @@ fn main() {
             level: bevy::log::Level::DEBUG,
         })
         .add_plugins(SilkServerPlugin {
-            signaler_addr: ConnectionAddr::Local { port: 3536 },
+            signaler_addr: ConnectionAddr::Local { port: 3536, secure: false },
             tick_rate: 1.0,
         })
         .add_systems(

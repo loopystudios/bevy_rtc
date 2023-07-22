@@ -9,6 +9,7 @@ pub enum ConnectionRequest {
     Connect {
         ip: IpAddr,
         port: u16,
+        secure: bool,
         auth: AuthenticationRequest,
     },
     /// A request to disconnect from the signaling server; this will also

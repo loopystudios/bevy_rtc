@@ -78,19 +78,22 @@ impl Default for AuthenticationRequest {
 #[derive(Debug, Clone, Copy)]
 pub enum ConnectionAddr {
     /// Connect to a local signaling server.
-    Local { port: u16 },
+    Local { port: u16, secure: bool },
     /// Connect to a remote signaling server.
-    Remote { ip: IpAddr, port: u16 },
+    Remote { ip: IpAddr, port: u16, secure: bool },
 }
 
 impl ConnectionAddr {
     pub fn to_url(&self) -> String {
         match self {
-            ConnectionAddr::Local { port } => {
-                format!("ws://localhost:{port}/")
+            ConnectionAddr::Local { port, secure } => {
+                format!(
+                    "{}://localhost:{port}/",
+                    if *secure { "wss" } else { "ws" }
+                )
             }
-            ConnectionAddr::Remote { ip, port } => {
-                format!("wss://{ip}:{port}/")
+            ConnectionAddr::Remote { ip, port, secure } => {
+                format!("{}://{ip}:{port}/", if *secure { "wss" } else { "ws" })
             }
         }
     }
