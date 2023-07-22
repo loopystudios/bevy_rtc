@@ -6,10 +6,10 @@ use silk_common::{
     packets::auth::SilkLoginResponsePayload,
     schedule::SilkSchedule,
     sets::SilkSet,
-    ConnectionAddr,
 };
 use silk_server::{
-    AddNetworkMessageExt, NetworkReader, NetworkWriter, SilkServerPlugin,
+    AddNetworkMessageExt, NetworkReader, NetworkWriter, SignalingConfig,
+    SilkServerPlugin,
 };
 
 #[derive(Resource, Debug, Default, Clone)]
@@ -27,7 +27,7 @@ fn main() {
             level: bevy::log::Level::DEBUG,
         })
         .add_plugins(SilkServerPlugin {
-            signaler_addr: ConnectionAddr::Local { port: 3536, secure: false },
+            signaling: SignalingConfig::Local { port: 3536 },
             tick_rate: 1.0,
         })
         .add_systems(

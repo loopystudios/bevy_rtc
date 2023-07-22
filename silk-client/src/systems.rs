@@ -8,7 +8,7 @@ use silk_common::{
     bevy_matchbox::{matchbox_socket, prelude::*},
     events::SilkClientEvent,
     packets::auth::{SilkLoginRequestPayload, SilkLoginResponsePayload},
-    AuthenticationRequest, ConnectionAddr, SilkSocket,
+    AuthenticationRequest, SilkSocket,
 };
 
 /// Initialize the socket
@@ -20,7 +20,7 @@ pub(crate) fn init_socket(
         debug!("address: {addr:?}");
 
         // Create matchbox socket
-        let silk_socket = SilkSocket::new(*addr);
+        let silk_socket = SilkSocket::new(addr.to_owned());
         commands.open_socket(silk_socket.builder());
     } else {
         panic!("state set to connecting without config");
@@ -45,25 +45,15 @@ pub(crate) fn connection_event_reader(
     mut event_wtr: EventWriter<SilkClientEvent>,
 ) {
     match cxn_event_reader.iter().next() {
-        Some(ConnectionRequest::Connect {
-            ip,
-            port,
-            secure,
-            auth,
-        }) => {
+        Some(ConnectionRequest::Connect { addr, auth }) => {
             if let ConnectionState::Disconnected =
                 current_connection_state.get()
             {
-                let addr = ConnectionAddr::Remote {
-                    ip: *ip,
-                    port: *port,
-                    secure: *secure,
-                };
                 debug!(
                     previous = format!("{current_connection_state:?}"),
                     "set state: connecting"
                 );
-                state.addr.replace(addr);
+                state.addr.replace(addr.to_owned());
                 state.auth.replace(auth.to_owned());
                 next_connection_state.set(ConnectionState::Establishing);
             }

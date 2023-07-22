@@ -7,7 +7,6 @@ use events::SocketRecvEvent;
 use schedule::SilkSchedule;
 use sets::SilkSet;
 use socket::common_socket_reader;
-use std::net::IpAddr;
 
 pub mod demo_packets;
 pub mod events;
@@ -33,11 +32,9 @@ impl SilkSocket {
     /// The index of the reliable channel in the [`WebRtcSocket`].
     pub const RELIABLE_CHANNEL_INDEX: usize = 1;
 
-    /// Initialize a WebRTC socket compatible with Tribrid's Client-Server
-    /// architecture.
-    pub fn new(config: ConnectionAddr) -> Self {
-        let room_url = config.to_url();
-        let builder = WebRtcSocket::builder(room_url)
+    /// Initialize a WebRTC socket compatible with VGX architecture.
+    pub fn new(addr: String) -> Self {
+        let builder = WebRtcSocket::builder(addr)
             .add_channel(ChannelConfig {
                 ordered: true,
                 max_retransmits: Some(0),
@@ -72,30 +69,6 @@ pub enum AuthenticationRequest {
 impl Default for AuthenticationRequest {
     fn default() -> Self {
         AuthenticationRequest::Guest { username: None }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum ConnectionAddr {
-    /// Connect to a local signaling server.
-    Local { port: u16, secure: bool },
-    /// Connect to a remote signaling server.
-    Remote { ip: IpAddr, port: u16, secure: bool },
-}
-
-impl ConnectionAddr {
-    pub fn to_url(&self) -> String {
-        match self {
-            ConnectionAddr::Local { port, secure } => {
-                format!(
-                    "{}://localhost:{port}/",
-                    if *secure { "wss" } else { "ws" }
-                )
-            }
-            ConnectionAddr::Remote { ip, port, secure } => {
-                format!("{}://{ip}:{port}/", if *secure { "wss" } else { "ws" })
-            }
-        }
     }
 }
 

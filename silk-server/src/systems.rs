@@ -15,7 +15,7 @@ pub fn init_socket(mut commands: Commands, state: Res<ServerState>) {
     debug!("address: {:?}", state.addr);
 
     // Create matchbox socket
-    let silk_socket = SilkSocket::new(state.addr);
+    let silk_socket = SilkSocket::new(state.addr.clone());
     commands.open_socket(silk_socket.builder());
 }
 

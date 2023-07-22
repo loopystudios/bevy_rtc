@@ -13,7 +13,7 @@ use silk_common::{
     sets::SilkSet,
     AuthenticationRequest,
 };
-use std::{net::Ipv4Addr, ops::DerefMut};
+use std::ops::DerefMut;
 
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash, States)]
 enum ConnectionState {
@@ -192,10 +192,8 @@ fn login_ui(
                 let auth = AuthenticationRequest::Guest { username: None };
                 next_connection_state.set(ConnectionState::LoggingIn);
                 event_wtr.send(ConnectionRequest::Connect {
-                    ip: Ipv4Addr::LOCALHOST.into(),
-                    port: 3536,
+                    addr: "ws://127.0.0.1:3536".to_string(),
                     auth,
-                    secure: false,
                 });
             }
             if ui.button("Disconnect").clicked() {

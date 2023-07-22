@@ -1,7 +1,5 @@
 use bevy::prelude::*;
-use silk_common::{
-    bevy_matchbox::prelude::PeerId, AuthenticationRequest, ConnectionAddr,
-};
+use silk_common::{bevy_matchbox::prelude::PeerId, AuthenticationRequest};
 
 /// State of the socket
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash, States)]
@@ -16,7 +14,7 @@ pub enum ConnectionState {
 #[derive(Resource, Default)]
 pub struct ClientState {
     /// The socket address, used for connecting/reconnecting
-    pub addr: Option<ConnectionAddr>,
+    pub addr: Option<String>,
     /// The authentication used for connecting/reconnecting
     pub auth: Option<AuthenticationRequest>,
     /// The ID of the host

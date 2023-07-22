@@ -1,3 +1,5 @@
+use std::net::Ipv4Addr;
+
 use bevy::{prelude::*, time::fixed_timestep::FixedTime};
 pub use router::{AddNetworkMessageExt, IncomingMessages, OutgoingMessages};
 use signaler::SilkSignalerPlugin;
@@ -6,7 +8,7 @@ use silk_common::{
     packets::auth::{SilkLoginRequestPayload, SilkLoginResponsePayload},
     schedule::*,
     sets::SilkSet,
-    ConnectionAddr, SilkCommonPlugin,
+    SilkCommonPlugin,
 };
 use state::ServerState;
 pub use system_params::{NetworkReader, NetworkWriter};
@@ -17,18 +19,36 @@ pub(crate) mod state;
 mod system_params;
 pub(crate) mod systems;
 
+/// Configuration used for server signaling
+pub enum SignalingConfig {
+    /// I am hosting my own signaler
+    Local { port: u16 },
+    /// I am using a remote signaler
+    Remote { addr: String },
+}
+
+impl SignalingConfig {
+    pub fn to_url(&self) -> String {
+        match self {
+            SignalingConfig::Local { port } => {
+                format!("ws://{}:{}", Ipv4Addr::LOCALHOST, port)
+            }
+            SignalingConfig::Remote { addr } => addr.to_owned(),
+        }
+    }
+}
+
 /// The socket server abstraction
 pub struct SilkServerPlugin {
     /// Whether the signaling server is local or remote
-    pub signaler_addr: ConnectionAddr,
+    pub signaling: SignalingConfig,
     /// Hertz for server tickrate, e.g. 30.0 = 30 times per second
     pub tick_rate: f32,
 }
 
 impl Plugin for SilkServerPlugin {
     fn build(&self, app: &mut App) {
-        // TODO: Use TLS for secure
-        if let ConnectionAddr::Local { port, secure } = self.signaler_addr {
+        if let SignalingConfig::Local { port } = self.signaling {
             app.add_plugins(SilkSignalerPlugin { port });
         }
 
@@ -37,7 +57,7 @@ impl Plugin for SilkServerPlugin {
             .add_network_message::<SilkLoginResponsePayload>()
             .add_event::<SilkServerEvent>()
             .insert_resource(ServerState {
-                addr: self.signaler_addr,
+                addr: self.signaling.to_url(),
                 id: None,
             })
             .add_systems(Startup, systems::init_socket)
