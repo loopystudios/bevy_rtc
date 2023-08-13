@@ -11,7 +11,8 @@ use silk_common::{
     sets::SilkSet,
     SilkCommonPlugin,
 };
-use state::{ClientState, ConnectionState};
+use state::ClientState;
+pub use state::ConnectionState;
 pub use system_params::{NetworkReader, NetworkWriter};
 
 pub mod events;
