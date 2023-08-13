@@ -9,16 +9,6 @@ pub struct SilkPacket<M: Payload> {
     pub data: M,
 }
 
-#[cfg(not(any(feature = "json", feature = "bincode")))]
-compile_error!(
-    "you must enable feature \"json\" or \"bincode\" to choose a transport format"
-);
-
-#[cfg(all(feature = "json", feature = "bincode"))]
-compile_error!(
-    "feature \"json\" and feature \"bincode\" cannot be enabled at the same time"
-);
-
 pub trait Payload:
     Debug + Clone + Send + Sync + for<'a> Deserialize<'a> + Serialize + 'static
 {
@@ -26,7 +16,7 @@ pub trait Payload:
 
     fn reflect_name() -> &'static str;
 
-    #[cfg(feature = "json")]
+    #[cfg(not(feature = "binary"))]
     fn from_packet(packet: &Packet) -> Option<Self> {
         serde_json::from_slice::<SilkPacket<Self>>(packet)
             .ok()
@@ -34,7 +24,7 @@ pub trait Payload:
             .map(|silk_packet| silk_packet.data)
     }
 
-    #[cfg(feature = "bincode")]
+    #[cfg(feature = "binary")]
     fn from_packet(packet: &Packet) -> Option<Self> {
         bincode::deserialize::<SilkPacket<Self>>(packet)
             .ok()
@@ -42,7 +32,7 @@ pub trait Payload:
             .map(|silk_packet| silk_packet.data)
     }
 
-    #[cfg(feature = "json")]
+    #[cfg(not(feature = "binary"))]
     fn to_packet(&self) -> Packet {
         let silk_packet = SilkPacket {
             msg_id: Self::id(),
@@ -55,7 +45,7 @@ pub trait Payload:
             .into()
     }
 
-    #[cfg(feature = "bincode")]
+    #[cfg(feature = "binary")]
     fn to_packet(&self) -> Packet {
         let silk_packet = SilkPacket {
             msg_id: Self::id(),

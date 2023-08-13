@@ -13,5 +13,4 @@ silk-common = { path = "../silk-common" }
 default = []
 client = ["dep:silk-client"]
 server = ["dep:silk-server"]
-json = ["silk-net/json"]
-bincode = ["silk-net/bincode"]
+binary = ["silk-net/binary"]
