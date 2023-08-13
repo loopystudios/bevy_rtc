@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 silk-server = { optional = true, path = "../silk-server" }
 silk-client = { optional = true, path = "../silk-client" }
-silk-net = { path = "../silk-net" }
+silk-net = { path = "../silk-net", default-features = false }
 silk-common = { path = "../silk-common" }
 
 [features]
