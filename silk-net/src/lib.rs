@@ -18,21 +18,10 @@ pub trait Payload:
     fn reflect_name() -> &'static str;
 
     fn from_packet(packet: &Packet) -> Option<Self> {
-        let result: Result<SilkPacket<Self>, serde_json::Error> =
-            serde_json::from_slice(packet);
-        match result {
-            Ok(packet) => {
-                if packet.msg_id == Self::id() {
-                    Some(packet.data)
-                } else {
-                    None
-                }
-            }
-            Err(e) => {
-                error!("failed to deserialize packet! err: {e:?}, bytes: {packet:?}");
-                None
-            }
-        }
+        serde_json::from_slice::<SilkPacket<Self>>(packet)
+            .ok()
+            .filter(|silk_packet| silk_packet.msg_id == Self::id())
+            .map(|silk_packet| silk_packet.data)
         //bincode::deserialize::<SilkPacket<Self>>(packet)
         //    .ok()
         //    .filter(|silk_packet| silk_packet.msg_id == Self::id())
