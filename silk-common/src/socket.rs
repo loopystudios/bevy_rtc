@@ -19,6 +19,7 @@ pub fn common_socket_reader(
             )
             .map(SocketRecvEvent)
             .collect::<Vec<_>>();
+        trace!("Received {} total messages", messages.len());
         event_wtr.send_batch(messages);
     }
 }
