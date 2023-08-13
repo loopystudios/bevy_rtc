@@ -1,5 +1,4 @@
 use bevy_matchbox::matchbox_socket::Packet;
-use log::{error, warn};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::fmt::Debug;
 
@@ -10,6 +9,16 @@ pub struct SilkPacket<M: Payload> {
     pub data: M,
 }
 
+#[cfg(not(any(feature = "json", feature = "bincode")))]
+compile_error!(
+    "you must enable feature \"json\" or \"bincode\" to choose a transport format"
+);
+
+#[cfg(all(feature = "json", feature = "bincode"))]
+compile_error!(
+    "feature \"json\" and feature \"bincode\" cannot be enabled at the same time"
+);
+
 pub trait Payload:
     Debug + Clone + Send + Sync + for<'a> Deserialize<'a> + Serialize + 'static
 {
@@ -17,31 +26,42 @@ pub trait Payload:
 
     fn reflect_name() -> &'static str;
 
+    #[cfg(feature = "json")]
     fn from_packet(packet: &Packet) -> Option<Self> {
         serde_json::from_slice::<SilkPacket<Self>>(packet)
             .ok()
             .filter(|silk_packet| silk_packet.msg_id == Self::id())
             .map(|silk_packet| silk_packet.data)
-        //bincode::deserialize::<SilkPacket<Self>>(packet)
-        //    .ok()
-        //    .filter(|silk_packet| silk_packet.msg_id == Self::id())
-        //    .map(|silk_packet| silk_packet.data)
     }
 
+    #[cfg(feature = "bincode")]
+    fn from_packet(packet: &Packet) -> Option<Self> {
+        bincode::deserialize::<SilkPacket<Self>>(packet)
+            .ok()
+            .filter(|silk_packet| silk_packet.msg_id == Self::id())
+            .map(|silk_packet| silk_packet.data)
+    }
+
+    #[cfg(feature = "json")]
     fn to_packet(&self) -> Packet {
         let silk_packet = SilkPacket {
             msg_id: Self::id(),
             data: self.clone(),
         };
 
-        let input_string = serde_json::to_string(&silk_packet).unwrap();
+        serde_json::to_string(&silk_packet)
+            .unwrap()
+            .as_bytes()
+            .into()
+    }
 
-        // Convert the string to bytes
-        let bytes = input_string.as_bytes();
+    #[cfg(feature = "bincode")]
+    fn to_packet(&self) -> Packet {
+        let silk_packet = SilkPacket {
+            msg_id: Self::id(),
+            data: self.clone(),
+        };
 
-        // Allocate a Box to hold the bytes
-        let boxed_bytes: Box<[u8]> = bytes.into();
-        //bincode::serialize(&silk_packet).unwrap().into_boxed_slice()
-        boxed_bytes
+        bincode::serialize(&silk_packet).unwrap().into_boxed_slice()
     }
 }
