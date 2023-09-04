@@ -1,5 +1,3 @@
-use std::net::Ipv4Addr;
-
 use bevy::{prelude::*, time::fixed_timestep::FixedTime};
 pub use router::{AddNetworkMessageExt, IncomingMessages, OutgoingMessages};
 use signaler::SilkSignalerPlugin;
@@ -11,6 +9,7 @@ use silk_common::{
     SilkCommonPlugin,
 };
 use state::ServerState;
+use std::net::Ipv4Addr;
 pub use system_params::{NetworkReader, NetworkWriter};
 
 mod router;
