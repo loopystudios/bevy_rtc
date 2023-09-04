@@ -1,11 +1,11 @@
 use bevy::{log::LogPlugin, prelude::*, window::WindowResolution};
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use painting::PaintingState;
-use silk_client::{
+use silk::client::{
     events::ConnectionRequest, AddNetworkMessageExt, NetworkReader,
     NetworkWriter, SilkClientPlugin,
 };
-use silk_common::{
+use silk::common::{
     bevy_matchbox::prelude::*,
     demo_packets::{Chat, DrawPoint},
     events::SilkClientEvent,
@@ -34,7 +34,7 @@ fn main() {
         DefaultPlugins
             .set(LogPlugin {
                 filter:
-                    "error,painting_client=trace,silk=trace,wgpu_core=warn,wgpu_hal=warn,matchbox_socket=warn"
+                    "error,painting_client=trace,silk=debug,wgpu_core=warn,wgpu_hal=warn,matchbox_socket=warn"
                         .into(),
                 level: bevy::log::Level::DEBUG,
             })

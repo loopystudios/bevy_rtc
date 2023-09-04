@@ -1,5 +1,5 @@
 use bevy::{log::LogPlugin, prelude::*, utils::HashSet};
-use silk_common::{
+use silk::common::{
     bevy_matchbox::prelude::PeerId,
     demo_packets::{Chat, DrawPoint},
     events::SilkServerEvent,
@@ -7,7 +7,7 @@ use silk_common::{
     schedule::SilkSchedule,
     sets::SilkSet,
 };
-use silk_server::{
+use silk::server::{
     AddNetworkMessageExt, NetworkReader, NetworkWriter, SignalingConfig,
     SilkServerPlugin,
 };

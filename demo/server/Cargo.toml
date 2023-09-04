@@ -1,0 +1,12 @@
+[package]
+name = "demo-server"
+version.workspace = true
+license.workspace = true
+edition.workspace = true
+
+[dependencies]
+silk = { path = "../..", features = ["server"] }
+bevy = "0.11"
+bevy_egui = "0.21"
+futures-timer = { version = "3", features = ["wasm-bindgen"] }
+log = { version = "0.4", default-features = false }

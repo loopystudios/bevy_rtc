@@ -1,12 +1,11 @@
 [workspace]
-members = ["crates/*"]
+members = ["crates/*", "demo/*"]
 resolver = "2"
 
 [workspace.package]
 edition = "2021"
 version = "0.0.1"
 license = "MIT/Apache-2.0"
-
 
 [package]
 name = "silk"
