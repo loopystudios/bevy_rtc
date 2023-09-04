@@ -6,7 +6,7 @@ Silk is a monorepo for networking utilities and scheduling built over Bevy for o
 
 - A Bevy update and Silk scheduled update are **not** 1-to-1.
 - Any network traffic (reading, writing) must be scheduled on the `SilkSchedule`.
-- Do not put a rendering loop on the `SilkSchedule`, or you may see blitting.
+- Do not put a rendering loop on the `SilkSchedule`, or you may see frame dropping.
 
 ## Demos
 
