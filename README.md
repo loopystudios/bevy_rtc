@@ -16,10 +16,17 @@ Silk is a monorepo for networking utilities and scheduling built over Bevy for o
 cargo run -p demo-server
 ```
 
-- Client
+- Client (Native)
 
 ```bash
 cargo run -p demo-client
+```
+
+- Client (Web)
+
+```bash
+cargo install wasm-server-runner
+cargo run -p demo-client --target wasm32-unknown-unknown
 ```
 
 ## Features
