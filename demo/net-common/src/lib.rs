@@ -1,5 +1,5 @@
-use crate::Payload;
 use serde::{Deserialize, Serialize};
+use silk::net::Payload;
 
 #[derive(Payload, Serialize, Deserialize, Debug, Clone, Default)]
 pub struct DrawPoint {

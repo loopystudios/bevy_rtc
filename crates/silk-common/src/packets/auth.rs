@@ -1,8 +1,12 @@
-use crate::Payload;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
-#[derive(Payload, Serialize, Deserialize, Debug, Clone)]
+// Name hacking to get the import correct for silk_net::Payload.
+mod silk {
+    pub use silk_net as net;
+}
+
+#[derive(silk_net::Payload, Serialize, Deserialize, Debug, Clone)]
 pub enum SilkLoginRequestPayload {
     RegisteredUser {
         access_token: String,
@@ -13,7 +17,7 @@ pub enum SilkLoginRequestPayload {
     },
 }
 
-#[derive(Payload, Serialize, Deserialize, Debug, Clone)]
+#[derive(silk_net::Payload, Serialize, Deserialize, Debug, Clone)]
 pub enum SilkLoginResponsePayload {
     Accepted { username: String },
     Denied { reason: Option<String> },

@@ -8,7 +8,6 @@ use schedule::SilkSchedule;
 use sets::SilkSet;
 use socket::common_socket_reader;
 
-pub mod demo_packets;
 pub mod events;
 pub mod packets;
 pub mod schedule;
@@ -17,8 +16,6 @@ pub mod socket;
 
 // Re-exports
 pub use bevy_matchbox;
-pub use proc_macro_payload::Payload;
-pub use silk_net::Payload;
 
 /// An abstraction over [`matchbox_socket::WebRtcSocket`] to fit Tribrid's
 /// Client-Server architecture.

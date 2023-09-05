@@ -16,7 +16,7 @@ pub fn derive_payload_fn(item: TokenStream) -> TokenStream {
     let id = s.finish() as u16;
     let reflect_name = ident.to_string();
     quote! {
-        impl Payload for #ident {
+        impl silk::net::Payload for #ident {
             fn id() -> u16 {
                 #id
             }

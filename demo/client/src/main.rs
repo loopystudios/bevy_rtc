@@ -1,17 +1,14 @@
 use bevy::{log::LogPlugin, prelude::*, window::WindowResolution};
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
+use net_common::{Chat, DrawPoint};
 use painting::PaintingState;
 use silk::client::{
     events::ConnectionRequest, AddNetworkMessageExt, NetworkReader,
     NetworkWriter, SilkClientPlugin,
 };
 use silk::common::{
-    bevy_matchbox::prelude::*,
-    demo_packets::{Chat, DrawPoint},
-    events::SilkClientEvent,
-    schedule::SilkSchedule,
-    sets::SilkSet,
-    AuthenticationRequest,
+    bevy_matchbox::prelude::*, events::SilkClientEvent, schedule::SilkSchedule,
+    sets::SilkSet, AuthenticationRequest,
 };
 use std::ops::DerefMut;
 

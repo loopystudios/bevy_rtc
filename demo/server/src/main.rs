@@ -1,10 +1,8 @@
 use bevy::{log::LogPlugin, prelude::*, utils::HashSet};
+use net_common::{Chat, DrawPoint};
 use silk::common::{
-    bevy_matchbox::prelude::PeerId,
-    demo_packets::{Chat, DrawPoint},
-    events::SilkServerEvent,
-    packets::auth::SilkLoginResponsePayload,
-    schedule::SilkSchedule,
+    bevy_matchbox::prelude::PeerId, events::SilkServerEvent,
+    packets::auth::SilkLoginResponsePayload, schedule::SilkSchedule,
     sets::SilkSet,
 };
 use silk::server::{

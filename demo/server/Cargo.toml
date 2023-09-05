@@ -7,6 +7,7 @@ publish = false
 
 [dependencies]
 silk = { path = "../..", features = ["server"] }
+net-common = { path = "../net-common" }
 bevy = { workspace = true }
 bevy_egui = "0.21"
 futures-timer = { version = "3", features = ["wasm-bindgen"] }
