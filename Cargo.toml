@@ -9,10 +9,11 @@ license = "MIT/Apache-2.0"
 
 [workspace.dependencies]
 bevy = { version = "0.11", default-features = false }
-matchbox_signaling = { git = "https://github.com/johanhelsing/matchbox", branch = "unwrap-healing" }
-bevy_matchbox = { git = "https://github.com/johanhelsing/matchbox", version = "0.7" }
+# Switch back to matchbox 0.7 after https://github.com/johanhelsing/matchbox/pull/283
+matchbox_signaling = { git = "ssh://git@github.com/vectorgameexperts/matchbox.git", rev = "c77c57e" }
+bevy_matchbox = { git = "ssh://git@github.com/vectorgameexperts/matchbox.git", rev = "c77c57e" }
 tokio = { version = "1", default-features = false }
-async-compat = "*"
+async-compat = "0.2"
 anyhow = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 bincode = "1.3"
