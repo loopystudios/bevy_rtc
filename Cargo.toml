@@ -4,12 +4,12 @@ resolver = "2"
 
 [workspace.package]
 edition = "2021"
-version = "0.7.1"
+version = "0.7.2"
 license = "MIT/Apache-2.0"
 
 [workspace.dependencies]
 bevy = { version = "0.11", default-features = false }
-matchbox_signaling = { git = "https://github.com/johanhelsing/matchbox", version = "0.7" }
+matchbox_signaling = { git = "https://github.com/johanhelsing/matchbox", branch = "unwrap-healing" }
 bevy_matchbox = { git = "https://github.com/johanhelsing/matchbox", version = "0.7" }
 tokio = { version = "1", default-features = false }
 async-compat = "*"

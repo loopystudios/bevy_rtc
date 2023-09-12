@@ -74,6 +74,7 @@ pub(crate) fn connection_event_reader(
 
 /// Translates socket updates into bevy events
 pub(crate) fn client_socket_reader(
+    mut commands: Commands,
     mut state: ResMut<ClientState>,
     mut socket: Option<ResMut<MatchboxSocket<MultipleChannels>>>,
     mut event_wtr: EventWriter<SilkClientEvent>,
@@ -91,34 +92,55 @@ pub(crate) fn client_socket_reader(
         }
 
         // Connection state updates
-        for (id, peer_state) in socket.update_peers() {
-            match peer_state {
-                matchbox_socket::PeerState::Connected => {
-                    state.host_id.replace(id);
-                    let Some(auth) = state.auth.take() else { panic!("no auth set") };
-                    match auth {
-                        AuthenticationRequest::Registered {
-                            access_token,
-                            character,
-                        } => login_send.reliable_to_host(
-                            SilkLoginRequestPayload::RegisteredUser {
-                                access_token,
-                                character,
-                            },
-                        ),
-                        AuthenticationRequest::Guest { username } => login_send
-                            .reliable_to_host(SilkLoginRequestPayload::Guest {
-                                username,
-                            }),
+        match socket.try_update_peers() {
+            Ok(updates) => {
+                for (id, peer_state) in updates {
+                    match peer_state {
+                        matchbox_socket::PeerState::Connected => {
+                            state.host_id.replace(id);
+                            let Some(auth) = state.auth.take() else {
+                                panic!("no auth set")
+                            };
+                            match auth {
+                                AuthenticationRequest::Registered {
+                                    access_token,
+                                    character,
+                                } => login_send.reliable_to_host(
+                                    SilkLoginRequestPayload::RegisteredUser {
+                                        access_token,
+                                        character,
+                                    },
+                                ),
+                                AuthenticationRequest::Guest { username } => {
+                                    login_send.reliable_to_host(
+                                        SilkLoginRequestPayload::Guest {
+                                            username,
+                                        },
+                                    )
+                                }
+                            }
+                        }
+                        matchbox_socket::PeerState::Disconnected => {
+                            state.host_id.take();
+                            next_connection_state
+                                .set(ConnectionState::Disconnected);
+                            event_wtr.send(
+                                SilkClientEvent::DisconnectedFromHost {
+                                    reason: Some("Server reset".to_string()),
+                                },
+                            );
+                        }
                     }
                 }
-                matchbox_socket::PeerState::Disconnected => {
-                    state.host_id.take();
-                    next_connection_state.set(ConnectionState::Disconnected);
-                    event_wtr.send(SilkClientEvent::DisconnectedFromHost {
-                        reason: Some("Server reset".to_string()),
-                    });
-                }
+            }
+            Err(e) => {
+                error!("connection to server broken - cleaning up! {e:?}");
+                state.host_id.take();
+                next_connection_state.set(ConnectionState::Disconnected);
+                event_wtr.send(SilkClientEvent::DisconnectedFromHost {
+                    reason: Some("Server reset".to_string()),
+                });
+                commands.close_socket::<MultipleChannels>();
             }
         }
     }
