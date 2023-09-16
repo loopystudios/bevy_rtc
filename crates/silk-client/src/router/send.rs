@@ -29,6 +29,7 @@ impl<M: Payload> OutgoingMessages<M> {
             if let Some(host) = state.host_id {
                 // Client is sending
                 for message in queue.reliable_to_host.iter() {
+                    // TODO: This can panic!! and has.
                     socket
                         .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
                         .send(message.to_packet(), host)
