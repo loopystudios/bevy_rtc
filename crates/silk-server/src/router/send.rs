@@ -39,9 +39,12 @@ impl<M: Payload> OutgoingMessages<M> {
             for message in queue.reliable_to_all.iter() {
                 let peers: Vec<PeerId> = socket.connected_peers().collect();
                 peers.into_iter().for_each(|peer| {
-                    socket
+                    if socket
                         .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
-                        .send(message.to_packet(), peer);
+                        .try_send(message.to_packet(), peer).is_err()
+                    {
+                        error!("failed to send reliable packet to {peer}: {message:?}");
+                    }
                 })
             }
             if !queue.reliable_to_all.is_empty() {
@@ -54,9 +57,11 @@ impl<M: Payload> OutgoingMessages<M> {
             for message in queue.unreliable_to_all.iter() {
                 let peers: Vec<PeerId> = socket.connected_peers().collect();
                 peers.into_iter().for_each(|peer| {
-                    socket
+                    if socket
                         .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
-                        .send(message.to_packet(), peer)
+                        .try_send(message.to_packet(), peer).is_err() {
+                        error!("failed to send unreliable packet to {peer}: {message:?}");
+                    }
                 })
             }
             if !queue.unreliable_to_all.is_empty() {
@@ -70,9 +75,11 @@ impl<M: Payload> OutgoingMessages<M> {
                 let peers: Vec<PeerId> =
                     socket.connected_peers().filter(|p| p != peer).collect();
                 peers.into_iter().for_each(|peer| {
-                    socket
+                    if socket
                         .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
-                        .send(message.to_packet(), peer)
+                        .try_send(message.to_packet(), peer).is_err() {
+                        error!("failed to send reliable packet to {peer}: {message:?}");
+                    }
                 });
             }
             if !queue.reliable_to_all_except.is_empty() {
@@ -86,9 +93,11 @@ impl<M: Payload> OutgoingMessages<M> {
                 let peers: Vec<PeerId> =
                     socket.connected_peers().filter(|p| p != peer).collect();
                 peers.into_iter().for_each(|peer| {
-                    socket
+                    if socket
                         .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
-                        .send(message.to_packet(), peer)
+                        .try_send(message.to_packet(), peer).is_err() {
+                        error!("failed to send unreliable packet to {peer}: {message:?}");
+                    }
                 });
             }
             if !queue.unreliable_to_all_except.is_empty() {
@@ -99,9 +108,15 @@ impl<M: Payload> OutgoingMessages<M> {
                 );
             }
             for (peer, message) in queue.reliable_to_peer.iter() {
-                socket
+                if socket
                     .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
-                    .send(message.to_packet(), *peer)
+                    .try_send(message.to_packet(), *peer)
+                    .is_err()
+                {
+                    error!(
+                        "failed to send reliable packet to {peer}: {message:?}"
+                    );
+                }
             }
             if !queue.reliable_to_peer.is_empty() {
                 trace!(
@@ -111,9 +126,13 @@ impl<M: Payload> OutgoingMessages<M> {
                 );
             }
             for (peer, message) in queue.unreliable_to_peer.iter() {
-                socket
+                if socket
                     .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
-                    .send(message.to_packet(), *peer)
+                    .try_send(message.to_packet(), *peer)
+                    .is_err()
+                {
+                    error!("failed to send unreliable packet to {peer}: {message:?}");
+                }
             }
             if !queue.unreliable_to_peer.is_empty() {
                 trace!(

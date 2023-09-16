@@ -29,10 +29,13 @@ impl<M: Payload> OutgoingMessages<M> {
             if let Some(host) = state.host_id {
                 // Client is sending
                 for message in queue.reliable_to_host.iter() {
-                    // TODO: This can panic!! and has.
-                    socket
+                    if socket
                         .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
-                        .send(message.to_packet(), host)
+                        .try_send(message.to_packet(), host)
+                        .is_err()
+                    {
+                        error!("failed to send reliable packet to {host}: {message:?}");
+                    }
                 }
                 if !queue.reliable_to_host.is_empty() {
                     trace!(
@@ -42,9 +45,13 @@ impl<M: Payload> OutgoingMessages<M> {
                     );
                 }
                 for message in queue.unreliable_to_host.iter() {
-                    socket
+                    if socket
                         .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
-                        .send(message.to_packet(), host)
+                        .try_send(message.to_packet(), host)
+                        .is_err()
+                    {
+                        error!("failed to send unreliable packet to {host}: {message:?}");
+                    }
                 }
                 if !queue.unreliable_to_host.is_empty() {
                     trace!(
