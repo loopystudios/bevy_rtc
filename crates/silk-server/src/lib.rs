@@ -1,5 +1,4 @@
 use bevy::{prelude::*, time::fixed_timestep::FixedTime};
-pub use router::{AddNetworkMessageExt, IncomingMessages, OutgoingMessages};
 use signaler::SilkSignalerPlugin;
 use silk_common::{
     events::SilkServerEvent,
@@ -10,13 +9,16 @@ use silk_common::{
 };
 use state::ServerState;
 use std::net::Ipv4Addr;
-pub use system_params::{NetworkReader, NetworkWriter};
 
 mod router;
-pub mod signaler;
-pub(crate) mod state;
+mod state;
 mod system_params;
-pub(crate) mod systems;
+mod systems;
+
+pub use router::{AddNetworkMessageExt, IncomingMessages, OutgoingMessages};
+pub use system_params::{NetworkReader, NetworkWriter};
+
+pub mod signaler;
 
 /// Configuration used for server signaling
 pub enum SignalingConfig {

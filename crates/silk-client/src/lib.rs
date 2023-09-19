@@ -1,9 +1,5 @@
-mod state;
-mod systems;
-
 use bevy::prelude::*;
 use events::ConnectionRequest;
-pub use router::{AddNetworkMessageExt, IncomingMessages, OutgoingMessages};
 use silk_common::{
     bevy_matchbox::{prelude::MultipleChannels, MatchboxSocket},
     events::SilkClientEvent,
@@ -13,12 +9,17 @@ use silk_common::{
     SilkCommonPlugin,
 };
 use state::ClientState;
+
+mod router;
+mod state;
+mod system_params;
+mod systems;
+
+pub use router::{AddNetworkMessageExt, IncomingMessages, OutgoingMessages};
 pub use state::ConnectionState;
 pub use system_params::{NetworkReader, NetworkWriter};
 
 pub mod events;
-mod router;
-mod system_params;
 
 /// The socket client abstraction
 pub struct SilkClientPlugin;
