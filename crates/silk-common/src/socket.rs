@@ -1,5 +1,3 @@
-use std::f32::consts::E;
-
 use crate::events::SocketRecvEvent;
 use bevy::prelude::*;
 use bevy_matchbox::{prelude::MultipleChannels, MatchboxSocket};
