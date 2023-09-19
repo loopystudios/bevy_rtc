@@ -2,21 +2,29 @@ use crate::{system_params::NetworkReader, ServerState};
 use bevy::prelude::*;
 use silk_common::{
     bevy_matchbox::{
-        matchbox_socket::PeerState, prelude::MultipleChannels, MatchboxSocket,
-        OpenSocketExt,
+        matchbox_socket::{PeerState, WebRtcSocket},
+        prelude::{ChannelConfig, MultipleChannels},
+        MatchboxSocket, OpenSocketExt,
     },
     events::SilkServerEvent,
     packets::auth::SilkLoginRequestPayload,
-    SilkSocket,
 };
 
 /// Initialize the socket
 pub fn init_socket(mut commands: Commands, state: Res<ServerState>) {
-    debug!("address: {:?}", state.addr);
+    debug!("server address: {:?}", state.addr);
 
     // Create matchbox socket
-    let silk_socket = SilkSocket::new(state.addr.clone());
-    commands.open_socket(silk_socket.builder());
+    let socker_builder = WebRtcSocket::builder(state.addr.clone())
+        // Match UNRELIABLE_CHANNEL_INDEX
+        .add_channel(ChannelConfig {
+            ordered: true,
+            max_retransmits: Some(0),
+        })
+        // Match RELIABLE_CHANNEL_INDEX
+        .add_channel(ChannelConfig::reliable());
+
+    commands.open_socket(socker_builder);
 }
 
 /// Translates socket events into Bevy events

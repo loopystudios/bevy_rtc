@@ -5,10 +5,13 @@ use crate::{
 };
 use bevy::prelude::*;
 use silk_common::{
-    bevy_matchbox::{matchbox_socket, prelude::*},
+    bevy_matchbox::{
+        matchbox_socket::{self, WebRtcSocket},
+        prelude::*,
+    },
     events::SilkClientEvent,
     packets::auth::{SilkLoginRequestPayload, SilkLoginResponsePayload},
-    AuthenticationRequest, SilkSocket,
+    AuthenticationRequest,
 };
 
 /// Initialize the socket
@@ -17,11 +20,20 @@ pub(crate) fn init_socket(
     socket_res: Res<ClientState>,
 ) {
     if let Some(addr) = &socket_res.addr {
-        debug!("address: {addr:?}");
+        debug!("connecting to: {addr:?}");
 
         // Create matchbox socket
-        let silk_socket = SilkSocket::new(addr.to_owned());
-        commands.open_socket(silk_socket.builder());
+        let socker_builder = WebRtcSocket::builder(addr)
+            // Match UNRELIABLE_CHANNEL_INDEX
+            .add_channel(ChannelConfig {
+                ordered: true,
+                max_retransmits: Some(0),
+            })
+            // Match RELIABLE_CHANNEL_INDEX
+            .add_channel(ChannelConfig::reliable());
+
+        // Open socket
+        commands.open_socket(socker_builder);
     } else {
         panic!("state set to connecting without config");
     }
@@ -74,75 +86,69 @@ pub(crate) fn connection_event_reader(
 
 /// Translates socket updates into bevy events
 pub(crate) fn client_socket_reader(
-    mut commands: Commands,
     mut state: ResMut<ClientState>,
-    mut socket: Option<ResMut<MatchboxSocket<MultipleChannels>>>,
+    mut socket: ResMut<MatchboxSocket<MultipleChannels>>,
     mut event_wtr: EventWriter<SilkClientEvent>,
     mut login_send: NetworkWriter<SilkLoginRequestPayload>,
     mut next_connection_state: ResMut<NextState<ConnectionState>>,
 ) {
     // Create socket events for Silk
-    if let Some(socket) = socket.as_mut() {
-        // Id changed events
-        if let Some(id) = socket.id() {
-            if state.id.is_none() {
-                state.id.replace(id);
-                event_wtr.send(SilkClientEvent::IdAssigned(id));
-            }
-        }
 
-        // Connection state updates
-        match socket.try_update_peers() {
-            Ok(updates) => {
-                for (id, peer_state) in updates {
-                    match peer_state {
-                        matchbox_socket::PeerState::Connected => {
-                            state.host_id.replace(id);
-                            let Some(auth) = state.auth.take() else {
-                                panic!("no auth set")
-                            };
-                            match auth {
-                                AuthenticationRequest::Registered {
+    // Id changed events
+    if let Some(id) = socket.id() {
+        if state.id.is_none() {
+            state.id.replace(id);
+            event_wtr.send(SilkClientEvent::IdAssigned(id));
+        }
+    }
+
+    // Connection state updates
+    match socket.try_update_peers() {
+        Ok(updates) => {
+            for (id, peer_state) in updates {
+                match peer_state {
+                    matchbox_socket::PeerState::Connected => {
+                        state.host_id.replace(id);
+                        let Some(auth) = state.auth.take() else {
+                            panic!("no auth set")
+                        };
+                        match auth {
+                            AuthenticationRequest::Registered {
+                                access_token,
+                                character,
+                            } => login_send.reliable_to_host(
+                                SilkLoginRequestPayload::RegisteredUser {
                                     access_token,
                                     character,
-                                } => login_send.reliable_to_host(
-                                    SilkLoginRequestPayload::RegisteredUser {
-                                        access_token,
-                                        character,
-                                    },
-                                ),
-                                AuthenticationRequest::Guest { username } => {
-                                    login_send.reliable_to_host(
-                                        SilkLoginRequestPayload::Guest {
-                                            username,
-                                        },
-                                    )
-                                }
+                                },
+                            ),
+                            AuthenticationRequest::Guest { username } => {
+                                login_send.reliable_to_host(
+                                    SilkLoginRequestPayload::Guest { username },
+                                )
                             }
                         }
-                        matchbox_socket::PeerState::Disconnected => {
-                            state.host_id.take();
-                            next_connection_state
-                                .set(ConnectionState::Disconnected);
-                            event_wtr.send(
-                                SilkClientEvent::DisconnectedFromHost {
-                                    reason: Some("Server reset".to_string()),
-                                },
-                            );
-                        }
+                    }
+                    matchbox_socket::PeerState::Disconnected => {
+                        next_connection_state
+                            .set(ConnectionState::Disconnected);
+                        event_wtr.send(SilkClientEvent::DisconnectedFromHost {
+                            reason: Some("Server reset".to_string()),
+                        });
                     }
                 }
             }
-            Err(e) => {
-                error!("connection to server broken - cleaning up! {e:?}");
-                state.host_id.take();
-                next_connection_state.set(ConnectionState::Disconnected);
-                event_wtr.send(SilkClientEvent::DisconnectedFromHost {
-                    reason: Some("Server reset".to_string()),
-                });
-                commands.close_socket::<MultipleChannels>();
-            }
         }
+        Err(e) => {
+            error!("read channel error: {e:?}");
+        }
+    }
+
+    if socket.is_closed() {
+        next_connection_state.set(ConnectionState::Disconnected);
+        event_wtr.send(SilkClientEvent::DisconnectedFromHost {
+            reason: Some("Connection failed".to_string()),
+        });
     }
 }
 

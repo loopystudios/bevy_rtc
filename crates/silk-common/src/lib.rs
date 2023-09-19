@@ -1,8 +1,5 @@
 use bevy::prelude::*;
-use bevy_matchbox::matchbox_socket::{
-    ChannelConfig, MessageLoopFuture, MultipleChannels, WebRtcSocket,
-    WebRtcSocketBuilder,
-};
+use bevy_matchbox::{prelude::MultipleChannels, MatchboxSocket};
 use events::SocketRecvEvent;
 use schedule::SilkSchedule;
 use sets::SilkSet;
@@ -16,42 +13,6 @@ pub mod socket;
 
 // Re-exports
 pub use bevy_matchbox;
-
-/// An abstraction over [`matchbox_socket::WebRtcSocket`] to fit Tribrid's
-/// Client-Server architecture.
-pub struct SilkSocket {
-    builder: WebRtcSocketBuilder<MultipleChannels>,
-}
-
-impl SilkSocket {
-    /// The index of the unreliable channel in the [`WebRtcSocket`].
-    pub const UNRELIABLE_CHANNEL_INDEX: usize = 0;
-    /// The index of the reliable channel in the [`WebRtcSocket`].
-    pub const RELIABLE_CHANNEL_INDEX: usize = 1;
-
-    /// Initialize a WebRTC socket compatible with VGX architecture.
-    pub fn new(addr: String) -> Self {
-        let builder = WebRtcSocket::builder(addr)
-            .add_channel(ChannelConfig {
-                ordered: true,
-                max_retransmits: Some(0),
-            }) // Match UNRELIABLE_CHANNEL_INDEX
-            .add_channel(ChannelConfig::reliable()); // Match RELIABLE_CHANNEL_INDEX
-
-        Self { builder }
-    }
-
-    pub fn builder(self) -> WebRtcSocketBuilder<MultipleChannels> {
-        self.builder
-    }
-
-    /// Consume the wrapper, returning the lower-level matchbox types.
-    pub fn into_parts(
-        self,
-    ) -> (WebRtcSocket<MultipleChannels>, MessageLoopFuture) {
-        self.builder.build()
-    }
-}
 
 #[derive(Debug, Clone)]
 pub enum AuthenticationRequest {
@@ -94,7 +55,10 @@ impl Plugin for SilkCommonPlugin {
                 // stage
                 common_socket_reader
                     .after(trace_network_read)
-                    .before(SilkSet::NetworkRead),
+                    .before(SilkSet::NetworkRead)
+                    .run_if(
+                        resource_exists::<MatchboxSocket<MultipleChannels>>(),
+                    ),
             )
             .add_systems(
                 SilkSchedule,

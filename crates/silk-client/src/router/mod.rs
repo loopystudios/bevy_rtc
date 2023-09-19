@@ -5,7 +5,10 @@ use bevy::prelude::*;
 pub use receive::IncomingMessages;
 pub use send::OutgoingMessages;
 use silk_common::{
-    schedule::SilkSchedule, sets::SilkSet, socket::common_socket_reader,
+    bevy_matchbox::{prelude::MultipleChannels, MatchboxSocket},
+    schedule::SilkSchedule,
+    sets::SilkSet,
+    socket::common_socket_reader,
 };
 pub use silk_net::Payload;
 
@@ -32,7 +35,10 @@ impl AddNetworkMessageExt for App {
                 SilkSchedule,
                 IncomingMessages::<M>::read_system
                     .before(SilkSet::NetworkRead)
-                    .after(common_socket_reader),
+                    .after(common_socket_reader)
+                    .run_if(
+                        resource_exists::<MatchboxSocket<MultipleChannels>>(),
+                    ),
             )
             .insert_resource(OutgoingMessages::<M> {
                 reliable_to_host: vec![],

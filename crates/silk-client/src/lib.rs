@@ -5,6 +5,7 @@ use bevy::prelude::*;
 use events::ConnectionRequest;
 pub use router::{AddNetworkMessageExt, IncomingMessages, OutgoingMessages};
 use silk_common::{
+    bevy_matchbox::{prelude::MultipleChannels, MatchboxSocket},
     events::SilkClientEvent,
     packets::auth::{SilkLoginRequestPayload, SilkLoginResponsePayload},
     schedule::SilkSchedule,
@@ -42,7 +43,9 @@ impl Plugin for SilkClientPlugin {
         )
         .add_systems(
             SilkSchedule,
-            systems::client_socket_reader.in_set(SilkSet::NetworkRead),
+            systems::client_socket_reader
+                .in_set(SilkSet::NetworkRead)
+                .run_if(resource_exists::<MatchboxSocket<MultipleChannels>>()),
         )
         .add_systems(
             SilkSchedule,

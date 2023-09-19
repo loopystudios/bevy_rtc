@@ -4,14 +4,14 @@ resolver = "2"
 
 [workspace.package]
 edition = "2021"
-version = "0.7.3"
+version = "0.7.4"
 license = "MIT/Apache-2.0"
 
 [workspace.dependencies]
 bevy = { version = "0.11", default-features = false }
 # Switch back to matchbox 0.7 after https://github.com/johanhelsing/matchbox/pull/283
-matchbox_signaling = { git = "ssh://git@github.com/vectorgameexperts/matchbox.git", rev = "6fb0a892dce7f5277e7a5031a9ce24a4fbfaf1b1" }
-bevy_matchbox = { git = "ssh://git@github.com/vectorgameexperts/matchbox.git", rev = "6fb0a892dce7f5277e7a5031a9ce24a4fbfaf1b1" }
+matchbox_signaling = { git = "ssh://git@github.com/vectorgameexperts/matchbox.git", rev = "2f37301" }
+bevy_matchbox = { git = "ssh://git@github.com/vectorgameexperts/matchbox.git", rev = "2f37301" }
 tokio = { version = "1", default-features = false }
 async-compat = "0.2"
 anyhow = "1.0"

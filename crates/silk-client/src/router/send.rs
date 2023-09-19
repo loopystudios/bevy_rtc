@@ -1,10 +1,10 @@
-use bevy::prelude::*;
-use silk_common::bevy_matchbox::{prelude::MultipleChannels, MatchboxSocket};
-
-use silk_common::SilkSocket;
-use silk_net::Payload;
-
 use crate::state::ClientState;
+use bevy::prelude::*;
+use silk_common::{
+    bevy_matchbox::{prelude::MultipleChannels, MatchboxSocket},
+    socket::{RELIABLE_CHANNEL_INDEX, UNRELIABLE_CHANNEL_INDEX},
+};
+use silk_net::Payload;
 
 #[derive(Default, Debug, Resource)]
 pub struct OutgoingMessages<M: Payload> {
@@ -30,7 +30,7 @@ impl<M: Payload> OutgoingMessages<M> {
                 // Client is sending
                 for message in queue.reliable_to_host.iter() {
                     if socket
-                        .channel(SilkSocket::RELIABLE_CHANNEL_INDEX)
+                        .channel(RELIABLE_CHANNEL_INDEX)
                         .try_send(message.to_packet(), host)
                         .is_err()
                     {
@@ -46,7 +46,7 @@ impl<M: Payload> OutgoingMessages<M> {
                 }
                 for message in queue.unreliable_to_host.iter() {
                     if socket
-                        .channel(SilkSocket::UNRELIABLE_CHANNEL_INDEX)
+                        .channel(UNRELIABLE_CHANNEL_INDEX)
                         .try_send(message.to_packet(), host)
                         .is_err()
                     {
