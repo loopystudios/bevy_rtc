@@ -56,7 +56,7 @@ pub(crate) fn connection_event_reader(
     current_connection_state: Res<State<ConnectionState>>,
     mut event_wtr: EventWriter<SilkClientEvent>,
 ) {
-    match cxn_event_reader.iter().next() {
+    match cxn_event_reader.read().next() {
         Some(ConnectionRequest::Connect { addr, auth }) => {
             if let ConnectionState::Disconnected =
                 current_connection_state.get()
@@ -144,7 +144,7 @@ pub(crate) fn client_socket_reader(
         }
     }
 
-    if socket.is_closed() {
+    if socket.any_closed() {
         next_connection_state.set(ConnectionState::Disconnected);
         event_wtr.send(SilkClientEvent::DisconnectedFromHost {
             reason: Some("Connection failed".to_string()),

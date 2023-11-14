@@ -9,6 +9,6 @@ publish = false
 silk = { path = "../..", features = ["server"] }
 net-common = { path = "../net-common" }
 bevy = { workspace = true }
-bevy_egui = "0.21"
+bevy_egui = { workspace = true }
 futures-timer = { version = "3", features = ["wasm-bindgen"] }
 log = { version = "0.4", default-features = false }

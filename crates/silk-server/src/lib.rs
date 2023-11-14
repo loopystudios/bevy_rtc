@@ -1,4 +1,4 @@
-use bevy::{prelude::*, time::fixed_timestep::FixedTime};
+use bevy::prelude::*;
 use signaler::SilkSignalerPlugin;
 use silk_common::{
     events::SilkServerEvent,
@@ -44,7 +44,7 @@ pub struct SilkServerPlugin {
     /// Whether the signaling server is local or remote
     pub signaling: SignalingConfig,
     /// Hertz for server tickrate, e.g. 30.0 = 30 times per second
-    pub tick_rate: f32,
+    pub tick_rate: f64,
 }
 
 impl Plugin for SilkServerPlugin {
@@ -62,7 +62,7 @@ impl Plugin for SilkServerPlugin {
                 id: None,
             })
             .add_systems(Startup, systems::init_socket)
-            .insert_resource(FixedTime::new_from_secs(1.0 / self.tick_rate));
+            .insert_resource(Time::<Fixed>::from_seconds(1.0 / self.tick_rate));
 
         app.add_systems(
             SilkSchedule,

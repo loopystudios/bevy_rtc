@@ -12,10 +12,10 @@ pub fn common_socket_reader(
     mut event_wtr: EventWriter<SocketRecvEvent>,
 ) {
     let messages = socket
-        .channel(RELIABLE_CHANNEL_INDEX)
+        .channel_mut(RELIABLE_CHANNEL_INDEX)
         .receive()
         .into_iter()
-        .chain(socket.channel(UNRELIABLE_CHANNEL_INDEX).receive())
+        .chain(socket.channel_mut(UNRELIABLE_CHANNEL_INDEX).receive())
         .map(SocketRecvEvent)
         .collect::<Vec<_>>();
     trace!("Received {} total messages", messages.len());

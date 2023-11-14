@@ -101,7 +101,7 @@ fn handle_events(
     mut events: EventReader<SilkClientEvent>,
     mut world_state: ResMut<WorldState>,
 ) {
-    for ev in events.iter() {
+    for ev in events.read() {
         debug!("event: {ev:?}");
         match ev {
             SilkClientEvent::IdAssigned(id) => {

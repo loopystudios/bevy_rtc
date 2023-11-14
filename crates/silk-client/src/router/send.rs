@@ -30,7 +30,7 @@ impl<M: Payload> OutgoingMessages<M> {
                 // Client is sending
                 for message in queue.reliable_to_host.iter() {
                     if socket
-                        .channel(RELIABLE_CHANNEL_INDEX)
+                        .channel_mut(RELIABLE_CHANNEL_INDEX)
                         .try_send(message.to_packet(), host)
                         .is_err()
                     {
@@ -46,7 +46,7 @@ impl<M: Payload> OutgoingMessages<M> {
                 }
                 for message in queue.unreliable_to_host.iter() {
                     if socket
-                        .channel(UNRELIABLE_CHANNEL_INDEX)
+                        .channel_mut(UNRELIABLE_CHANNEL_INDEX)
                         .try_send(message.to_packet(), host)
                         .is_err()
                     {

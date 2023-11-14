@@ -7,7 +7,7 @@ edition.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 bevy = { workspace = true }
-matchbox_signaling = { workspace = true }
+bevy_matchbox = { workspace = true, features = ["signaling"] }
 silk-common = { path = "../silk-common" }
 silk-net = { path = "../silk-net" }
 anyhow = { workspace = true }

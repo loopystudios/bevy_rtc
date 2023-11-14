@@ -76,7 +76,7 @@ fn handle_events(
     mut event_rdr: EventReader<SilkServerEvent>,
     mut world_state: ResMut<ServerState>,
 ) {
-    for ev in event_rdr.iter() {
+    for ev in event_rdr.read() {
         debug!("event: {ev:?}");
         match ev {
             SilkServerEvent::GuestLoginRequest { peer_id, .. }

@@ -40,7 +40,7 @@ impl<M: Payload> OutgoingMessages<M> {
                 let peers: Vec<PeerId> = socket.connected_peers().collect();
                 peers.into_iter().for_each(|peer| {
                     if socket
-                        .channel(RELIABLE_CHANNEL_INDEX)
+                        .channel_mut(RELIABLE_CHANNEL_INDEX)
                         .try_send(message.to_packet(), peer).is_err()
                     {
                         error!("failed to send reliable packet to {peer}: {message:?}");
@@ -58,7 +58,7 @@ impl<M: Payload> OutgoingMessages<M> {
                 let peers: Vec<PeerId> = socket.connected_peers().collect();
                 peers.into_iter().for_each(|peer| {
                     if socket
-                        .channel(UNRELIABLE_CHANNEL_INDEX)
+                        .channel_mut(UNRELIABLE_CHANNEL_INDEX)
                         .try_send(message.to_packet(), peer).is_err() {
                         error!("failed to send unreliable packet to {peer}: {message:?}");
                     }
@@ -76,7 +76,7 @@ impl<M: Payload> OutgoingMessages<M> {
                     socket.connected_peers().filter(|p| p != peer).collect();
                 peers.into_iter().for_each(|peer| {
                     if socket
-                        .channel(RELIABLE_CHANNEL_INDEX)
+                        .channel_mut(RELIABLE_CHANNEL_INDEX)
                         .try_send(message.to_packet(), peer).is_err() {
                         error!("failed to send reliable packet to {peer}: {message:?}");
                     }
@@ -94,7 +94,7 @@ impl<M: Payload> OutgoingMessages<M> {
                     socket.connected_peers().filter(|p| p != peer).collect();
                 peers.into_iter().for_each(|peer| {
                     if socket
-                        .channel(UNRELIABLE_CHANNEL_INDEX)
+                        .channel_mut(UNRELIABLE_CHANNEL_INDEX)
                         .try_send(message.to_packet(), peer).is_err() {
                         error!("failed to send unreliable packet to {peer}: {message:?}");
                     }
@@ -109,7 +109,7 @@ impl<M: Payload> OutgoingMessages<M> {
             }
             for (peer, message) in queue.reliable_to_peer.iter() {
                 if socket
-                    .channel(RELIABLE_CHANNEL_INDEX)
+                    .channel_mut(RELIABLE_CHANNEL_INDEX)
                     .try_send(message.to_packet(), *peer)
                     .is_err()
                 {
@@ -127,7 +127,7 @@ impl<M: Payload> OutgoingMessages<M> {
             }
             for (peer, message) in queue.unreliable_to_peer.iter() {
                 if socket
-                    .channel(UNRELIABLE_CHANNEL_INDEX)
+                    .channel_mut(UNRELIABLE_CHANNEL_INDEX)
                     .try_send(message.to_packet(), *peer)
                     .is_err()
                 {

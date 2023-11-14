@@ -22,7 +22,7 @@ impl<M: Payload> IncomingMessages<M> {
         mut events: EventReader<SocketRecvEvent>,
     ) {
         let mut read = 0;
-        for SocketRecvEvent((_peer_id, packet)) in events.iter() {
+        for SocketRecvEvent((_peer_id, packet)) in events.read() {
             if let Some(message) = M::from_packet(packet) {
                 incoming.messages.push(message);
                 read += 1;
