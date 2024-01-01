@@ -6,9 +6,8 @@ edition.workspace = true
 publish = false
 
 [dependencies]
-silk = { path = "../..", features = ["client"] }
-net-common = { path = "../net-common" }
 bevy = { workspace = true, default-features = true }
-bevy_egui = { workspace = true }
-futures-timer = { version = "3", features = ["wasm-bindgen"] }
+bevy-silk = { path = "../../bevy-silk", features = ["client"] }
+protocol = { path = "../protocol" }
+bevy_egui = "0.24"
 log = { version = "0.4", default-features = false }

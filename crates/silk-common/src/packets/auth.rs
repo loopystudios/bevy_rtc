@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
 // Name hacking to get the import correct for silk_net::Payload.
-mod silk {
+mod bevy_silk {
     pub use silk_net as net;
 }
 

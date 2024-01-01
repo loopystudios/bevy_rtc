@@ -2,7 +2,8 @@ use bevy_matchbox::matchbox_socket::Packet;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::fmt::Debug;
 
-// Note: Intentional name collision with the trait Payload! This makes importing Payload easier.
+// Note: Intentional name collision with the trait Payload! This makes importing
+// Payload easier.
 pub use proc_macro_payload::Payload;
 
 #[derive(Deserialize, Serialize)]

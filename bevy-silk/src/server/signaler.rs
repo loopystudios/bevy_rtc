@@ -1,5 +1,7 @@
 use bevy::prelude::*;
-use bevy_matchbox::{matchbox_signaling::SignalingServer, MatchboxServer};
+use silk_common::bevy_matchbox::{
+    matchbox_signaling::SignalingServer, MatchboxServer,
+};
 use std::net::{Ipv4Addr, SocketAddrV4};
 
 /// The signaler abstraction

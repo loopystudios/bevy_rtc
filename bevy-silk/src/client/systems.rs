@@ -1,4 +1,4 @@
-use crate::{
+use super::{
     events::ConnectionRequest,
     state::{ClientState, ConnectionState},
     system_params::{NetworkReader, NetworkWriter},

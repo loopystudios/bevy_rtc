@@ -1,4 +1,4 @@
-use crate::router::{IncomingMessages, OutgoingMessages};
+use super::router::{IncomingMessages, OutgoingMessages};
 use bevy::{ecs::system::SystemParam, prelude::*};
 use silk_net::Payload;
 

@@ -1,11 +1,8 @@
+use super::router::{IncomingMessages, OutgoingMessages};
 use bevy::{ecs::system::SystemParam, prelude::*};
-
 use bevy_matchbox::prelude::PeerId;
-
-use crate::router::{IncomingMessages, OutgoingMessages};
-use silk_net::Payload;
-
 use silk_common::bevy_matchbox;
+use silk_net::Payload;
 
 #[derive(SystemParam, Debug)]
 pub struct NetworkReader<'w, M: Payload> {

@@ -1,14 +1,16 @@
 use bevy::{log::LogPlugin, prelude::*, utils::HashSet};
-use net_common::{Chat, DrawPoint};
-use silk::common::{
-    bevy_matchbox::prelude::PeerId, events::SilkServerEvent,
-    packets::auth::SilkLoginResponsePayload, schedule::SilkSchedule,
-    sets::SilkSet,
+use bevy_silk::{
+    common::{
+        bevy_matchbox::prelude::PeerId, events::SilkServerEvent,
+        packets::auth::SilkLoginResponsePayload, schedule::SilkSchedule,
+        sets::SilkSet,
+    },
+    server::{
+        AddNetworkMessageExt, NetworkReader, NetworkWriter, SignalingConfig,
+        SilkServerPlugin,
+    },
 };
-use silk::server::{
-    AddNetworkMessageExt, NetworkReader, NetworkWriter, SignalingConfig,
-    SilkServerPlugin,
-};
+use protocol::{Chat, DrawPoint};
 
 #[derive(Resource, Debug, Default, Clone)]
 struct ServerState {
@@ -26,7 +28,7 @@ fn main() {
         })
         .add_plugins(SilkServerPlugin {
             signaling: SignalingConfig::Local { port: 3536 },
-            tick_rate: 1.0,
+            tick_rate: 60.0,
         })
         .add_systems(
             SilkSchedule,
@@ -56,7 +58,7 @@ fn send_draw_points(
     mut draw_send: NetworkWriter<DrawPoint>,
 ) {
     for (peer, draw) in draw_read.iter() {
-        draw_send.unreliable_to_all_except(*peer, draw.clone());
+        draw_send.reliable_to_all_except(*peer, draw.clone());
     }
 }
 

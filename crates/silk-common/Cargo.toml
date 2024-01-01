@@ -6,12 +6,12 @@ edition.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
+bevy = { workspace = true }
 silk-net = { path = "../silk-net" }
 silk-macros = { path = "../silk-macros" }
-bevy_matchbox = { workspace = true }
-serde = { workspace = true }
-bincode = { workspace = true }
-log = { version = "0.4", default-features = false }
-bevy = { workspace = true }
+bevy_matchbox = { workspace = true, features = ["signaling"] }
+serde = "1"
+bincode = "*"                                                  # TODO: This should be removed
+log = "0.4"
 strum = "0.25"
 strum_macros = "0.25"

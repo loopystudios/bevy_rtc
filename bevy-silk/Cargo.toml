@@ -1,0 +1,17 @@
+[package]
+name = "bevy-silk"
+description = "A client-server library designed over WebRTC for Bevy"
+version.workspace = true
+license.workspace = true
+edition.workspace = true
+
+[dependencies]
+bevy = { workspace = true }
+silk-net = { path = "../crates/silk-net", default-features = false }
+silk-common = { path = "../crates/silk-common" }
+
+[features]
+default = []
+client = []
+server = []
+binary = ["silk-net/binary"]

@@ -9,9 +9,9 @@ edition.workspace = true
 bevy_matchbox = { workspace = true }
 silk-macros = { path = "../silk-macros" }
 log = "0.4"
-serde = { workspace = true }
-bincode = { workspace = true, optional = true }
-serde_json = { workspace = true, optional = true }
+serde = "1"
+bincode = { version = "1", optional = true }
+serde_json = { version = "1", optional = true }
 
 [features]
 default = ["dep:serde_json"]

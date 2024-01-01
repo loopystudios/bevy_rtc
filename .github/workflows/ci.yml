@@ -1,0 +1,59 @@
+name: CI
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup | Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup | SSH Keys
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Setup | Toolchain
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: clippy,rustfmt
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2.7.1
+
+      - name: Build | Clippy
+        run: cargo clippy -- -D warnings
+
+      - name: Build | Rustfmt
+        run: cargo fmt --all -- --check
+
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup | Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup | SSH Keys
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Setup | Rust
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          targets: |
+            wasm32-unknown-unknown
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2.7.1
+
+      - name: Build | Check bevy-silk server (native)
+        run: cargo check -p bevy-silk -F server
+
+      - name: Build | Check bevy-silk client (wasm)
+        run: cargo check -p bevy-silk -F client --target wasm32-unknown-unknown
+
+      - name: Build | Check bevy-silk client (native)
+        run: cargo check -p bevy-silk -F client

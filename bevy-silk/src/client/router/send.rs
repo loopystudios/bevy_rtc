@@ -1,4 +1,4 @@
-use crate::state::ClientState;
+use crate::client::state::ClientState;
 use bevy::prelude::*;
 use silk_common::{
     bevy_matchbox::{prelude::MultipleChannels, MatchboxSocket},

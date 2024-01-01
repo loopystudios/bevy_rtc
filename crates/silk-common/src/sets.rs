@@ -5,7 +5,8 @@ use strum_macros::{Display, EnumIter};
     Debug, Hash, PartialEq, Eq, Clone, Copy, SystemSet, Display, EnumIter,
 )]
 pub enum SilkSet {
-    /// Do not use this system, it flushes previous network buffers since we do not consume on read for network traffic.
+    /// Do not use this system, it flushes previous network buffers since we do
+    /// not consume on read for network traffic.
     Flush,
     /// An exclusive system to read network traffic
     NetworkRead,

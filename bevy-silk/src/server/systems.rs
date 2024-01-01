@@ -1,4 +1,4 @@
-use crate::{system_params::NetworkReader, ServerState};
+use super::{system_params::NetworkReader, ServerState};
 use bevy::prelude::*;
 use silk_common::{
     bevy_matchbox::{
