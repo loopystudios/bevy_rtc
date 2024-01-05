@@ -12,15 +12,15 @@ pub enum SilkSet {
     NetworkRead,
     /// A system to process network traffic.
     Process,
-    /// An exclusive system to receive Silk events
+    /// An exclusive system to handle Silk events, such as `IdAssigned`.
     SilkEvents,
-    /// Apply updates before the main update
+    /// Apply updates before the main update.
     PreUpdate,
     /// Default stage for game updates.
     Update,
-    /// Apply updates after the main update
+    /// Apply updates after the main update.
     PostUpdate,
-    /// The last opportunity to write network traffic
+    /// The last opportunity to write network traffic.
     NetworkWrite,
 }
 

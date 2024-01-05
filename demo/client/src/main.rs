@@ -1,14 +1,18 @@
-use bevy::{log::LogPlugin, prelude::*, window::WindowResolution};
+use bevy::{
+    log::LogPlugin,
+    prelude::*,
+    window::{PresentMode, WindowResolution},
+};
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use bevy_silk::{
+    bevy_matchbox::prelude::*,
     client::{
-        events::ConnectionRequest, AddNetworkMessageExt, NetworkReader,
-        NetworkWriter, SilkClientPlugin,
+        events::{ConnectionRequest, SilkClientEvent},
+        AddNetworkMessageExt, NetworkReader, NetworkWriter, SilkClientPlugin,
     },
-    common::{
-        bevy_matchbox::prelude::*, events::SilkClientEvent,
-        schedule::SilkSchedule, sets::SilkSet, AuthenticationRequest,
-    },
+    protocol::AuthenticationRequest,
+    schedule::SilkSchedule,
+    sets::SilkSet,
 };
 use painting::PaintingState;
 use protocol::{Chat, DrawPoint};
@@ -28,54 +32,42 @@ pub struct WorldState {
 }
 
 fn main() {
-    let mut app = App::new();
-    app.add_plugins(
-        DefaultPlugins
-            .set(LogPlugin {
-                filter:
-                    "error,painting_client=trace,silk=debug,wgpu_core=warn,wgpu_hal=warn,matchbox_socket=warn"
-                        .into(),
-                level: bevy::log::Level::DEBUG,
-            })
-            .set(WindowPlugin {
+    App::new()
+        .add_plugins(DefaultPlugins.set(LogPlugin::default()).set(
+            WindowPlugin {
                 primary_window: Some(bevy::window::Window {
-                    fit_canvas_to_parent: true, // behave on wasm
+                    present_mode: PresentMode::AutoVsync,
+                    fit_canvas_to_parent: true,
+                    prevent_default_event_handling: true,
                     resolution: WindowResolution::new(400., 700.),
                     ..default()
                 }),
                 ..default()
-            }),
-    )
-    .add_plugins(EguiPlugin)
-    .add_plugins(SilkClientPlugin)
-    .add_network_message::<Chat>()
-    .add_network_message::<DrawPoint>()
-    .add_state::<ConnectionState>()
-    .insert_resource(WorldState::default())
-    .add_systems(
-        SilkSchedule,
-        handle_events
-            .in_set(SilkSet::SilkEvents)
-    )
-    .add_systems(Update, login_ui)
-    .add_systems(Update, chatbox_ui.run_if(in_state(ConnectionState::Connected)))
-    .add_systems(Update, painting_ui.run_if(in_state(ConnectionState::Connected)))
-    .add_systems(
-        OnEnter(ConnectionState::Disconnected),
-        on_disconnected,
-    )
-    .add_systems(
-        OnEnter(ConnectionState::LoggingIn),
-        on_logging_in,
-    )
-    .add_systems(
-        OnEnter(ConnectionState::Connected),
-        on_connected,
-    )
-    .add_systems(Startup, setup_cam)
-    .insert_resource(MessagesState::default())
-    .insert_resource(PaintingState::default())
-    .run();
+            },
+        ))
+        .add_plugins(EguiPlugin)
+        .add_plugins(SilkClientPlugin)
+        .add_network_message::<Chat>()
+        .add_network_message::<DrawPoint>()
+        .add_state::<ConnectionState>()
+        .insert_resource(WorldState::default())
+        .add_systems(SilkSchedule, handle_events.in_set(SilkSet::SilkEvents))
+        .add_systems(Update, login_ui)
+        .add_systems(
+            Update,
+            chatbox_ui.run_if(in_state(ConnectionState::Connected)),
+        )
+        .add_systems(
+            Update,
+            painting_ui.run_if(in_state(ConnectionState::Connected)),
+        )
+        .add_systems(OnEnter(ConnectionState::Disconnected), on_disconnected)
+        .add_systems(OnEnter(ConnectionState::LoggingIn), on_logging_in)
+        .add_systems(OnEnter(ConnectionState::Connected), on_connected)
+        .add_systems(Startup, setup_cam)
+        .insert_resource(MessagesState::default())
+        .insert_resource(PaintingState::default())
+        .run();
 }
 
 fn setup_cam(mut commands: Commands) {
@@ -132,6 +124,7 @@ fn chatbox_ui(
     mut chat_send: NetworkWriter<Chat>,
     mut chat_read: NetworkReader<Chat>,
 ) {
+    //
     for chat in chat_read.iter() {
         messages_state
             .messages

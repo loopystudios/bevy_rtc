@@ -1,12 +1,11 @@
-use bevy::prelude::*;
-use signaler::SilkSignalerPlugin;
-use silk_common::{
-    events::SilkServerEvent,
+use crate::{
+    common_plugin::SilkCommonPlugin,
     packets::auth::{SilkLoginRequestPayload, SilkLoginResponsePayload},
     schedule::*,
     sets::SilkSet,
-    SilkCommonPlugin,
 };
+use bevy::prelude::*;
+use signaler::SilkSignalerPlugin;
 use state::ServerState;
 use std::net::Ipv4Addr;
 
@@ -18,6 +17,9 @@ mod systems;
 pub use router::{AddNetworkMessageExt, IncomingMessages, OutgoingMessages};
 pub use system_params::{NetworkReader, NetworkWriter};
 
+use self::events::SilkServerEvent;
+
+pub mod events;
 pub mod signaler;
 
 /// Configuration used for server signaling

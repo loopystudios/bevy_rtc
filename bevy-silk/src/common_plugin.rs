@@ -1,42 +1,17 @@
 use bevy::prelude::*;
-use bevy_matchbox::{prelude::MultipleChannels, MatchboxSocket};
-use events::SocketRecvEvent;
-use schedule::SilkSchedule;
-use sets::SilkSet;
-use socket::common_socket_reader;
+use bevy_matchbox::{matchbox_socket::MultipleChannels, MatchboxSocket};
 
-pub mod events;
-pub mod packets;
-pub mod schedule;
-pub mod sets;
-pub mod socket;
-
-// Re-exports
-pub use bevy_matchbox;
-
-#[derive(Debug, Clone)]
-pub enum AuthenticationRequest {
-    Registered {
-        access_token: String,
-        character: String,
-    },
-    Guest {
-        username: Option<String>,
-    },
-}
-impl Default for AuthenticationRequest {
-    fn default() -> Self {
-        AuthenticationRequest::Guest { username: None }
-    }
-}
+use crate::{
+    events::SocketRecvEvent, schedule::SilkSchedule, sets::SilkSet,
+    socket::common_socket_reader,
+};
 
 pub struct SilkCommonPlugin;
 
 impl Plugin for SilkCommonPlugin {
     fn build(&self, app: &mut App) {
+        // Initialize the schedule for silk
         app.init_schedule(SilkSchedule);
-
-        // it's important here to configure set order
         app.edit_schedule(SilkSchedule, |schedule| {
             schedule.configure_sets(SilkSet::sets());
         });
@@ -98,7 +73,9 @@ impl Plugin for SilkCommonPlugin {
             );
 
         // add scheduler
-        app.add_systems(FixedUpdate, schedule::run_silk_schedule);
+        app.add_systems(FixedUpdate, |world: &mut World| {
+            world.run_schedule(SilkSchedule);
+        });
     }
 }
 

@@ -1,13 +1,13 @@
-use super::{system_params::NetworkReader, ServerState};
+use crate::packets::auth::SilkLoginRequestPayload;
+
+use super::{
+    events::SilkServerEvent, system_params::NetworkReader, ServerState,
+};
 use bevy::prelude::*;
-use silk_common::{
-    bevy_matchbox::{
-        matchbox_socket::{PeerState, WebRtcSocket},
-        prelude::{ChannelConfig, MultipleChannels},
-        MatchboxSocket, OpenSocketExt,
-    },
-    events::SilkServerEvent,
-    packets::auth::SilkLoginRequestPayload,
+use bevy_matchbox::{
+    matchbox_socket::{PeerState, WebRtcSocket},
+    prelude::{ChannelConfig, MultipleChannels},
+    MatchboxSocket, OpenSocketExt,
 };
 
 /// Initialize the socket

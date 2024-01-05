@@ -1,10 +1,10 @@
-use crate::client::state::ClientState;
-use bevy::prelude::*;
-use silk_common::{
-    bevy_matchbox::{prelude::MultipleChannels, MatchboxSocket},
+use crate::{
+    client::state::ClientState,
+    protocol::Payload,
     socket::{RELIABLE_CHANNEL_INDEX, UNRELIABLE_CHANNEL_INDEX},
 };
-use silk_net::Payload;
+use bevy::prelude::*;
+use bevy_matchbox::{prelude::MultipleChannels, MatchboxSocket};
 
 #[derive(Default, Debug, Resource)]
 pub struct OutgoingMessages<M: Payload> {

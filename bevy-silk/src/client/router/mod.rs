@@ -1,16 +1,14 @@
 mod receive;
 mod send;
 
-use bevy::prelude::*;
-pub use receive::IncomingMessages;
-pub use send::OutgoingMessages;
-use silk_common::{
-    bevy_matchbox::{prelude::MultipleChannels, MatchboxSocket},
-    schedule::SilkSchedule,
-    sets::SilkSet,
+use crate::{
+    protocol::Payload, schedule::SilkSchedule, sets::SilkSet,
     socket::common_socket_reader,
 };
-pub use silk_net::Payload;
+use bevy::prelude::*;
+use bevy_matchbox::{prelude::MultipleChannels, MatchboxSocket};
+pub use receive::IncomingMessages;
+pub use send::OutgoingMessages;
 
 pub trait AddNetworkMessageExt {
     fn add_network_message<M: Payload>(&mut self) -> &mut Self;

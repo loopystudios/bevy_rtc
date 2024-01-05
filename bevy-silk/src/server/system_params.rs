@@ -1,8 +1,7 @@
 use super::router::{IncomingMessages, OutgoingMessages};
+use crate::protocol::Payload;
 use bevy::{ecs::system::SystemParam, prelude::*};
 use bevy_matchbox::prelude::PeerId;
-use silk_common::bevy_matchbox;
-use silk_net::Payload;
 
 #[derive(SystemParam, Debug)]
 pub struct NetworkReader<'w, M: Payload> {

@@ -1,13 +1,12 @@
-use bevy::prelude::*;
-use events::ConnectionRequest;
-use silk_common::{
-    bevy_matchbox::{prelude::MultipleChannels, MatchboxSocket},
-    events::SilkClientEvent,
+use crate::{
+    common_plugin::SilkCommonPlugin,
     packets::auth::{SilkLoginRequestPayload, SilkLoginResponsePayload},
     schedule::SilkSchedule,
     sets::SilkSet,
-    SilkCommonPlugin,
 };
+use bevy::prelude::*;
+use bevy_matchbox::{prelude::MultipleChannels, MatchboxSocket};
+use events::ConnectionRequest;
 use state::ClientState;
 
 mod router;
@@ -18,6 +17,8 @@ mod systems;
 pub use router::{AddNetworkMessageExt, IncomingMessages, OutgoingMessages};
 pub use state::ConnectionState;
 pub use system_params::{NetworkReader, NetworkWriter};
+
+use self::events::SilkClientEvent;
 
 pub mod events;
 

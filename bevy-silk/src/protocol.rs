@@ -59,3 +59,19 @@ pub trait Payload:
         bincode::serialize(&silk_packet).unwrap().into_boxed_slice()
     }
 }
+
+#[derive(Debug, Clone)]
+pub enum AuthenticationRequest {
+    Registered {
+        access_token: String,
+        character: String,
+    },
+    Guest {
+        username: Option<String>,
+    },
+}
+impl Default for AuthenticationRequest {
+    fn default() -> Self {
+        AuthenticationRequest::Guest { username: None }
+    }
+}

@@ -1,4 +1,4 @@
-use bevy_silk::net::Payload;
+use bevy_silk::protocol::Payload;
 use serde::{Deserialize, Serialize};
 
 #[derive(Payload, Serialize, Deserialize, Debug, Clone, Default)]

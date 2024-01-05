@@ -1,5 +1,7 @@
 use bevy::prelude::*;
-use silk_common::{bevy_matchbox::prelude::PeerId, AuthenticationRequest};
+use bevy_matchbox::prelude::PeerId;
+
+use crate::protocol::AuthenticationRequest;
 
 /// State of the socket
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash, States)]

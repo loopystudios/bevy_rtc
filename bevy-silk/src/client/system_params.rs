@@ -1,6 +1,7 @@
+use crate::protocol::Payload;
+
 use super::router::{IncomingMessages, OutgoingMessages};
 use bevy::{ecs::system::SystemParam, prelude::*};
-use silk_net::Payload;
 
 #[derive(SystemParam, Debug)]
 pub struct NetworkReader<'w, M: Payload> {

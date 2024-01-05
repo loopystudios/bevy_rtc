@@ -1,5 +1,5 @@
 use bevy::prelude::Resource;
-use silk_common::bevy_matchbox::prelude::PeerId;
+use bevy_matchbox::prelude::PeerId;
 
 #[derive(Resource)]
 pub struct ServerState {

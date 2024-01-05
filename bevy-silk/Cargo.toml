@@ -7,11 +7,19 @@ edition.workspace = true
 
 [dependencies]
 bevy = { workspace = true }
-silk-net = { path = "../crates/silk-net", default-features = false }
-silk-common = { path = "../crates/silk-common" }
+silk-macros = { path = "../crates/silk-macros" }
+bevy_matchbox = { workspace = true }
+
+log = "0.4"
+serde = "1"
+serde_json = { version = "1" }
+bincode = { version = "1", optional = true }
+strum = "0.25"
+strum_macros = "0.25"
+
 
 [features]
-default = []
+default = ["client", "server", "binary"]
 client = []
-server = []
-binary = ["silk-net/binary"]
+server = ["bevy_matchbox/signaling"]
+binary = ["dep:bincode"]

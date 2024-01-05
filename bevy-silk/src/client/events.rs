@@ -1,5 +1,18 @@
 use bevy::prelude::Event;
-use silk_common::AuthenticationRequest;
+use bevy_matchbox::matchbox_socket::PeerId;
+
+use crate::protocol::AuthenticationRequest;
+
+/// Socket events that are possible to subscribe to in Bevy
+#[derive(Debug, Clone, Event)]
+pub enum SilkClientEvent {
+    /// The signaling server assigned the socket a unique ID
+    IdAssigned(PeerId),
+    /// The socket has successfully connected to a host
+    ConnectedToHost { host: PeerId, username: String },
+    /// The socket disconnected from the host
+    DisconnectedFromHost { reason: Option<String> },
+}
 
 #[derive(Debug, Clone, Event)]
 pub enum ConnectionRequest {

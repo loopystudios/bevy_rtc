@@ -1,17 +1,16 @@
 use super::{
-    events::ConnectionRequest,
+    events::{ConnectionRequest, SilkClientEvent},
     state::{ClientState, ConnectionState},
     system_params::{NetworkReader, NetworkWriter},
 };
-use bevy::prelude::*;
-use silk_common::{
-    bevy_matchbox::{
-        matchbox_socket::{self, WebRtcSocket},
-        prelude::*,
-    },
-    events::SilkClientEvent,
+use crate::{
     packets::auth::{SilkLoginRequestPayload, SilkLoginResponsePayload},
-    AuthenticationRequest,
+    protocol::AuthenticationRequest,
+};
+use bevy::prelude::*;
+use bevy_matchbox::{
+    matchbox_socket::{self, WebRtcSocket},
+    prelude::*,
 };
 
 /// Initialize the socket

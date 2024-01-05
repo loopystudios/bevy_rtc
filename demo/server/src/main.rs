@@ -1,14 +1,13 @@
 use bevy::{log::LogPlugin, prelude::*, utils::HashSet};
 use bevy_silk::{
-    common::{
-        bevy_matchbox::prelude::PeerId, events::SilkServerEvent,
-        packets::auth::SilkLoginResponsePayload, schedule::SilkSchedule,
-        sets::SilkSet,
-    },
+    bevy_matchbox::prelude::PeerId,
+    packets::auth::SilkLoginResponsePayload,
+    schedule::SilkSchedule,
     server::{
-        AddNetworkMessageExt, NetworkReader, NetworkWriter, SignalingConfig,
-        SilkServerPlugin,
+        events::SilkServerEvent, AddNetworkMessageExt, NetworkReader,
+        NetworkWriter, SignalingConfig, SilkServerPlugin,
     },
+    sets::SilkSet,
 };
 use protocol::{Chat, DrawPoint};
 

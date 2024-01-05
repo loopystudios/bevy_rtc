@@ -1,6 +1,6 @@
+use crate::{events::SocketRecvEvent, protocol::Payload};
 use bevy::prelude::*;
-use silk_common::{bevy_matchbox::prelude::PeerId, events::SocketRecvEvent};
-use silk_net::Payload;
+use bevy_matchbox::prelude::PeerId;
 
 #[derive(Default, Debug, Resource)]
 pub struct IncomingMessages<M: Payload> {
