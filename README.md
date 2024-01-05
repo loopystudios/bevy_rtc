@@ -33,20 +33,20 @@ Run the server, and any number of clients.
 - Server (Native only)
 
 ```bash
-cargo run -p demo-server
+cargo run -p server
 ```
 
 - Client (Native)
 
 ```bash
-cargo run -p demo-client
+cargo run -p client
 ```
 
 - Client (Web)
 
 ```bash
 cargo install wasm-server-runner
-cargo run -p demo-client --target wasm32-unknown-unknown
+cargo run -p client --target wasm32-unknown-unknown
 ```
 
 ## Example
