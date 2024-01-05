@@ -1,5 +1,5 @@
 [package]
-name = "demo-client"
+name = "client"
 version.workspace = true
 license.workspace = true
 edition.workspace = true
