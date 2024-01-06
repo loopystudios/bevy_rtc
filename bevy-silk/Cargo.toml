@@ -19,7 +19,7 @@ strum_macros = "0.25"
 
 
 [features]
-default = ["client", "server", "dep:serde_json"]
+default = ["dep:serde_json"]
 client = []
 server = ["bevy_matchbox/signaling"]
 binary = ["dep:bincode"]
