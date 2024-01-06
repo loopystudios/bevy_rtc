@@ -2,10 +2,12 @@ mod receive;
 mod send;
 
 use crate::{
-    protocol::Payload, schedule::SilkSchedule, sets::SilkSet,
+    protocol::Payload,
+    schedule::{SilkSchedule, SilkSet},
     socket::common_socket_reader,
 };
 use bevy::prelude::*;
+
 pub use receive::IncomingMessages;
 pub use send::OutgoingMessages;
 

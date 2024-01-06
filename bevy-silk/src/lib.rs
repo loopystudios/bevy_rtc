@@ -4,12 +4,11 @@ compile_error!(
 );
 
 pub(crate) mod common_plugin;
-pub mod events;
+pub(crate) mod events;
 pub mod packets;
 pub mod protocol;
 pub mod schedule;
-pub mod sets;
-pub mod socket;
+pub(crate) mod socket;
 
 // Re-exports
 pub use bevy_matchbox;

@@ -1,24 +1,23 @@
+use crate::protocol::AuthenticationRequest;
 use bevy::prelude::*;
 use bevy_matchbox::prelude::PeerId;
 
-use crate::protocol::AuthenticationRequest;
-
 /// State of the socket
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash, States)]
-pub enum ConnectionState {
+pub enum SilkConnectionState {
     /// Unauthenticated and inactive
     #[default]
     Disconnected,
     /// Connecting to the websocket
     Establishing,
     /// Connected to the websocket, but not authenticated by the server
-    LoggingIn,
+    Authenticating,
     /// Authenticated and active
     Connected,
 }
 
 #[derive(Resource, Default)]
-pub struct ClientState {
+pub struct SilkState {
     /// The socket address, used for connecting/reconnecting
     pub addr: Option<String>,
     /// The authentication used for connecting/reconnecting

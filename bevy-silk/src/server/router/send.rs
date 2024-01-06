@@ -1,12 +1,9 @@
 use crate::{
     protocol::Payload,
-    socket::{RELIABLE_CHANNEL_INDEX, UNRELIABLE_CHANNEL_INDEX},
+    socket::{SilkSocket, RELIABLE_CHANNEL_INDEX, UNRELIABLE_CHANNEL_INDEX},
 };
 use bevy::prelude::*;
-use bevy_matchbox::{
-    prelude::{MultipleChannels, PeerId},
-    MatchboxSocket,
-};
+use bevy_matchbox::prelude::PeerId;
 
 #[derive(Default, Debug, Resource)]
 pub struct OutgoingMessages<M: Payload> {
@@ -32,7 +29,7 @@ impl<M: Payload> OutgoingMessages<M> {
 
     pub(crate) fn write_system(
         mut queue: ResMut<Self>,
-        mut socket: Option<ResMut<MatchboxSocket<MultipleChannels>>>,
+        mut socket: Option<ResMut<SilkSocket>>,
     ) {
         if let Some(socket) = socket.as_mut() {
             // Server is sending

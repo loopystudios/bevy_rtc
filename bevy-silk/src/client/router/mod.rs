@@ -2,11 +2,11 @@ mod receive;
 mod send;
 
 use crate::{
-    protocol::Payload, schedule::SilkSchedule, sets::SilkSet,
-    socket::common_socket_reader,
+    protocol::Payload,
+    schedule::{SilkSchedule, SilkSet},
+    socket::{common_socket_reader, SilkSocket},
 };
 use bevy::prelude::*;
-use bevy_matchbox::{prelude::MultipleChannels, MatchboxSocket};
 pub use receive::IncomingMessages;
 pub use send::OutgoingMessages;
 
@@ -34,9 +34,7 @@ impl AddNetworkMessageExt for App {
                 IncomingMessages::<M>::read_system
                     .before(SilkSet::NetworkRead)
                     .after(common_socket_reader)
-                    .run_if(
-                        resource_exists::<MatchboxSocket<MultipleChannels>>(),
-                    ),
+                    .run_if(resource_exists::<SilkSocket>()),
             )
             .insert_resource(OutgoingMessages::<M> {
                 reliable_to_host: vec![],

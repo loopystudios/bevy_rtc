@@ -1,10 +1,9 @@
 use crate::{
-    client::state::ClientState,
+    client::state::SilkState,
     protocol::Payload,
-    socket::{RELIABLE_CHANNEL_INDEX, UNRELIABLE_CHANNEL_INDEX},
+    socket::{SilkSocket, RELIABLE_CHANNEL_INDEX, UNRELIABLE_CHANNEL_INDEX},
 };
 use bevy::prelude::*;
-use bevy_matchbox::{prelude::MultipleChannels, MatchboxSocket};
 
 #[derive(Default, Debug, Resource)]
 pub struct OutgoingMessages<M: Payload> {
@@ -22,8 +21,8 @@ impl<M: Payload> OutgoingMessages<M> {
 
     pub(crate) fn write_system(
         mut queue: ResMut<Self>,
-        mut socket: Option<ResMut<MatchboxSocket<MultipleChannels>>>,
-        state: Res<ClientState>,
+        mut socket: Option<ResMut<SilkSocket>>,
+        state: Res<SilkState>,
     ) {
         if let Some(socket) = socket.as_mut() {
             if let Some(host) = state.host_id {

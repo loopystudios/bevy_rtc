@@ -1,35 +1,27 @@
+mod chat;
+mod painting;
+
 use bevy::{
     log::LogPlugin,
     prelude::*,
     window::{PresentMode, WindowResolution},
 };
-use bevy_egui::{egui, EguiContexts, EguiPlugin};
+use bevy_egui::{
+    egui::{self, Pos2},
+    EguiContexts, EguiPlugin,
+};
 use bevy_silk::{
-    bevy_matchbox::prelude::*,
     client::{
-        events::{ConnectionRequest, SilkClientEvent},
-        AddNetworkMessageExt, NetworkReader, NetworkWriter, SilkClientPlugin,
+        AddNetworkMessageExt, ConnectionRequest, NetworkReader, NetworkWriter,
+        SilkClientEvent, SilkClientPlugin, SilkConnectionState, SilkState,
     },
     protocol::AuthenticationRequest,
-    schedule::SilkSchedule,
-    sets::SilkSet,
+    schedule::{SilkSchedule, SilkSet},
 };
+use chat::ChatState;
 use painting::PaintingState;
-use protocol::{Chat, DrawPoint};
+use protocol::{ChatPayload, DrawLinePayload};
 use std::ops::DerefMut;
-
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash, States)]
-enum ConnectionState {
-    #[default]
-    Disconnected,
-    LoggingIn,
-    Connected,
-}
-
-#[derive(Resource, Default, Debug, Clone, PartialEq, Eq, Hash)]
-pub struct WorldState {
-    id: Option<PeerId>,
-}
 
 fn main() {
     App::new()
@@ -47,25 +39,30 @@ fn main() {
         ))
         .add_plugins(EguiPlugin)
         .add_plugins(SilkClientPlugin)
-        .add_network_message::<Chat>()
-        .add_network_message::<DrawPoint>()
-        .add_state::<ConnectionState>()
-        .insert_resource(WorldState::default())
+        .add_network_message::<ChatPayload>()
+        .add_network_message::<DrawLinePayload>()
         .add_systems(SilkSchedule, handle_events.in_set(SilkSet::SilkEvents))
         .add_systems(Update, login_ui)
+        .add_systems(SilkSchedule, read_chats.in_set(SilkSet::NetworkRead))
+        .add_systems(SilkSchedule, read_lines.in_set(SilkSet::NetworkRead))
+        .add_systems(SilkSchedule, send_chats.in_set(SilkSet::NetworkWrite))
+        .add_systems(SilkSchedule, send_lines.in_set(SilkSet::NetworkWrite))
         .add_systems(
             Update,
-            chatbox_ui.run_if(in_state(ConnectionState::Connected)),
+            chatbox_ui.run_if(in_state(SilkConnectionState::Connected)),
         )
         .add_systems(
             Update,
-            painting_ui.run_if(in_state(ConnectionState::Connected)),
+            painting_ui.run_if(in_state(SilkConnectionState::Connected)),
         )
-        .add_systems(OnEnter(ConnectionState::Disconnected), on_disconnected)
-        .add_systems(OnEnter(ConnectionState::LoggingIn), on_logging_in)
-        .add_systems(OnEnter(ConnectionState::Connected), on_connected)
+        .add_systems(
+            OnEnter(SilkConnectionState::Disconnected),
+            on_disconnected,
+        )
+        .add_systems(OnEnter(SilkConnectionState::Establishing), on_logging_in)
+        .add_systems(OnEnter(SilkConnectionState::Connected), on_connected)
         .add_systems(Startup, setup_cam)
-        .insert_resource(MessagesState::default())
+        .insert_resource(ChatState::default())
         .insert_resource(PaintingState::default())
         .run();
 }
@@ -76,10 +73,12 @@ fn setup_cam(mut commands: Commands) {
 
 fn on_disconnected(
     mut commands: Commands,
-    mut world_state: ResMut<WorldState>,
+    mut chat_state: ResMut<ChatState>,
+    mut painting_state: ResMut<PaintingState>,
 ) {
     commands.insert_resource(ClearColor(Color::RED));
-    *world_state = WorldState::default();
+    *chat_state = ChatState::default();
+    *painting_state = PaintingState::default();
 }
 
 fn on_logging_in(mut commands: Commands) {
@@ -90,83 +89,98 @@ fn on_connected(mut commands: Commands) {
     commands.insert_resource(ClearColor(Color::GREEN));
 }
 
-fn handle_events(
-    mut app_state: ResMut<NextState<ConnectionState>>,
-    mut events: EventReader<SilkClientEvent>,
-    mut world_state: ResMut<WorldState>,
-) {
+fn handle_events(mut events: EventReader<SilkClientEvent>) {
     for ev in events.read() {
         debug!("event: {ev:?}");
         match ev {
             SilkClientEvent::IdAssigned(id) => {
                 info!("Got ID from signaling server: {id:?}");
-                world_state.id.replace(*id);
             }
             SilkClientEvent::ConnectedToHost { host, username } => {
                 // Connected to host
                 info!("Connected to host: {host:?} as {username}");
-                app_state.set(ConnectionState::Connected);
             }
             SilkClientEvent::DisconnectedFromHost { reason } => {
                 // Disconnected from host
-                error!("Disconnected from host, reason: {reason:?}");
-                app_state.set(ConnectionState::Disconnected);
+                warn!("Disconnected from host, reason: {reason:?}");
             }
         }
     }
 }
 
+fn read_chats(
+    mut chat_state: ResMut<ChatState>,
+    mut chat_read: NetworkReader<ChatPayload>,
+) {
+    for chat in chat_read.iter() {
+        chat_state.messages.push(chat.to_owned());
+    }
+}
+
+fn send_chats(
+    mut chat_state: ResMut<ChatState>,
+    mut chat_send: NetworkWriter<ChatPayload>,
+    silk_state: Res<SilkState>,
+) {
+    if let Some(message) = chat_state.out.take() {
+        let payload = ChatPayload {
+            from: silk_state.id.unwrap().to_string(),
+            message,
+        };
+        chat_send.reliable_to_host(payload);
+    }
+}
+
+fn read_lines(
+    mut painting_state: ResMut<PaintingState>,
+    mut painting_read: NetworkReader<DrawLinePayload>,
+) {
+    for draw in painting_read.iter() {
+        let DrawLinePayload { x1, y1, x2, y2 } = draw;
+        painting_state
+            .lines
+            .push(vec![Pos2::new(*x1, *y1), Pos2::new(*x2, *y2)]);
+    }
+}
+
+fn send_lines(
+    mut painting_state: ResMut<PaintingState>,
+    mut painting_send: NetworkWriter<DrawLinePayload>,
+) {
+    let draws = painting_state.out.drain(..);
+    for (x1, y1, x2, y2) in draws {
+        let draw = DrawLinePayload { x1, y1, x2, y2 };
+        painting_send.unreliable_to_host(draw)
+    }
+}
+
 fn chatbox_ui(
     mut egui_context: EguiContexts,
-    world_state: Res<WorldState>,
-    mut messages_state: ResMut<MessagesState>,
+    mut chat_state: ResMut<ChatState>,
     mut text: Local<String>,
-    mut chat_send: NetworkWriter<Chat>,
-    mut chat_read: NetworkReader<Chat>,
 ) {
-    //
-    for chat in chat_read.iter() {
-        messages_state
-            .messages
-            .push((chat.from.clone(), chat.message.clone()));
-    }
-
     egui::Window::new("Chat").show(egui_context.ctx_mut(), |ui| {
         ui.label("Send Message");
         ui.horizontal_wrapped(|ui| {
             ui.text_edit_singleline(text.deref_mut());
             if ui.button("Send").clicked() {
-                let chat_message = Chat {
-                    from: format!("{}", world_state.id.unwrap()),
-                    message: text.to_owned(),
-                };
-                chat_send.reliable_to_host(chat_message);
+                chat_state.out.replace(text.to_owned());
             };
         });
         ui.label("Messages");
-        messages_state.ui(ui);
+        chat_state.ui(ui);
     });
 }
 
 fn painting_ui(
     mut egui_context: EguiContexts,
     mut painting: ResMut<PaintingState>,
-    mut draw_read: NetworkReader<DrawPoint>,
-    mut draw_send: NetworkWriter<DrawPoint>,
 ) {
-    for draw in draw_read.iter() {
-        painting.lines.push(vec![
-            Pos2::new(draw.x1, draw.y1),
-            Pos2::new(draw.x2, draw.y2),
-        ]);
-    }
-
     egui::Window::new("Painter").show(egui_context.ctx_mut(), |ui| {
         let mut out: Option<(f32, f32, f32, f32)> = None;
         painting.ui(ui, &mut out);
-        if let Some((x1, y1, x2, y2)) = out {
-            let draw_point = DrawPoint { x1, y1, x2, y2 };
-            draw_send.unreliable_to_host(draw_point)
+        if let Some(draw) = out {
+            painting.out.push(draw);
         }
     });
 }
@@ -174,17 +188,15 @@ fn painting_ui(
 fn login_ui(
     mut egui_context: EguiContexts,
     mut event_wtr: EventWriter<ConnectionRequest>,
-    mut next_connection_state: ResMut<NextState<ConnectionState>>,
-    world_state: Res<WorldState>,
+    state: Res<SilkState>,
 ) {
     egui::Window::new("Login").show(egui_context.ctx_mut(), |ui| {
-        ui.label(format!("{:?}", world_state.id));
+        ui.label(format!("{:?}", state.id));
         ui.horizontal_wrapped(|ui| {
             if ui.button("Connect").clicked() {
                 let auth = AuthenticationRequest::Guest { username: None };
-                next_connection_state.set(ConnectionState::LoggingIn);
                 event_wtr.send(ConnectionRequest::Connect {
-                    addr: "ws://127.0.0.1:3536".to_string(),
+                    addr: "ws://0.0.0.0:3536".to_string(),
                     auth,
                 });
             }
@@ -195,141 +207,4 @@ fn login_ui(
             }
         });
     });
-}
-
-#[derive(Resource, Default, PartialEq)]
-struct MessagesState {
-    messages: Vec<(String, String)>,
-}
-
-use egui::*;
-impl MessagesState {
-    fn ui(&mut self, ui: &mut Ui) {
-        let text_style = egui::TextStyle::Body;
-        let row_height = ui.text_style_height(&text_style);
-        ScrollArea::vertical().stick_to_bottom(true).show_rows(
-            ui,
-            row_height,
-            self.messages.len(),
-            |ui, items| {
-                for i in items {
-                    let (from, message) = &self.messages[i];
-                    let text = format!("<-- {from}: {message}");
-                    ui.label(text);
-                }
-            },
-        );
-
-        ui.ctx().request_repaint();
-    }
-}
-
-mod painting {
-    use crate::egui;
-    use bevy::prelude::Resource;
-    use egui::*;
-
-    #[derive(Resource)]
-    pub struct PaintingState {
-        /// in 0-1 normalized coordinates
-        pub lines: Vec<Vec<Pos2>>,
-        stroke: Stroke,
-    }
-
-    impl Default for PaintingState {
-        fn default() -> Self {
-            Self {
-                lines: Default::default(),
-                stroke: Stroke::new(1.0, Color32::from_rgb(25, 200, 100)),
-            }
-        }
-    }
-
-    impl PaintingState {
-        fn ui_control(&mut self, ui: &mut egui::Ui) -> egui::Response {
-            ui.horizontal(|ui| {
-                egui::stroke_ui(ui, &mut self.stroke, "Stroke");
-                ui.separator();
-                if ui.button("Clear Painting").clicked() {
-                    self.lines.clear();
-                }
-            })
-            .response
-        }
-
-        fn ui_content(
-            &mut self,
-            ui: &mut Ui,
-            out: &mut Option<(f32, f32, f32, f32)>,
-        ) -> egui::Response {
-            let (mut response, painter) = ui.allocate_painter(
-                ui.available_size_before_wrap(),
-                Sense::drag(),
-            );
-
-            let to_screen = emath::RectTransform::from_to(
-                Rect::from_min_size(
-                    Pos2::ZERO,
-                    response.rect.square_proportions(),
-                ),
-                response.rect,
-            );
-            let from_screen = to_screen.inverse();
-
-            if self.lines.is_empty() {
-                self.lines.push(vec![]);
-            }
-
-            let current_line = self.lines.last_mut().unwrap();
-
-            // User has mouse down
-            if let Some(pointer_pos) = response.interact_pointer_pos() {
-                let canvas_pos = from_screen * pointer_pos;
-                if current_line.last() != Some(&canvas_pos) {
-                    if let Some(last_point) = current_line.last() {
-                        // Line = current_line.last() -> canvas_pos
-                        let (x1, y1, x2, y2) = (
-                            last_point.x,
-                            last_point.y,
-                            canvas_pos.x,
-                            canvas_pos.y,
-                        );
-                        // Send to out
-                        out.replace((x1, y1, x2, y2));
-                    }
-                    current_line.push(canvas_pos);
-                    response.mark_changed();
-                }
-            } else if !current_line.is_empty() {
-                self.lines.push(vec![]);
-                response.mark_changed();
-            }
-
-            let shapes =
-                self.lines
-                    .iter()
-                    .filter(|line| line.len() >= 2)
-                    .map(|line| {
-                        let points: Vec<Pos2> =
-                            line.iter().map(|p| to_screen * *p).collect();
-                        egui::Shape::line(points, self.stroke)
-                    });
-
-            painter.extend(shapes);
-
-            response
-        }
-
-        pub fn ui(
-            &mut self,
-            ui: &mut Ui,
-            out: &mut Option<(f32, f32, f32, f32)>,
-        ) {
-            self.ui_control(ui);
-            ui.label("Paint with your mouse/touch!");
-            Frame::canvas(ui.style()).show(ui, |ui| {
-                self.ui_content(ui, out);
-            });
-        }
-    }
 }

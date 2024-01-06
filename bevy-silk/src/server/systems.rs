@@ -1,17 +1,15 @@
-use crate::packets::auth::SilkLoginRequestPayload;
+use crate::{packets::auth::SilkLoginRequestPayload, socket::SilkSocket};
 
-use super::{
-    events::SilkServerEvent, system_params::NetworkReader, ServerState,
-};
+use super::{events::SilkServerEvent, system_params::NetworkReader, SilkState};
 use bevy::prelude::*;
 use bevy_matchbox::{
     matchbox_socket::{PeerState, WebRtcSocket},
-    prelude::{ChannelConfig, MultipleChannels},
-    MatchboxSocket, OpenSocketExt,
+    prelude::ChannelConfig,
+    OpenSocketExt,
 };
 
 /// Initialize the socket
-pub fn init_socket(mut commands: Commands, state: Res<ServerState>) {
+pub fn init_socket(mut commands: Commands, state: Res<SilkState>) {
     debug!("server address: {:?}", state.addr);
 
     // Create matchbox socket
@@ -29,8 +27,8 @@ pub fn init_socket(mut commands: Commands, state: Res<ServerState>) {
 
 /// Translates socket events into Bevy events
 pub fn server_socket_reader(
-    mut state: ResMut<ServerState>,
-    mut socket: ResMut<MatchboxSocket<MultipleChannels>>,
+    mut state: ResMut<SilkState>,
+    mut socket: ResMut<SilkSocket>,
     mut event_wtr: EventWriter<SilkServerEvent>,
 ) {
     // Id changed events

@@ -2,7 +2,7 @@ use bevy_silk::protocol::Payload;
 use serde::{Deserialize, Serialize};
 
 #[derive(Payload, Serialize, Deserialize, Debug, Clone, Default)]
-pub struct DrawPoint {
+pub struct DrawLinePayload {
     pub x1: f32,
     pub y1: f32,
     pub x2: f32,
@@ -10,7 +10,7 @@ pub struct DrawPoint {
 }
 
 #[derive(Payload, Serialize, Deserialize, Debug, Clone, Default)]
-pub struct Chat {
+pub struct ChatPayload {
     pub from: String,
     pub message: String,
 }

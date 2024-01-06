@@ -1,10 +1,9 @@
-use bevy::prelude::*;
-use bevy_matchbox::{matchbox_socket::MultipleChannels, MatchboxSocket};
-
 use crate::{
-    events::SocketRecvEvent, schedule::SilkSchedule, sets::SilkSet,
-    socket::common_socket_reader,
+    events::SocketRecvEvent,
+    schedule::{SilkSchedule, SilkSet},
+    socket::{common_socket_reader, SilkSocket},
 };
+use bevy::prelude::*;
 
 pub struct SilkCommonPlugin;
 
@@ -31,9 +30,7 @@ impl Plugin for SilkCommonPlugin {
                 common_socket_reader
                     .after(trace_network_read)
                     .before(SilkSet::NetworkRead)
-                    .run_if(
-                        resource_exists::<MatchboxSocket<MultipleChannels>>(),
-                    ),
+                    .run_if(resource_exists::<SilkSocket>()),
             )
             .add_systems(
                 SilkSchedule,
