@@ -70,8 +70,8 @@ fn main() {
     App::new()
         .add_plugins(MinimalPlugins)
         .add_plugins(SilkServerPlugin {
-            signaling_port: 3536,
-            tick_rate: 1.0, // listen/respond to packets once a second
+            port: 3536,
+            tick_rate: 1.0, // run the networking SilkSchedule systems once a second
         })
         .add_network_message::<MyPacket>()
         .add_systems(
@@ -86,7 +86,6 @@ fn main() {
             }
             .in_set(SilkSet::Update), // Optional: When to run your system
         )
-        .add_systems(Startup, || println!("Started server on ws://0.0.0.0:3536"))
         .run();
 }
 ```

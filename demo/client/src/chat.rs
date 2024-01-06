@@ -16,11 +16,11 @@ impl ChatState {
         ScrollArea::vertical().stick_to_bottom(true).show_rows(
             ui,
             row_height,
-            self.messages.len(),
+            self.messages.len().min(5), // Show 5 rows at most
             |ui, items| {
-                for i in items {
+                for i in items.take(self.messages.len().min(5)) {
                     let ChatPayload { from, message } = &self.messages[i];
-                    let text = format!("<-- {from}: {message}");
+                    let text = format!("{from} says: {message}");
                     ui.label(text);
                 }
             },

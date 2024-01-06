@@ -42,19 +42,11 @@ fn main() {
         .add_network_message::<ChatPayload>()
         .add_network_message::<DrawLinePayload>()
         .add_systems(SilkSchedule, handle_events.in_set(SilkSet::SilkEvents))
-        .add_systems(Update, login_ui)
         .add_systems(SilkSchedule, read_chats.in_set(SilkSet::NetworkRead))
         .add_systems(SilkSchedule, read_lines.in_set(SilkSet::NetworkRead))
         .add_systems(SilkSchedule, send_chats.in_set(SilkSet::NetworkWrite))
         .add_systems(SilkSchedule, send_lines.in_set(SilkSet::NetworkWrite))
-        .add_systems(
-            Update,
-            chatbox_ui.run_if(in_state(SilkConnectionState::Connected)),
-        )
-        .add_systems(
-            Update,
-            painting_ui.run_if(in_state(SilkConnectionState::Connected)),
-        )
+        .add_systems(Update, app_ui)
         .add_systems(
             OnEnter(SilkConnectionState::Disconnected),
             on_disconnected,
@@ -68,6 +60,7 @@ fn main() {
 }
 
 fn setup_cam(mut commands: Commands) {
+    // Without a camera we get no clear color
     commands.spawn(Camera2dBundle::default());
 }
 
@@ -94,11 +87,11 @@ fn handle_events(mut events: EventReader<SilkClientEvent>) {
         debug!("event: {ev:?}");
         match ev {
             SilkClientEvent::IdAssigned(id) => {
-                info!("Got ID from signaling server: {id:?}");
+                info!("ID assigned: {id:?}");
             }
             SilkClientEvent::ConnectedToHost { host, username } => {
                 // Connected to host
-                info!("Connected to host: {host:?} as {username}");
+                info!("Connected to host ({host}) as {username}");
             }
             SilkClientEvent::DisconnectedFromHost { reason } => {
                 // Disconnected from host
@@ -113,7 +106,7 @@ fn read_chats(
     mut chat_read: NetworkReader<ChatPayload>,
 ) {
     for chat in chat_read.iter() {
-        chat_state.messages.push(chat.to_owned());
+        chat_state.messages.insert(0, chat.to_owned());
     }
 }
 
@@ -154,56 +147,83 @@ fn send_lines(
     }
 }
 
-fn chatbox_ui(
-    mut egui_context: EguiContexts,
-    mut chat_state: ResMut<ChatState>,
-    mut text: Local<String>,
-) {
-    egui::Window::new("Chat").show(egui_context.ctx_mut(), |ui| {
-        ui.label("Send Message");
-        ui.horizontal_wrapped(|ui| {
-            ui.text_edit_singleline(text.deref_mut());
-            if ui.button("Send").clicked() {
-                chat_state.out.replace(text.to_owned());
-            };
-        });
-        ui.label("Messages");
-        chat_state.ui(ui);
-    });
-}
-
-fn painting_ui(
-    mut egui_context: EguiContexts,
-    mut painting: ResMut<PaintingState>,
-) {
-    egui::Window::new("Painter").show(egui_context.ctx_mut(), |ui| {
-        let mut out: Option<(f32, f32, f32, f32)> = None;
-        painting.ui(ui, &mut out);
-        if let Some(draw) = out {
-            painting.out.push(draw);
-        }
-    });
-}
-
-fn login_ui(
-    mut egui_context: EguiContexts,
-    mut event_wtr: EventWriter<ConnectionRequest>,
+#[allow(clippy::too_many_arguments)]
+fn app_ui(
     state: Res<SilkState>,
+    connection_status: Res<State<SilkConnectionState>>,
+    mut contexts: EguiContexts,
+    mut painting_state: ResMut<PaintingState>,
+    mut connection_requests: EventWriter<ConnectionRequest>,
+    mut chat_state: ResMut<ChatState>,
+    mut room_url: Local<String>,
+    mut chat_line: Local<String>,
 ) {
-    egui::Window::new("Login").show(egui_context.ctx_mut(), |ui| {
-        ui.label(format!("{:?}", state.id));
-        ui.horizontal_wrapped(|ui| {
-            if ui.button("Connect").clicked() {
-                let auth = AuthenticationRequest::Guest { username: None };
-                event_wtr.send(ConnectionRequest::Connect {
-                    addr: "ws://0.0.0.0:3536".to_string(),
-                    auth,
+    let window = egui::Window::new("Painting Demo")
+        .pivot(egui::Align2::CENTER_CENTER)
+        .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+        .resizable(false)
+        .title_bar(true)
+        .collapsible(false);
+    window.show(contexts.ctx_mut(), |ui| {
+        ui.vertical_centered(|ui| match connection_status.get() {
+            SilkConnectionState::Establishing
+            | SilkConnectionState::Authenticating
+            | SilkConnectionState::Disconnected => {
+                ui.horizontal_wrapped(|ui| {
+                    ui.label("Room URL:");
+                    ui.add(
+                        egui::TextEdit::singleline(&mut *room_url)
+                            .hint_text("ws://127.0.0.1:3536 (default)")
+                            .password(true)
+                            .desired_width(300.0),
+                    );
                 });
+                if ui.button("Connect").clicked() {
+                    let auth = AuthenticationRequest::Guest { username: None };
+                    connection_requests.send(ConnectionRequest::Connect {
+                        addr: if room_url.is_empty() {
+                            "ws://127.0.0.1:3536".to_string()
+                        } else {
+                            room_url.to_string()
+                        },
+                        auth,
+                    });
+                }
             }
-            if ui.button("Disconnect").clicked() {
-                event_wtr.send(ConnectionRequest::Disconnect {
-                    reason: Some("User clicked disconnect".to_string()),
+            SilkConnectionState::Connected => {
+                ui.horizontal(|ui| {
+                    if ui.button("Disconnect").clicked() {
+                        connection_requests.send(
+                            ConnectionRequest::Disconnect {
+                                reason: Some(
+                                    "User clicked disconnect".to_string(),
+                                ),
+                            },
+                        );
+                    }
+                    ui.label(format!("Connected as {}", state.id.unwrap()));
                 });
+                ui.separator();
+
+                // Chat UI
+                ui.label("Chat");
+                ui.horizontal_wrapped(|ui| {
+                    ui.text_edit_singleline(chat_line.deref_mut());
+                    if ui.button("Send").clicked() {
+                        chat_state.out.replace(chat_line.to_owned());
+                    };
+                });
+                ui.label("Messages");
+                chat_state.ui(ui);
+
+                ui.separator();
+
+                // Paint GUI
+                let mut out: Option<(f32, f32, f32, f32)> = None;
+                painting_state.ui(ui, &mut out);
+                if let Some(draw) = out {
+                    painting_state.out.push(draw);
+                }
             }
         });
     });
