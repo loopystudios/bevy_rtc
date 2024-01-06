@@ -2,14 +2,12 @@ use bevy::{
     ecs::schedule::{ScheduleLabel, SystemSetConfigs},
     prelude::*,
 };
-use strum_macros::{Display, EnumIter};
+use enum_display::EnumDisplay;
 
 #[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct SilkSchedule;
 
-#[derive(
-    Debug, Hash, PartialEq, Eq, Clone, Copy, SystemSet, Display, EnumIter,
-)]
+#[derive(Debug, Hash, PartialEq, Eq, Clone, Copy, SystemSet, EnumDisplay)]
 pub enum SilkSet {
     /// Do not use this system, it flushes previous network buffers since we do
     /// not consume on read for network traffic.

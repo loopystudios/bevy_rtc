@@ -9,14 +9,12 @@ edition.workspace = true
 bevy = { workspace = true }
 silk-macros = { path = "../crates/silk-macros" }
 bevy_matchbox = { workspace = true }
-
-log = "0.4"
 serde = "1"
+enum-display = "0.1"
+# Default encoding
 serde_json = { version = "1", optional = true }
+# Binary encoding (`binary` feature)
 bincode = { version = "1", optional = true }
-strum = "0.25"
-strum_macros = "0.25"
-
 
 [features]
 default = ["dep:serde_json"]
