@@ -22,7 +22,6 @@ fn main() {
         .add_systems(SilkSchedule, handle_events.in_set(SilkSet::SilkEvents))
         .add_systems(SilkSchedule, send_draw_points.in_set(SilkSet::Update))
         .add_systems(SilkSchedule, send_chats.in_set(SilkSet::Update))
-        .add_systems(Startup, || info!("Connecting..."))
         .run();
 }
 
@@ -68,9 +67,7 @@ fn handle_events(
             SilkServerEvent::ClientLeft(id) => {
                 info!("{id} left");
             }
-            SilkServerEvent::IdAssigned(id) => {
-                info!("Id assigned: {id}")
-            }
+            _ => {}
         }
     }
     event_rdr.clear();
