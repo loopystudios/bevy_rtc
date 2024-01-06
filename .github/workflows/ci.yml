@@ -10,13 +10,8 @@ jobs:
       - name: Setup | Checkout
         uses: actions/checkout@v4
 
-      - name: Setup | SSH Keys
-        uses: webfactory/ssh-agent@v0.8.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
       - name: Setup | Toolchain
-        uses: dtolnay/rust-toolchain@nightly
+        uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy,rustfmt
 
@@ -35,13 +30,8 @@ jobs:
       - name: Setup | Checkout
         uses: actions/checkout@v4
 
-      - name: Setup | SSH Keys
-        uses: webfactory/ssh-agent@v0.8.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
       - name: Setup | Rust
-        uses: dtolnay/rust-toolchain@nightly
+        uses: dtolnay/rust-toolchain@stable
         with:
           targets: |
             wasm32-unknown-unknown
