@@ -1,14 +1,11 @@
 [package]
-name = "demo-server"
+name = "server"
 version.workspace = true
 license.workspace = true
 edition.workspace = true
 publish = false
 
 [dependencies]
-silk = { path = "../..", features = ["server"] }
-net-common = { path = "../net-common" }
 bevy = { workspace = true }
-bevy_egui = { workspace = true }
-futures-timer = { version = "3", features = ["wasm-bindgen"] }
-log = { version = "0.4", default-features = false }
+bevy-silk = { path = "../../bevy-silk", features = ["server"] }
+protocol = { path = "../protocol" }

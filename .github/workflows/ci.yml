@@ -1,0 +1,52 @@
+name: CI
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup | Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup | Ubuntu dependencies
+        run: sudo apt install libasound2-dev libudev-dev pkg-config
+
+      - name: Setup | Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy,rustfmt
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2.7.1
+
+      - name: Build | Clippy
+        run: cargo clippy -- -D warnings
+
+      - name: Build | Rustfmt
+        run: cargo fmt --all -- --check
+
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup | Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup | Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: |
+            wasm32-unknown-unknown
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2.7.1
+
+      - name: Build | Check bevy-silk server (native)
+        run: cargo check -p bevy-silk -F server
+
+      - name: Build | Check bevy-silk client (wasm)
+        run: cargo check -p bevy-silk -F client --target wasm32-unknown-unknown
+
+      - name: Build | Check bevy-silk client (native)
+        run: cargo check -p bevy-silk -F client

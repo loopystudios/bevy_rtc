@@ -1,0 +1,23 @@
+[package]
+name = "bevy-silk"
+description = "A client-server library designed over WebRTC for Bevy"
+version.workspace = true
+license.workspace = true
+edition.workspace = true
+
+[dependencies]
+bevy = { workspace = true }
+silk-macros = { path = "../crates/silk-macros" }
+bevy_matchbox = { workspace = true }
+serde = "1"
+enum-display = "0.1"
+# Default encoding
+serde_json = { version = "1", optional = true }
+# Binary encoding (`binary` feature)
+bincode = { version = "1", optional = true }
+
+[features]
+default = ["dep:serde_json"]
+client = []
+server = ["bevy_matchbox/signaling"]
+binary = ["dep:bincode"]
