@@ -4,7 +4,7 @@ mod send;
 use crate::{
     protocol::Payload,
     schedule::{SilkSchedule, SilkSet},
-    socket::common_socket_reader,
+    socket::{common_socket_reader, SilkSocket},
 };
 use bevy::prelude::*;
 
@@ -26,16 +26,6 @@ impl AddNetworkMessageExt for App {
             panic!("server already contains resource: {}", M::reflect_name());
         }
         self.insert_resource(IncomingMessages::<M> { messages: vec![] })
-            .add_systems(
-                SilkSchedule,
-                IncomingMessages::<M>::flush.in_set(SilkSet::Flush),
-            )
-            .add_systems(
-                SilkSchedule,
-                IncomingMessages::<M>::read_system
-                    .before(SilkSet::NetworkRead)
-                    .after(common_socket_reader),
-            )
             .insert_resource(OutgoingMessages::<M> {
                 reliable_to_all: vec![],
                 unreliable_to_all: vec![],
@@ -46,8 +36,19 @@ impl AddNetworkMessageExt for App {
             })
             .add_systems(
                 SilkSchedule,
-                OutgoingMessages::<M>::write_system
-                    .after(SilkSet::NetworkWrite),
+                (
+                    IncomingMessages::<M>::flush,
+                    IncomingMessages::<M>::receive_payloads,
+                )
+                    .chain()
+                    .before(SilkSet::NetworkRead)
+                    .after(common_socket_reader),
+            )
+            .add_systems(
+                SilkSchedule,
+                OutgoingMessages::<M>::send_payloads
+                    .after(SilkSet::NetworkWrite)
+                    .run_if(resource_exists::<SilkSocket>()),
             );
 
         self

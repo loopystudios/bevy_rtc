@@ -19,7 +19,7 @@ fn main() {
         })
         .add_network_message::<ChatPayload>()
         .add_network_message::<DrawLinePayload>()
-        .add_systems(SilkSchedule, handle_events.in_set(SilkSet::SilkEvents))
+        .add_systems(Update, handle_events)
         .add_systems(SilkSchedule, send_draw_points.in_set(SilkSet::Update))
         .add_systems(SilkSchedule, send_chats.in_set(SilkSet::Update))
         .run();

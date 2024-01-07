@@ -3,7 +3,6 @@ compile_error!(
     "The 'server' feature is not supported on the wasm32 target architecture."
 );
 
-pub(crate) mod common_plugin;
 pub(crate) mod events;
 pub mod packets;
 pub mod protocol;

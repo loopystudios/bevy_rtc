@@ -27,119 +27,124 @@ impl<M: Payload> OutgoingMessages<M> {
         self.unreliable_to_peer.clear();
     }
 
-    pub(crate) fn write_system(
+    pub(crate) fn send_payloads(
         mut queue: ResMut<Self>,
-        mut socket: Option<ResMut<SilkSocket>>,
+        mut socket: ResMut<SilkSocket>,
     ) {
-        if let Some(socket) = socket.as_mut() {
-            // Server is sending
-            for message in queue.reliable_to_all.iter() {
-                let peers: Vec<PeerId> = socket.connected_peers().collect();
-                peers.into_iter().for_each(|peer| {
-                    if socket
-                        .channel_mut(RELIABLE_CHANNEL_INDEX)
-                        .try_send(message.to_packet(), peer).is_err()
-                    {
-                        error!("failed to send reliable packet to {peer}: {message:?}");
-                    }
-                })
-            }
-            if !queue.reliable_to_all.is_empty() {
-                trace!(
-                    "sent {} [R;N] {} packets",
-                    queue.reliable_to_all.len(),
-                    M::reflect_name()
-                );
-            }
-            for message in queue.unreliable_to_all.iter() {
-                let peers: Vec<PeerId> = socket.connected_peers().collect();
-                peers.into_iter().for_each(|peer| {
-                    if socket
-                        .channel_mut(UNRELIABLE_CHANNEL_INDEX)
-                        .try_send(message.to_packet(), peer).is_err() {
-                        error!("failed to send unreliable packet to {peer}: {message:?}");
-                    }
-                })
-            }
-            if !queue.unreliable_to_all.is_empty() {
-                trace!(
-                    "sent {} [U;N] {} packets",
-                    queue.unreliable_to_all.len(),
-                    M::reflect_name()
-                );
-            }
-            for (peer, message) in queue.reliable_to_all_except.iter() {
-                let peers: Vec<PeerId> =
-                    socket.connected_peers().filter(|p| p != peer).collect();
-                peers.into_iter().for_each(|peer| {
-                    if socket
-                        .channel_mut(RELIABLE_CHANNEL_INDEX)
-                        .try_send(message.to_packet(), peer).is_err() {
-                        error!("failed to send reliable packet to {peer}: {message:?}");
-                    }
-                });
-            }
-            if !queue.reliable_to_all_except.is_empty() {
-                trace!(
-                    "sent {} [R;N-1] {} packets",
-                    queue.reliable_to_all_except.len(),
-                    M::reflect_name()
-                );
-            }
-            for (peer, message) in queue.unreliable_to_all_except.iter() {
-                let peers: Vec<PeerId> =
-                    socket.connected_peers().filter(|p| p != peer).collect();
-                peers.into_iter().for_each(|peer| {
-                    if socket
-                        .channel_mut(UNRELIABLE_CHANNEL_INDEX)
-                        .try_send(message.to_packet(), peer).is_err() {
-                        error!("failed to send unreliable packet to {peer}: {message:?}");
-                    }
-                });
-            }
-            if !queue.unreliable_to_all_except.is_empty() {
-                trace!(
-                    "sent {} [U;N-1] {} packets",
-                    queue.unreliable_to_all_except.len(),
-                    M::reflect_name()
-                );
-            }
-            for (peer, message) in queue.reliable_to_peer.iter() {
+        // Server is sending
+        for message in queue.reliable_to_all.iter() {
+            let peers: Vec<PeerId> = socket.connected_peers().collect();
+            peers.into_iter().for_each(|peer| {
                 if socket
                     .channel_mut(RELIABLE_CHANNEL_INDEX)
-                    .try_send(message.to_packet(), *peer)
+                    .try_send(message.to_packet(), peer)
                     .is_err()
                 {
                     error!(
                         "failed to send reliable packet to {peer}: {message:?}"
                     );
                 }
-            }
-            if !queue.reliable_to_peer.is_empty() {
-                trace!(
-                    "sent {} [R] {} packets",
-                    queue.reliable_to_peer.len(),
-                    M::reflect_name()
-                );
-            }
-            for (peer, message) in queue.unreliable_to_peer.iter() {
+            })
+        }
+        if !queue.reliable_to_all.is_empty() {
+            trace!(
+                "sent {} [R;N] {} packets",
+                queue.reliable_to_all.len(),
+                M::reflect_name()
+            );
+        }
+        for message in queue.unreliable_to_all.iter() {
+            let peers: Vec<PeerId> = socket.connected_peers().collect();
+            peers.into_iter().for_each(|peer| {
+                    if socket
+                        .channel_mut(UNRELIABLE_CHANNEL_INDEX)
+                        .try_send(message.to_packet(), peer).is_err() {
+                        error!("failed to send unreliable packet to {peer}: {message:?}");
+                    }
+                })
+        }
+        if !queue.unreliable_to_all.is_empty() {
+            trace!(
+                "sent {} [U;N] {} packets",
+                queue.unreliable_to_all.len(),
+                M::reflect_name()
+            );
+        }
+        for (peer, message) in queue.reliable_to_all_except.iter() {
+            let peers: Vec<PeerId> =
+                socket.connected_peers().filter(|p| p != peer).collect();
+            peers.into_iter().for_each(|peer| {
                 if socket
-                    .channel_mut(UNRELIABLE_CHANNEL_INDEX)
-                    .try_send(message.to_packet(), *peer)
+                    .channel_mut(RELIABLE_CHANNEL_INDEX)
+                    .try_send(message.to_packet(), peer)
                     .is_err()
                 {
-                    error!("failed to send unreliable packet to {peer}: {message:?}");
+                    error!(
+                        "failed to send reliable packet to {peer}: {message:?}"
+                    );
                 }
+            });
+        }
+        if !queue.reliable_to_all_except.is_empty() {
+            trace!(
+                "sent {} [R;N-1] {} packets",
+                queue.reliable_to_all_except.len(),
+                M::reflect_name()
+            );
+        }
+        for (peer, message) in queue.unreliable_to_all_except.iter() {
+            let peers: Vec<PeerId> =
+                socket.connected_peers().filter(|p| p != peer).collect();
+            peers.into_iter().for_each(|peer| {
+                    if socket
+                        .channel_mut(UNRELIABLE_CHANNEL_INDEX)
+                        .try_send(message.to_packet(), peer).is_err() {
+                        error!("failed to send unreliable packet to {peer}: {message:?}");
+                    }
+                });
+        }
+        if !queue.unreliable_to_all_except.is_empty() {
+            trace!(
+                "sent {} [U;N-1] {} packets",
+                queue.unreliable_to_all_except.len(),
+                M::reflect_name()
+            );
+        }
+        for (peer, message) in queue.reliable_to_peer.iter() {
+            if socket
+                .channel_mut(RELIABLE_CHANNEL_INDEX)
+                .try_send(message.to_packet(), *peer)
+                .is_err()
+            {
+                error!("failed to send reliable packet to {peer}: {message:?}");
             }
-            if !queue.unreliable_to_peer.is_empty() {
-                trace!(
-                    "sent {} [U] {} packets",
-                    queue.unreliable_to_peer.len(),
-                    M::reflect_name()
+        }
+        if !queue.reliable_to_peer.is_empty() {
+            trace!(
+                "sent {} [R] {} packets",
+                queue.reliable_to_peer.len(),
+                M::reflect_name()
+            );
+        }
+        for (peer, message) in queue.unreliable_to_peer.iter() {
+            if socket
+                .channel_mut(UNRELIABLE_CHANNEL_INDEX)
+                .try_send(message.to_packet(), *peer)
+                .is_err()
+            {
+                error!(
+                    "failed to send unreliable packet to {peer}: {message:?}"
                 );
             }
-
-            queue.flush();
         }
+        if !queue.unreliable_to_peer.is_empty() {
+            trace!(
+                "sent {} [U] {} packets",
+                queue.unreliable_to_peer.len(),
+                M::reflect_name()
+            );
+        }
+
+        queue.flush();
     }
 }

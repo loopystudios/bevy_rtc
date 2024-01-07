@@ -41,7 +41,7 @@ fn main() {
         .add_plugins(SilkClientPlugin)
         .add_network_message::<ChatPayload>()
         .add_network_message::<DrawLinePayload>()
-        .add_systems(SilkSchedule, handle_events.in_set(SilkSet::SilkEvents))
+        .add_systems(Update, handle_events)
         .add_systems(SilkSchedule, read_chats.in_set(SilkSet::NetworkRead))
         .add_systems(SilkSchedule, read_lines.in_set(SilkSet::NetworkRead))
         .add_systems(SilkSchedule, send_chats.in_set(SilkSet::NetworkWrite))

@@ -17,7 +17,7 @@ impl<M: Payload> IncomingMessages<M> {
         incoming.messages.clear();
     }
 
-    pub fn read_system(
+    pub fn receive_payloads(
         mut incoming: ResMut<Self>,
         mut events: EventReader<SocketRecvEvent>,
     ) {

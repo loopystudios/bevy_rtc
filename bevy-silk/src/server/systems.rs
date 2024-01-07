@@ -91,7 +91,7 @@ pub fn init_server_socket(mut commands: Commands, state: Res<SilkState>) {
 }
 
 /// Translates socket events into Bevy events
-pub fn server_socket_reader(
+pub fn server_event_writer(
     mut state: ResMut<SilkState>,
     mut socket: ResMut<SilkSocket>,
     mut event_wtr: EventWriter<SilkServerEvent>,

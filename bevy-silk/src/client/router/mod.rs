@@ -25,25 +25,26 @@ impl AddNetworkMessageExt for App {
             panic!("client already contains resource: {}", M::reflect_name());
         }
         self.insert_resource(IncomingMessages::<M> { messages: vec![] })
-            .add_systems(
-                SilkSchedule,
-                IncomingMessages::<M>::flush.in_set(SilkSet::Flush),
-            )
-            .add_systems(
-                SilkSchedule,
-                IncomingMessages::<M>::read_system
-                    .before(SilkSet::NetworkRead)
-                    .after(common_socket_reader)
-                    .run_if(resource_exists::<SilkSocket>()),
-            )
             .insert_resource(OutgoingMessages::<M> {
                 reliable_to_host: vec![],
                 unreliable_to_host: vec![],
             })
             .add_systems(
                 SilkSchedule,
-                OutgoingMessages::<M>::write_system
-                    .after(SilkSet::NetworkWrite),
+                (
+                    IncomingMessages::<M>::flush,
+                    IncomingMessages::<M>::receive_payloads,
+                )
+                    .chain()
+                    .before(SilkSet::NetworkRead)
+                    .after(common_socket_reader)
+                    .run_if(resource_exists::<SilkSocket>()),
+            )
+            .add_systems(
+                SilkSchedule,
+                OutgoingMessages::<M>::send_payloads
+                    .after(SilkSet::NetworkWrite)
+                    .run_if(resource_exists::<SilkSocket>()),
             );
         self
     }

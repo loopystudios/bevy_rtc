@@ -9,7 +9,12 @@ pub enum SilkClientEvent {
     /// The signaling server assigned the socket a unique ID
     IdAssigned(PeerId),
     /// The socket has successfully connected to a host
-    ConnectedToHost { host: PeerId, username: String },
+    ConnectedToHost {
+        /// The PeerId of the host that authenticated you
+        host: PeerId,
+        /// The username the host gives you
+        username: String,
+    },
     /// The socket disconnected from the host
     DisconnectedFromHost { reason: Option<String> },
 }

@@ -6,7 +6,7 @@ use super::{
 use crate::{
     packets::auth::{SilkLoginRequestPayload, SilkLoginResponsePayload},
     protocol::AuthenticationRequest,
-    socket::SilkSocket,
+    socket::{SilkSocket, SilkSocketPlurality},
 };
 use bevy::prelude::*;
 use bevy_matchbox::{
@@ -41,12 +41,12 @@ pub(crate) fn reset_socket(
     mut commands: Commands,
     mut state: ResMut<SilkState>,
 ) {
-    commands.close_socket::<MultipleChannels>();
+    commands.close_socket::<SilkSocketPlurality>();
     *state = SilkState::default();
 }
 
 /// Reads and handles connection request events
-pub(crate) fn connection_event_reader(
+pub(crate) fn client_event_writer(
     mut cxn_event_reader: EventReader<ConnectionRequest>,
     mut state: ResMut<SilkState>,
     mut next_connection_state: ResMut<NextState<SilkConnectionState>>,
@@ -144,13 +144,13 @@ pub(crate) fn client_socket_reader(
     if socket.any_closed() {
         next_connection_state.set(SilkConnectionState::Disconnected);
         event_wtr.send(SilkClientEvent::DisconnectedFromHost {
-            reason: Some("Connection failed".to_string()),
+            reason: Some("Connection closed".to_string()),
         });
     }
 }
 
 // Translate login to bevy client events
-pub(crate) fn on_login_accepted(
+pub(crate) fn on_login(
     state: Res<SilkState>,
     mut next_connection_state: ResMut<NextState<SilkConnectionState>>,
     mut login_read: NetworkReader<SilkLoginResponsePayload>,

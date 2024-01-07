@@ -9,22 +9,17 @@ pub struct SilkSchedule;
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy, SystemSet, EnumDisplay)]
 pub enum SilkSet {
-    /// Do not use this system, it flushes previous network buffers since we do
-    /// not consume on read for network traffic.
-    Flush,
-    /// An exclusive system to read network traffic
+    /// An exclusive system to read sockets
     NetworkRead,
-    /// A system to process network traffic.
+    /// An exclusive system to analyze network traffic before use.
     Process,
-    /// An exclusive system to handle Silk events, such as `IdAssigned`.
-    SilkEvents,
     /// Apply updates before the main update.
     PreUpdate,
     /// Default stage for game updates.
     Update,
     /// Apply updates after the main update.
     PostUpdate,
-    /// The last opportunity to write network traffic.
+    /// An exclusive system for sending payloads
     NetworkWrite,
 }
 
@@ -32,10 +27,8 @@ impl SilkSet {
     pub fn sets() -> SystemSetConfigs {
         // Define the ordering of systems here
         (
-            Self::Flush,
             Self::NetworkRead,
             Self::Process,
-            Self::SilkEvents,
             Self::PreUpdate,
             Self::Update,
             Self::PostUpdate,

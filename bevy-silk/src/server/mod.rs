@@ -5,9 +5,10 @@ mod system_params;
 mod systems;
 
 use crate::{
-    common_plugin::SilkCommonPlugin,
+    events::SocketRecvEvent,
     packets::auth::{SilkLoginRequestPayload, SilkLoginResponsePayload},
     schedule::{SilkSchedule, SilkSet},
+    socket::{common_socket_reader, SilkSocket},
 };
 use bevy::prelude::*;
 use std::net::Ipv4Addr;
@@ -28,7 +29,16 @@ pub struct SilkServerPlugin {
 
 impl Plugin for SilkServerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(SilkCommonPlugin)
+        // Initialize the schedule for silk
+        app.init_schedule(SilkSchedule)
+            .edit_schedule(SilkSchedule, |schedule| {
+                schedule.configure_sets(SilkSet::sets());
+            })
+            .add_event::<SocketRecvEvent>()
+            .insert_resource(Time::<Fixed>::from_seconds(1.0 / self.tick_rate))
+            .add_systems(FixedUpdate, |world: &mut World| {
+                world.run_schedule(SilkSchedule);
+            })
             .add_network_message::<SilkLoginRequestPayload>()
             .add_network_message::<SilkLoginResponsePayload>()
             .add_event::<SilkServerEvent>()
@@ -43,20 +53,19 @@ impl Plugin for SilkServerPlugin {
                 (systems::init_signaling_server, systems::init_server_socket)
                     .chain(),
             )
-            // TODO: This doesn't seem right - Only the schedule should run on
-            // this tickrate
-            .insert_resource(Time::<Fixed>::from_seconds(1.0 / self.tick_rate))
             .add_systems(
                 SilkSchedule,
                 systems::on_login.in_set(SilkSet::NetworkRead),
             )
             .add_systems(
                 SilkSchedule,
-                // Read silk events always before servers, who hook into this
-                // stage
-                systems::server_socket_reader
-                    .before(SilkSet::SilkEvents)
-                    .after(systems::on_login),
+                common_socket_reader
+                    .run_if(resource_exists::<SilkSocket>())
+                    .before(SilkSet::NetworkRead),
+            )
+            .add_systems(
+                Update,
+                systems::server_event_writer.after(systems::on_login),
             );
     }
 }

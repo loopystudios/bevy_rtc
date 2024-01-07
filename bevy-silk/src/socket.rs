@@ -3,7 +3,9 @@ use bevy::prelude::*;
 use bevy_matchbox::{prelude::MultipleChannels, MatchboxSocket};
 
 /// A type alias to the underlying matchbox socket.
-pub type SilkSocket = MatchboxSocket<MultipleChannels>;
+pub type SilkSocket = MatchboxSocket<SilkSocketPlurality>;
+/// A type alias to the underlying matchbox socket plurality.
+pub type SilkSocketPlurality = MultipleChannels;
 
 /// The index of the unreliable channel in the [`WebRtcSocket`].
 pub const UNRELIABLE_CHANNEL_INDEX: usize = 0;
