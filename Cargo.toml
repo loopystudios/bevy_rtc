@@ -9,4 +9,5 @@ license = "MIT/Apache-2.0"
 
 [workspace.dependencies]
 bevy = { version = "0.12", default-features = false }
-bevy_matchbox = { git = "ssh://git@github.com/vectorgameexperts/matchbox.git", rev = "a618737" }
+# TODO: Replace with 0.8.1 after https://github.com/johanhelsing/matchbox/issues/392
+bevy_matchbox = { git = "https://github.com/johanhelsing/matchbox", rev = "fa5c765" }
