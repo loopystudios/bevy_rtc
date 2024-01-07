@@ -69,13 +69,10 @@ use protocol::MyPacket;
 fn main() {
     App::new()
         .add_plugins(MinimalPlugins)
-        .add_plugins(SilkServerPlugin {
-            port: 3536,
-            tick_rate: 1.0, // run the networking SilkSchedule systems once a second
-        })
+        .add_plugins(SilkServerPlugin { port: 3536 })
         .add_network_message::<MyPacket>()
         .add_systems(
-            SilkSchedule,
+            Update,
             |reader: NetworkReader<MyPacket>, writer: NetworkWriter<MyPacket>| {
                 for (peer_id, packet) in reader.read() {
                     if let MyPacket::Ping = packet {
@@ -84,7 +81,6 @@ fn main() {
                     }
                 }
             }
-            .in_set(SilkSet::Update), // Optional: When to run your system
         )
         .run();
 }
@@ -101,7 +97,7 @@ fn main() {
         .add_plugins(SilkClientPlugin)
         .add_network_message::<Chat>()
         .add_systems(
-            SilkSchedule,
+            Update,
             |reader: NetworkReader<MyPacket>| {
                 for (peer_id, packet) in reader.read() {
                     if let MyPacket::Pong = packet {
