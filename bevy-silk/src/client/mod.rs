@@ -1,6 +1,5 @@
 use crate::{
     events::SocketRecvEvent,
-    protocol::{SilkLoginRequestPayload, SilkLoginResponsePayload},
     socket::{common_socket_reader, SilkSocket},
 };
 use bevy::prelude::*;
@@ -22,8 +21,6 @@ pub struct SilkClientPlugin;
 impl Plugin for SilkClientPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<SocketRecvEvent>()
-            .add_network_message::<SilkLoginRequestPayload>()
-            .add_network_message::<SilkLoginResponsePayload>()
             .insert_resource(SilkState::default())
             .add_state::<SilkConnectionState>()
             .add_event::<ConnectionRequest>()
@@ -39,11 +36,7 @@ impl Plugin for SilkClientPlugin {
             .add_systems(First, systems::connection_request_handler)
             .add_systems(
                 First,
-                (
-                    common_socket_reader,
-                    systems::client_event_writer,
-                    systems::on_login,
-                )
+                (common_socket_reader, systems::client_event_writer)
                     .chain()
                     .run_if(resource_exists::<SilkSocket>()),
             );

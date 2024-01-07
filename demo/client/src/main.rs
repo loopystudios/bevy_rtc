@@ -10,12 +10,9 @@ use bevy_egui::{
     egui::{self, Pos2},
     EguiContexts, EguiPlugin,
 };
-use bevy_silk::{
-    client::{
-        AddNetworkMessageExt, ConnectionRequest, NetworkReader, NetworkWriter,
-        SilkClientEvent, SilkClientPlugin, SilkConnectionState, SilkState,
-    },
-    protocol::AuthenticationRequest,
+use bevy_silk::client::{
+    AddNetworkMessageExt, ConnectionRequest, NetworkReader, NetworkWriter,
+    SilkClientEvent, SilkClientPlugin, SilkConnectionState, SilkState,
 };
 use chat::ChatState;
 use painting::PaintingState;
@@ -88,9 +85,9 @@ fn print_events(mut events: EventReader<SilkClientEvent>) {
             SilkClientEvent::IdAssigned(id) => {
                 info!("ID assigned: {id:?}");
             }
-            SilkClientEvent::ConnectedToHost { host, username } => {
+            SilkClientEvent::ConnectedToHost(host) => {
                 // Connected to host
-                info!("Connected to host ({host}) as {username}");
+                info!("Connected to host ({host})");
             }
             SilkClientEvent::DisconnectedFromHost { reason } => {
                 // Disconnected from host
@@ -165,9 +162,10 @@ fn app_ui(
         .collapsible(false);
     window.show(contexts.ctx_mut(), |ui| {
         ui.vertical_centered(|ui| match connection_status.get() {
-            SilkConnectionState::Establishing
-            | SilkConnectionState::Authenticating
-            | SilkConnectionState::Disconnected => {
+            SilkConnectionState::Establishing => {
+                ui.label("Connecting...");
+            }
+            SilkConnectionState::Disconnected => {
                 ui.horizontal_wrapped(|ui| {
                     ui.label("Room URL:");
                     ui.add(
@@ -178,27 +176,19 @@ fn app_ui(
                     );
                 });
                 if ui.button("Connect").clicked() {
-                    let auth = AuthenticationRequest::Guest { username: None };
                     connection_requests.send(ConnectionRequest::Connect {
                         addr: if room_url.is_empty() {
                             "ws://127.0.0.1:3536".to_string()
                         } else {
                             room_url.to_string()
                         },
-                        auth,
                     });
                 }
             }
             SilkConnectionState::Connected => {
                 ui.horizontal(|ui| {
                     if ui.button("Disconnect").clicked() {
-                        connection_requests.send(
-                            ConnectionRequest::Disconnect {
-                                reason: Some(
-                                    "User clicked disconnect".to_string(),
-                                ),
-                            },
-                        );
+                        connection_requests.send(ConnectionRequest::Disconnect);
                     }
                     ui.label(format!("Connected as {}", state.id.unwrap()));
                 });

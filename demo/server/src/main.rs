@@ -1,10 +1,7 @@
 use bevy::{log::LogPlugin, prelude::*};
-use bevy_silk::{
-    protocol::SilkLoginResponsePayload,
-    server::{
-        AddNetworkMessageExt, NetworkReader, NetworkWriter, SilkServerEvent,
-        SilkServerPlugin,
-    },
+use bevy_silk::server::{
+    AddNetworkMessageExt, NetworkReader, NetworkWriter, SilkServerEvent,
+    SilkServerPlugin,
 };
 use protocol::{ChatPayload, DrawLinePayload};
 
@@ -39,23 +36,11 @@ fn send_chats(
     }
 }
 
-fn player_auth(
-    mut guest_count: Local<u16>,
-    mut accept_wtr: NetworkWriter<SilkLoginResponsePayload>,
-    mut event_rdr: EventReader<SilkServerEvent>,
-) {
+fn player_auth(mut event_rdr: EventReader<SilkServerEvent>) {
     for ev in event_rdr.read() {
         match ev {
-            SilkServerEvent::GuestLoginRequest { peer_id, .. }
-            | SilkServerEvent::LoginRequest { peer_id, .. } => {
-                *guest_count += 1;
-                let username = format!("Guest-{}", *guest_count);
-                info!("{peer_id} : {username} joined");
-                // Accept all users
-                accept_wtr.reliable_to_peer(
-                    *peer_id,
-                    SilkLoginResponsePayload::Accepted { username },
-                );
+            SilkServerEvent::ClientJoined(id) => {
+                info!("{id} joined");
             }
             SilkServerEvent::ClientLeft(id) => {
                 info!("{id} left");

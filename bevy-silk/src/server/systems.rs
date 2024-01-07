@@ -1,5 +1,5 @@
-use super::{events::SilkServerEvent, system_params::NetworkReader, SilkState};
-use crate::{protocol::SilkLoginRequestPayload, socket::SilkSocket};
+use super::{events::SilkServerEvent, SilkState};
+use crate::socket::SilkSocket;
 use bevy::prelude::*;
 use bevy_matchbox::{
     matchbox_signaling::{
@@ -108,35 +108,10 @@ pub fn server_event_writer(
     for (peer, peer_state) in socket.update_peers() {
         match peer_state {
             PeerState::Connected => {
-                // Authentication happens in another system! Do nothing.
+                event_wtr.send(SilkServerEvent::ClientJoined(peer));
             }
             PeerState::Disconnected => {
                 event_wtr.send(SilkServerEvent::ClientLeft(peer));
-            }
-        }
-    }
-}
-
-// Translate login requests to bevy server events
-pub fn on_login(
-    mut login_read: NetworkReader<SilkLoginRequestPayload>,
-    mut event_wtr: EventWriter<SilkServerEvent>,
-) {
-    for (peer_id, payload) in login_read.iter() {
-        match payload {
-            SilkLoginRequestPayload::RegisteredUser {
-                access_token,
-                character,
-            } => event_wtr.send(SilkServerEvent::LoginRequest {
-                peer_id: *peer_id,
-                access_token: access_token.clone(),
-                character: character.clone(),
-            }),
-            SilkLoginRequestPayload::Guest { username } => {
-                event_wtr.send(SilkServerEvent::GuestLoginRequest {
-                    peer_id: *peer_id,
-                    username: username.to_owned(),
-                })
             }
         }
     }

@@ -1,15 +1,8 @@
 use super::{
     events::{ConnectionRequest, SilkClientEvent},
     state::{SilkConnectionState, SilkState},
-    system_params::{NetworkReader, NetworkWriter},
 };
-use crate::{
-    protocol::{
-        AuthenticationRequest, SilkLoginRequestPayload,
-        SilkLoginResponsePayload,
-    },
-    socket::{SilkSocket, SilkSocketPlurality},
-};
+use crate::socket::{SilkSocket, SilkSocketPlurality};
 use bevy::prelude::*;
 use bevy_matchbox::{
     matchbox_socket::{self, WebRtcSocket},
@@ -56,7 +49,7 @@ pub(crate) fn connection_request_handler(
     mut event_wtr: EventWriter<SilkClientEvent>,
 ) {
     match cxn_event_reader.read().next() {
-        Some(ConnectionRequest::Connect { addr, auth }) => {
+        Some(ConnectionRequest::Connect { addr }) => {
             if let SilkConnectionState::Disconnected =
                 current_connection_state.get()
             {
@@ -65,18 +58,17 @@ pub(crate) fn connection_request_handler(
                     "set state: connecting"
                 );
                 state.addr.replace(addr.to_owned());
-                state.auth.replace(auth.to_owned());
                 next_connection_state.set(SilkConnectionState::Establishing);
             }
         }
-        Some(ConnectionRequest::Disconnect { reason }) => {
+        Some(ConnectionRequest::Disconnect) => {
             debug!(
                 previous = format!("{current_connection_state:?}"),
                 "set state: disconnected"
             );
             next_connection_state.set(SilkConnectionState::Disconnected);
             event_wtr.send(SilkClientEvent::DisconnectedFromHost {
-                reason: reason.to_owned(),
+                reason: Some("Client requested to disconnect".to_string()),
             });
         }
         None => {}
@@ -88,7 +80,6 @@ pub(crate) fn client_event_writer(
     mut state: ResMut<SilkState>,
     mut socket: ResMut<SilkSocket>,
     mut event_wtr: EventWriter<SilkClientEvent>,
-    mut login_send: NetworkWriter<SilkLoginRequestPayload>,
     mut next_connection_state: ResMut<NextState<SilkConnectionState>>,
 ) {
     // Create socket events for Silk
@@ -108,25 +99,9 @@ pub(crate) fn client_event_writer(
                 match peer_state {
                     matchbox_socket::PeerState::Connected => {
                         state.host_id.replace(id);
-                        let Some(auth) = state.auth.take() else {
-                            panic!("no auth set")
-                        };
-                        match auth {
-                            AuthenticationRequest::Registered {
-                                access_token,
-                                character,
-                            } => login_send.reliable_to_host(
-                                SilkLoginRequestPayload::RegisteredUser {
-                                    access_token,
-                                    character,
-                                },
-                            ),
-                            AuthenticationRequest::Guest { username } => {
-                                login_send.reliable_to_host(
-                                    SilkLoginRequestPayload::Guest { username },
-                                )
-                            }
-                        }
+                        next_connection_state
+                            .set(SilkConnectionState::Connected);
+                        event_wtr.send(SilkClientEvent::ConnectedToHost(id));
                     }
                     matchbox_socket::PeerState::Disconnected => {
                         next_connection_state
@@ -148,33 +123,5 @@ pub(crate) fn client_event_writer(
         event_wtr.send(SilkClientEvent::DisconnectedFromHost {
             reason: Some("Connection closed".to_string()),
         });
-    }
-}
-
-// Translate login to bevy client events
-pub(crate) fn on_login(
-    state: Res<SilkState>,
-    mut next_connection_state: ResMut<NextState<SilkConnectionState>>,
-    mut login_read: NetworkReader<SilkLoginResponsePayload>,
-    mut event_wtr: EventWriter<SilkClientEvent>,
-) {
-    for payload in login_read.iter() {
-        match payload {
-            SilkLoginResponsePayload::Accepted { username } => {
-                info!("authenticated user: {username}");
-                next_connection_state.set(SilkConnectionState::Connected);
-                event_wtr.send(SilkClientEvent::ConnectedToHost {
-                    host: state.host_id.unwrap(),
-                    username: username.to_string(),
-                });
-            }
-            SilkLoginResponsePayload::Denied { reason } => {
-                error!("login denied, reason: {reason:?}");
-                next_connection_state.set(SilkConnectionState::Disconnected);
-                event_wtr.send(SilkClientEvent::DisconnectedFromHost {
-                    reason: reason.to_owned(),
-                });
-            }
-        }
     }
 }

@@ -6,7 +6,6 @@ mod systems;
 
 use crate::{
     events::SocketRecvEvent,
-    protocol::{SilkLoginRequestPayload, SilkLoginResponsePayload},
     socket::{common_socket_reader, SilkSocket},
 };
 use bevy::prelude::*;
@@ -27,8 +26,6 @@ impl Plugin for SilkServerPlugin {
     fn build(&self, app: &mut App) {
         // Initialize the schedule for silk
         app.add_event::<SocketRecvEvent>()
-            .add_network_message::<SilkLoginRequestPayload>()
-            .add_network_message::<SilkLoginResponsePayload>()
             .add_event::<SilkServerEvent>()
             .insert_resource(SilkState {
                 addr: (Ipv4Addr::UNSPECIFIED, self.port).into(),
@@ -43,11 +40,7 @@ impl Plugin for SilkServerPlugin {
             )
             .add_systems(
                 First,
-                (
-                    common_socket_reader,
-                    systems::on_login,
-                    systems::server_event_writer,
-                )
+                (common_socket_reader, systems::server_event_writer)
                     .chain()
                     .run_if(resource_exists::<SilkSocket>()),
             );
