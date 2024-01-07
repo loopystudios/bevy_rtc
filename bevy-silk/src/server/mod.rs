@@ -6,7 +6,7 @@ mod systems;
 
 use crate::{
     events::SocketRecvEvent,
-    packets::auth::{SilkLoginRequestPayload, SilkLoginResponsePayload},
+    protocol::{SilkLoginRequestPayload, SilkLoginResponsePayload},
     socket::{common_socket_reader, SilkSocket},
 };
 use bevy::prelude::*;

@@ -1,5 +1,5 @@
 use super::{events::SilkServerEvent, system_params::NetworkReader, SilkState};
-use crate::{packets::auth::SilkLoginRequestPayload, socket::SilkSocket};
+use crate::{protocol::SilkLoginRequestPayload, socket::SilkSocket};
 use bevy::prelude::*;
 use bevy_matchbox::{
     matchbox_signaling::{

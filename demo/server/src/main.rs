@@ -1,6 +1,6 @@
 use bevy::{log::LogPlugin, prelude::*};
 use bevy_silk::{
-    packets::auth::SilkLoginResponsePayload,
+    protocol::SilkLoginResponsePayload,
     server::{
         AddNetworkMessageExt, NetworkReader, NetworkWriter, SilkServerEvent,
         SilkServerPlugin,

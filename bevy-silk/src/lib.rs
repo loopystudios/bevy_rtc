@@ -4,7 +4,6 @@ compile_error!(
 );
 
 pub(crate) mod events;
-pub mod packets;
 pub mod protocol;
 pub(crate) mod socket;
 

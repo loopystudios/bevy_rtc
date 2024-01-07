@@ -4,8 +4,10 @@ use super::{
     system_params::{NetworkReader, NetworkWriter},
 };
 use crate::{
-    packets::auth::{SilkLoginRequestPayload, SilkLoginResponsePayload},
-    protocol::AuthenticationRequest,
+    protocol::{
+        AuthenticationRequest, SilkLoginRequestPayload,
+        SilkLoginResponsePayload,
+    },
     socket::{SilkSocket, SilkSocketPlurality},
 };
 use bevy::prelude::*;
