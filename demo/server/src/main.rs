@@ -1,7 +1,6 @@
 use bevy::{log::LogPlugin, prelude::*};
 use bevy_silk::{
     packets::auth::SilkLoginResponsePayload,
-    schedule::SilkSchedule,
     server::{
         AddNetworkMessageExt, NetworkReader, NetworkWriter, SilkServerEvent,
         SilkServerPlugin,
@@ -13,15 +12,10 @@ fn main() {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins)
         .add_plugins(LogPlugin::default())
-        .add_plugins(SilkServerPlugin {
-            port: 3536,
-            tick_rate: 60.0,
-        })
+        .add_plugins(SilkServerPlugin { port: 3536 })
         .add_network_message::<ChatPayload>()
         .add_network_message::<DrawLinePayload>()
-        .add_systems(Update, handle_events)
-        .add_systems(SilkSchedule, send_draw_points)
-        .add_systems(SilkSchedule, send_chats)
+        .add_systems(Update, (player_auth, send_draw_points, send_chats))
         .run();
 }
 
@@ -45,13 +39,12 @@ fn send_chats(
     }
 }
 
-fn handle_events(
+fn player_auth(
     mut guest_count: Local<u16>,
     mut accept_wtr: NetworkWriter<SilkLoginResponsePayload>,
     mut event_rdr: EventReader<SilkServerEvent>,
 ) {
     for ev in event_rdr.read() {
-        debug!("event: {ev:?}");
         match ev {
             SilkServerEvent::GuestLoginRequest { peer_id, .. }
             | SilkServerEvent::LoginRequest { peer_id, .. } => {
@@ -70,5 +63,4 @@ fn handle_events(
             _ => {}
         }
     }
-    event_rdr.clear();
 }

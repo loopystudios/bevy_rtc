@@ -3,10 +3,10 @@ mod send;
 
 use crate::{
     protocol::Payload,
-    schedule::{SilkSchedule, SilkSet},
     socket::{common_socket_reader, SilkSocket},
 };
 use bevy::prelude::*;
+
 pub use receive::IncomingMessages;
 pub use send::OutgoingMessages;
 
@@ -30,20 +30,18 @@ impl AddNetworkMessageExt for App {
                 unreliable_to_host: vec![],
             })
             .add_systems(
-                SilkSchedule,
+                First,
                 (
                     IncomingMessages::<M>::flush,
                     IncomingMessages::<M>::receive_payloads,
                 )
                     .chain()
-                    .before(SilkSet::PreUpdate)
                     .after(common_socket_reader)
                     .run_if(resource_exists::<SilkSocket>()),
             )
             .add_systems(
-                SilkSchedule,
+                Last,
                 OutgoingMessages::<M>::send_payloads
-                    .after(SilkSet::PostUpdate)
                     .run_if(resource_exists::<SilkSocket>()),
             );
         self

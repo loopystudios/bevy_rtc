@@ -16,7 +16,6 @@ use bevy_silk::{
         SilkClientEvent, SilkClientPlugin, SilkConnectionState, SilkState,
     },
     protocol::AuthenticationRequest,
-    schedule::SilkSchedule,
 };
 use chat::ChatState;
 use painting::PaintingState;
@@ -31,7 +30,7 @@ fn main() {
                     present_mode: PresentMode::AutoVsync,
                     fit_canvas_to_parent: true,
                     prevent_default_event_handling: true,
-                    resolution: WindowResolution::new(400., 700.),
+                    resolution: WindowResolution::new(450., 500.),
                     ..default()
                 }),
                 ..default()
@@ -41,50 +40,50 @@ fn main() {
         .add_plugins(SilkClientPlugin)
         .add_network_message::<ChatPayload>()
         .add_network_message::<DrawLinePayload>()
-        .add_systems(Update, handle_events)
-        .add_systems(SilkSchedule, read_chats)
-        .add_systems(SilkSchedule, read_lines)
-        .add_systems(SilkSchedule, send_chats)
-        .add_systems(SilkSchedule, send_lines)
-        .add_systems(Update, app_ui)
-        .add_systems(
-            OnEnter(SilkConnectionState::Disconnected),
-            on_disconnected,
-        )
-        .add_systems(OnEnter(SilkConnectionState::Establishing), on_logging_in)
-        .add_systems(OnEnter(SilkConnectionState::Connected), on_connected)
-        .add_systems(Startup, setup_cam)
         .insert_resource(ChatState::default())
         .insert_resource(PaintingState::default())
+        .add_systems(Startup, |mut commands: Commands| {
+            // Without a camera we get no clear color
+            commands.spawn(Camera2dBundle::default());
+        })
+        .add_systems(
+            Update,
+            (
+                print_events,
+                read_chats,
+                read_lines,
+                send_chats,
+                send_lines,
+                app_ui,
+            ),
+        )
+        .add_systems(
+            OnEnter(SilkConnectionState::Establishing),
+            |mut commands: Commands| {
+                commands.insert_resource(ClearColor(Color::ORANGE))
+            },
+        )
+        .add_systems(
+            OnEnter(SilkConnectionState::Connected),
+            |mut commands: Commands| {
+                commands.insert_resource(ClearColor(Color::GREEN))
+            },
+        )
+        .add_systems(
+            OnEnter(SilkConnectionState::Disconnected),
+            |mut commands: Commands,
+             mut chat_state: ResMut<ChatState>,
+             mut painting_state: ResMut<PaintingState>| {
+                commands.insert_resource(ClearColor(Color::RED));
+                *chat_state = ChatState::default();
+                *painting_state = PaintingState::default();
+            },
+        )
         .run();
 }
 
-fn setup_cam(mut commands: Commands) {
-    // Without a camera we get no clear color
-    commands.spawn(Camera2dBundle::default());
-}
-
-fn on_disconnected(
-    mut commands: Commands,
-    mut chat_state: ResMut<ChatState>,
-    mut painting_state: ResMut<PaintingState>,
-) {
-    commands.insert_resource(ClearColor(Color::RED));
-    *chat_state = ChatState::default();
-    *painting_state = PaintingState::default();
-}
-
-fn on_logging_in(mut commands: Commands) {
-    commands.insert_resource(ClearColor(Color::ORANGE));
-}
-
-fn on_connected(mut commands: Commands) {
-    commands.insert_resource(ClearColor(Color::GREEN));
-}
-
-fn handle_events(mut events: EventReader<SilkClientEvent>) {
+fn print_events(mut events: EventReader<SilkClientEvent>) {
     for ev in events.read() {
-        debug!("event: {ev:?}");
         match ev {
             SilkClientEvent::IdAssigned(id) => {
                 info!("ID assigned: {id:?}");

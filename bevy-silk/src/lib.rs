@@ -6,7 +6,6 @@ compile_error!(
 pub(crate) mod events;
 pub mod packets;
 pub mod protocol;
-pub mod schedule;
 pub(crate) mod socket;
 
 // Re-exports

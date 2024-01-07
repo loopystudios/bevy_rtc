@@ -7,7 +7,6 @@ mod systems;
 use crate::{
     events::SocketRecvEvent,
     packets::auth::{SilkLoginRequestPayload, SilkLoginResponsePayload},
-    schedule::{SilkSchedule, SilkSet},
     socket::{common_socket_reader, SilkSocket},
 };
 use bevy::prelude::*;
@@ -22,23 +21,12 @@ pub use system_params::{NetworkReader, NetworkWriter};
 pub struct SilkServerPlugin {
     /// Which port to serve the signaling server on
     pub port: u16,
-    /// Hertz for [`SilkSchedule`](crate::schedule::SilkSchedule) tickrate,
-    /// e.g. 30.0 = 30 times per second
-    pub tick_rate: f64,
 }
 
 impl Plugin for SilkServerPlugin {
     fn build(&self, app: &mut App) {
         // Initialize the schedule for silk
-        app.init_schedule(SilkSchedule)
-            .edit_schedule(SilkSchedule, |schedule| {
-                schedule.configure_sets(SilkSet::sets());
-            })
-            .add_event::<SocketRecvEvent>()
-            .insert_resource(Time::<Fixed>::from_seconds(1.0 / self.tick_rate))
-            .add_systems(FixedUpdate, |world: &mut World| {
-                world.run_schedule(SilkSchedule);
-            })
+        app.add_event::<SocketRecvEvent>()
             .add_network_message::<SilkLoginRequestPayload>()
             .add_network_message::<SilkLoginResponsePayload>()
             .add_event::<SilkServerEvent>()
@@ -54,15 +42,14 @@ impl Plugin for SilkServerPlugin {
                     .chain(),
             )
             .add_systems(
-                SilkSchedule,
+                First,
                 (
                     common_socket_reader,
                     systems::on_login,
                     systems::server_event_writer,
                 )
                     .chain()
-                    .run_if(resource_exists::<SilkSocket>())
-                    .before(SilkSet::PreUpdate),
+                    .run_if(resource_exists::<SilkSocket>()),
             );
     }
 }

@@ -1,7 +1,6 @@
 use crate::{
     events::SocketRecvEvent,
     packets::auth::{SilkLoginRequestPayload, SilkLoginResponsePayload},
-    schedule::{SilkSchedule, SilkSet},
     socket::{common_socket_reader, SilkSocket},
 };
 use bevy::prelude::*;
@@ -22,14 +21,7 @@ pub struct SilkClientPlugin;
 
 impl Plugin for SilkClientPlugin {
     fn build(&self, app: &mut App) {
-        app.init_schedule(SilkSchedule)
-            .edit_schedule(SilkSchedule, |schedule| {
-                schedule.configure_sets(SilkSet::sets());
-            })
-            .add_systems(Update, |world: &mut World| {
-                world.run_schedule(SilkSchedule);
-            })
-            .add_event::<SocketRecvEvent>()
+        app.add_event::<SocketRecvEvent>()
             .add_network_message::<SilkLoginRequestPayload>()
             .add_network_message::<SilkLoginResponsePayload>()
             .insert_resource(SilkState::default())
@@ -44,17 +36,16 @@ impl Plugin for SilkClientPlugin {
                 OnEnter(SilkConnectionState::Disconnected),
                 systems::reset_socket,
             )
-            .add_systems(Update, systems::connection_request_handler)
+            .add_systems(First, systems::connection_request_handler)
             .add_systems(
-                SilkSchedule,
+                First,
                 (
                     common_socket_reader,
                     systems::client_event_writer,
                     systems::on_login,
                 )
                     .chain()
-                    .run_if(resource_exists::<SilkSocket>())
-                    .before(SilkSet::PreUpdate),
+                    .run_if(resource_exists::<SilkSocket>()),
             );
     }
 }
