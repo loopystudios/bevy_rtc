@@ -44,25 +44,17 @@ impl Plugin for SilkClientPlugin {
                 OnEnter(SilkConnectionState::Disconnected),
                 systems::reset_socket,
             )
+            .add_systems(Update, systems::connection_request_handler)
             .add_systems(
                 SilkSchedule,
-                systems::on_login.in_set(SilkSet::NetworkRead),
-            )
-            .add_systems(
-                SilkSchedule,
-                common_socket_reader
+                (
+                    common_socket_reader,
+                    systems::client_event_writer,
+                    systems::on_login,
+                )
+                    .chain()
                     .run_if(resource_exists::<SilkSocket>())
-                    .before(SilkSet::NetworkRead),
-            )
-            .add_systems(
-                SilkSchedule,
-                systems::client_socket_reader
-                    .in_set(SilkSet::NetworkRead)
-                    .run_if(resource_exists::<SilkSocket>()),
-            )
-            .add_systems(
-                Update,
-                systems::client_event_writer.after(systems::on_login),
+                    .before(SilkSet::PreUpdate),
             );
     }
 }

@@ -41,13 +41,13 @@ impl AddNetworkMessageExt for App {
                     IncomingMessages::<M>::receive_payloads,
                 )
                     .chain()
-                    .before(SilkSet::NetworkRead)
+                    .before(SilkSet::PreUpdate)
                     .after(common_socket_reader),
             )
             .add_systems(
                 SilkSchedule,
                 OutgoingMessages::<M>::send_payloads
-                    .after(SilkSet::NetworkWrite)
+                    .after(SilkSet::PostUpdate)
                     .run_if(resource_exists::<SilkSocket>()),
             );
 

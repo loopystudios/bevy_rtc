@@ -55,17 +55,14 @@ impl Plugin for SilkServerPlugin {
             )
             .add_systems(
                 SilkSchedule,
-                systems::on_login.in_set(SilkSet::NetworkRead),
-            )
-            .add_systems(
-                SilkSchedule,
-                common_socket_reader
+                (
+                    common_socket_reader,
+                    systems::on_login,
+                    systems::server_event_writer,
+                )
+                    .chain()
                     .run_if(resource_exists::<SilkSocket>())
-                    .before(SilkSet::NetworkRead),
-            )
-            .add_systems(
-                Update,
-                systems::server_event_writer.after(systems::on_login),
+                    .before(SilkSet::PreUpdate),
             );
     }
 }

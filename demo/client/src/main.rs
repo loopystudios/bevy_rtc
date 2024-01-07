@@ -16,7 +16,7 @@ use bevy_silk::{
         SilkClientEvent, SilkClientPlugin, SilkConnectionState, SilkState,
     },
     protocol::AuthenticationRequest,
-    schedule::{SilkSchedule, SilkSet},
+    schedule::SilkSchedule,
 };
 use chat::ChatState;
 use painting::PaintingState;
@@ -42,10 +42,10 @@ fn main() {
         .add_network_message::<ChatPayload>()
         .add_network_message::<DrawLinePayload>()
         .add_systems(Update, handle_events)
-        .add_systems(SilkSchedule, read_chats.in_set(SilkSet::NetworkRead))
-        .add_systems(SilkSchedule, read_lines.in_set(SilkSet::NetworkRead))
-        .add_systems(SilkSchedule, send_chats.in_set(SilkSet::NetworkWrite))
-        .add_systems(SilkSchedule, send_lines.in_set(SilkSet::NetworkWrite))
+        .add_systems(SilkSchedule, read_chats)
+        .add_systems(SilkSchedule, read_lines)
+        .add_systems(SilkSchedule, send_chats)
+        .add_systems(SilkSchedule, send_lines)
         .add_systems(Update, app_ui)
         .add_systems(
             OnEnter(SilkConnectionState::Disconnected),

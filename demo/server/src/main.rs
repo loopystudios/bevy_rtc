@@ -1,7 +1,7 @@
 use bevy::{log::LogPlugin, prelude::*};
 use bevy_silk::{
     packets::auth::SilkLoginResponsePayload,
-    schedule::{SilkSchedule, SilkSet},
+    schedule::SilkSchedule,
     server::{
         AddNetworkMessageExt, NetworkReader, NetworkWriter, SilkServerEvent,
         SilkServerPlugin,
@@ -20,8 +20,8 @@ fn main() {
         .add_network_message::<ChatPayload>()
         .add_network_message::<DrawLinePayload>()
         .add_systems(Update, handle_events)
-        .add_systems(SilkSchedule, send_draw_points.in_set(SilkSet::Update))
-        .add_systems(SilkSchedule, send_chats.in_set(SilkSet::Update))
+        .add_systems(SilkSchedule, send_draw_points)
+        .add_systems(SilkSchedule, send_chats)
         .run();
 }
 

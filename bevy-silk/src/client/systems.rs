@@ -46,7 +46,7 @@ pub(crate) fn reset_socket(
 }
 
 /// Reads and handles connection request events
-pub(crate) fn client_event_writer(
+pub(crate) fn connection_request_handler(
     mut cxn_event_reader: EventReader<ConnectionRequest>,
     mut state: ResMut<SilkState>,
     mut next_connection_state: ResMut<NextState<SilkConnectionState>>,
@@ -82,7 +82,7 @@ pub(crate) fn client_event_writer(
 }
 
 /// Translates socket updates into bevy events
-pub(crate) fn client_socket_reader(
+pub(crate) fn client_event_writer(
     mut state: ResMut<SilkState>,
     mut socket: ResMut<SilkSocket>,
     mut event_wtr: EventWriter<SilkClientEvent>,
