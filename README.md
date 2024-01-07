@@ -116,8 +116,3 @@ fn main() {
         .run();
 }
 ```
-
-## Notes
-
-- Any network traffic (reading, writing) must be scheduled on the `SilkSchedule`.
-- Do not put rendering or UI on the `SilkSchedule`, or you may see frame dropping. Instead, use shared memory for rendering (e.g. resources, entities, etc.).
