@@ -11,7 +11,7 @@ use bevy_matchbox::{
 
 /// Initialize the socket
 pub(crate) fn init_socket(mut commands: Commands, socket_res: Res<SilkState>) {
-    if let Some(addr) = &socket_res.addr {
+    if let Some(addr) = socket_res.addr.as_ref() {
         debug!("connecting to: {addr:?}");
 
         // Create matchbox socket
@@ -37,7 +37,12 @@ pub(crate) fn reset_socket(
     mut state: ResMut<SilkState>,
 ) {
     commands.close_socket::<SilkSocketPlurality>();
-    *state = SilkState::default();
+    *state = SilkState {
+        // Keep for reconnecting
+        addr: state.addr.clone(),
+        host_id: None,
+        id: None,
+    };
 }
 
 /// Reads and handles connection request events
