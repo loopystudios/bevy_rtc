@@ -12,7 +12,7 @@ use bevy_egui::{
 };
 use bevy_silk::client::{
     AddNetworkMessageExt, ConnectionRequest, NetworkReader, NetworkWriter,
-    SilkClientEvent, SilkClientPlugin, SilkConnectionState, SilkState,
+    SilkClientEvent, SilkClientPlugin, SilkClientStatus, SilkState,
 };
 use chat::ChatState;
 use painting::PaintingState;
@@ -55,19 +55,19 @@ fn main() {
             ),
         )
         .add_systems(
-            OnEnter(SilkConnectionState::Establishing),
+            OnEnter(SilkClientStatus::Establishing),
             |mut commands: Commands| {
                 commands.insert_resource(ClearColor(Color::ORANGE))
             },
         )
         .add_systems(
-            OnEnter(SilkConnectionState::Connected),
+            OnEnter(SilkClientStatus::Connected),
             |mut commands: Commands| {
                 commands.insert_resource(ClearColor(Color::GREEN))
             },
         )
         .add_systems(
-            OnEnter(SilkConnectionState::Disconnected),
+            OnEnter(SilkClientStatus::Disconnected),
             |mut commands: Commands,
              mut chat_state: ResMut<ChatState>,
              mut painting_state: ResMut<PaintingState>| {
@@ -146,7 +146,7 @@ fn send_lines(
 #[allow(clippy::too_many_arguments)]
 fn app_ui(
     state: Res<SilkState>,
-    connection_status: Res<State<SilkConnectionState>>,
+    connection_status: Res<State<SilkClientStatus>>,
     mut contexts: EguiContexts,
     mut painting_state: ResMut<PaintingState>,
     mut connection_requests: EventWriter<ConnectionRequest>,
@@ -162,10 +162,10 @@ fn app_ui(
         .collapsible(false);
     window.show(contexts.ctx_mut(), |ui| {
         ui.vertical_centered(|ui| match connection_status.get() {
-            SilkConnectionState::Establishing => {
+            SilkClientStatus::Establishing => {
                 ui.label("Connecting...");
             }
-            SilkConnectionState::Disconnected => {
+            SilkClientStatus::Disconnected => {
                 ui.horizontal_wrapped(|ui| {
                     ui.label("Room URL:");
                     ui.add(
@@ -185,13 +185,16 @@ fn app_ui(
                     });
                 }
             }
-            SilkConnectionState::Connected => {
-                ui.horizontal(|ui| {
-                    if ui.button("Disconnect").clicked() {
-                        connection_requests.send(ConnectionRequest::Disconnect);
-                    }
-                    ui.label(format!("Connected as {}", state.id.unwrap()));
-                });
+            SilkClientStatus::Connected => {
+                if ui.button("Disconnect").clicked() {
+                    connection_requests.send(ConnectionRequest::Disconnect);
+                }
+                ui.label(format!("Connected as {}", state.id.unwrap()));
+                ui.label(format!(
+                    "Latency: {:.0?}",
+                    state.latency.unwrap_or_default()
+                ));
+
                 ui.separator();
 
                 // Chat UI

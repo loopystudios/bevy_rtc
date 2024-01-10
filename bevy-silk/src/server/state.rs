@@ -1,6 +1,21 @@
-use bevy::prelude::Resource;
+use bevy::{
+    ecs::schedule::States,
+    prelude::Resource,
+    utils::{hashbrown::HashMap, HashSet},
+};
 use bevy_matchbox::prelude::PeerId;
+use instant::Duration;
 use std::net::SocketAddr;
+
+/// State of the server
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash, States)]
+pub enum SilkServerStatus {
+    /// Not ready
+    #[default]
+    NotReady,
+    /// Ready
+    Ready,
+}
 
 #[derive(Resource)]
 pub struct SilkState {
@@ -9,4 +24,38 @@ pub struct SilkState {
 
     /// The ID the host (server)
     pub id: Option<PeerId>,
+
+    /// A list of connected peers
+    pub(crate) peers: HashSet<PeerId>,
+
+    /// A map of user latencies
+    pub(crate) latencies: HashMap<PeerId, Duration>,
+}
+
+impl SilkState {
+    pub fn new(addr: SocketAddr) -> Self {
+        Self {
+            addr,
+            id: None,
+            peers: HashSet::new(),
+            latencies: HashMap::new(),
+        }
+    }
+
+    /// Return the currently connected peers
+    pub fn peers(&self) -> impl Iterator<Item = PeerId> + '_ {
+        self.peers.iter().copied()
+    }
+
+    /// Return the latency for a peer if they exist
+    pub fn iter_latencies(
+        &self,
+    ) -> impl Iterator<Item = (PeerId, Duration)> + '_ {
+        self.latencies.iter().map(|(p, l)| (*p, *l))
+    }
+
+    /// Return the latency for a peer if they exist
+    pub fn get_latency_for(&self, peer_id: PeerId) -> Option<Duration> {
+        self.latencies.get(&peer_id).copied()
+    }
 }

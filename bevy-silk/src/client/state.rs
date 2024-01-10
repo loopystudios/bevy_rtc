@@ -1,9 +1,10 @@
 use bevy::prelude::*;
 use bevy_matchbox::prelude::PeerId;
+use instant::Duration;
 
 /// State of the socket
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash, States)]
-pub enum SilkConnectionState {
+pub enum SilkClientStatus {
     /// Disconnected
     #[default]
     Disconnected,
@@ -21,4 +22,6 @@ pub struct SilkState {
     pub host_id: Option<PeerId>,
     /// The ID given by the signaling server
     pub id: Option<PeerId>,
+    /// The latency to the server
+    pub latency: Option<Duration>,
 }

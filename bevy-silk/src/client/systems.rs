@@ -1,13 +1,18 @@
 use super::{
     events::{ConnectionRequest, SilkClientEvent},
-    state::{SilkConnectionState, SilkState},
+    state::{SilkClientStatus, SilkState},
+    NetworkReader, NetworkWriter,
 };
-use crate::socket::{SilkSocket, SilkSocketPlurality};
+use crate::{
+    latency::{LatencyTracer, LatencyTracerPayload},
+    socket::{SilkSocket, SilkSocketPlurality},
+};
 use bevy::prelude::*;
 use bevy_matchbox::{
     matchbox_socket::{self, WebRtcSocket},
     prelude::*,
 };
+use instant::Duration;
 
 /// Initialize the socket
 pub(crate) fn init_socket(mut commands: Commands, socket_res: Res<SilkState>) {
@@ -34,14 +39,19 @@ pub(crate) fn init_socket(mut commands: Commands, socket_res: Res<SilkState>) {
 /// Reset the internal socket
 pub(crate) fn reset_socket(
     mut commands: Commands,
+    tracer_query: Query<Entity, With<LatencyTracer>>,
     mut state: ResMut<SilkState>,
 ) {
     commands.close_socket::<SilkSocketPlurality>();
+    if let Ok(entity) = tracer_query.get_single() {
+        commands.entity(entity).despawn();
+    }
     *state = SilkState {
         // Keep for reconnecting
         addr: state.addr.clone(),
         host_id: None,
         id: None,
+        latency: None,
     };
 }
 
@@ -49,13 +59,13 @@ pub(crate) fn reset_socket(
 pub(crate) fn connection_request_handler(
     mut cxn_event_reader: EventReader<ConnectionRequest>,
     mut state: ResMut<SilkState>,
-    mut next_connection_state: ResMut<NextState<SilkConnectionState>>,
-    current_connection_state: Res<State<SilkConnectionState>>,
+    mut next_connection_state: ResMut<NextState<SilkClientStatus>>,
+    current_connection_state: Res<State<SilkClientStatus>>,
     mut event_wtr: EventWriter<SilkClientEvent>,
 ) {
     match cxn_event_reader.read().next() {
         Some(ConnectionRequest::Connect { addr }) => {
-            if let SilkConnectionState::Disconnected =
+            if let SilkClientStatus::Disconnected =
                 current_connection_state.get()
             {
                 debug!(
@@ -63,7 +73,7 @@ pub(crate) fn connection_request_handler(
                     "set state: connecting"
                 );
                 state.addr.replace(addr.to_owned());
-                next_connection_state.set(SilkConnectionState::Establishing);
+                next_connection_state.set(SilkClientStatus::Establishing);
             }
         }
         Some(ConnectionRequest::Disconnect) => {
@@ -71,7 +81,7 @@ pub(crate) fn connection_request_handler(
                 previous = format!("{current_connection_state:?}"),
                 "set state: disconnected"
             );
-            next_connection_state.set(SilkConnectionState::Disconnected);
+            next_connection_state.set(SilkClientStatus::Disconnected);
             event_wtr.send(SilkClientEvent::DisconnectedFromHost {
                 reason: Some("Client requested to disconnect".to_string()),
             });
@@ -82,10 +92,11 @@ pub(crate) fn connection_request_handler(
 
 /// Translates socket updates into bevy events
 pub(crate) fn client_event_writer(
+    mut commands: Commands,
     mut state: ResMut<SilkState>,
     mut socket: ResMut<SilkSocket>,
     mut event_wtr: EventWriter<SilkClientEvent>,
-    mut next_connection_state: ResMut<NextState<SilkConnectionState>>,
+    mut next_connection_state: ResMut<NextState<SilkClientStatus>>,
 ) {
     // Create socket events for Silk
 
@@ -104,13 +115,13 @@ pub(crate) fn client_event_writer(
                 match peer_state {
                     matchbox_socket::PeerState::Connected => {
                         state.host_id.replace(id);
-                        next_connection_state
-                            .set(SilkConnectionState::Connected);
+                        commands.spawn(LatencyTracer::new(id));
+                        next_connection_state.set(SilkClientStatus::Connected);
                         event_wtr.send(SilkClientEvent::ConnectedToHost(id));
                     }
                     matchbox_socket::PeerState::Disconnected => {
                         next_connection_state
-                            .set(SilkConnectionState::Disconnected);
+                            .set(SilkClientStatus::Disconnected);
                         event_wtr.send(SilkClientEvent::DisconnectedFromHost {
                             reason: Some("Server reset".to_string()),
                         });
@@ -124,9 +135,73 @@ pub(crate) fn client_event_writer(
     }
 
     if socket.any_closed() {
-        next_connection_state.set(SilkConnectionState::Disconnected);
+        next_connection_state.set(SilkClientStatus::Disconnected);
         event_wtr.send(SilkClientEvent::DisconnectedFromHost {
             reason: Some("Connection closed".to_string()),
         });
     }
+}
+
+pub fn send_latency_tracers(
+    state: Res<SilkState>,
+    mut writer: NetworkWriter<LatencyTracerPayload>,
+    time: Res<Time>,
+    mut throttle: Local<Option<Timer>>,
+) {
+    let timer = throttle.get_or_insert(Timer::new(
+        Duration::from_millis(100),
+        TimerMode::Repeating,
+    ));
+    timer.tick(time.delta());
+    if timer.just_finished() {
+        let peer_id = state.id.expect("expected peer id");
+        writer.unreliable_to_host(LatencyTracerPayload::new(peer_id));
+    }
+}
+
+pub fn read_latency_tracers(
+    state: Res<SilkState>,
+    mut trace_query: Query<&mut LatencyTracer>,
+    mut reader: NetworkReader<LatencyTracerPayload>,
+    mut writer: NetworkWriter<LatencyTracerPayload>,
+) {
+    let host_id = state.host_id.expect("expected host id");
+    let peer_id = state.id.expect("expected peer id");
+    let mut tracer = trace_query.single_mut();
+
+    // Only collect the most recent payloads that happens this tick.
+    let mut most_recent_payload: Option<LatencyTracerPayload> = None;
+
+    for payload in reader.iter() {
+        // Server time payloads get sent right back to the server
+        if payload.from == host_id {
+            let mrp = most_recent_payload.get_or_insert(payload.clone());
+            if mrp.age() > payload.age() {
+                *mrp = payload.clone();
+            }
+        }
+        // Process payloads we sent out
+        else if payload.from == peer_id {
+            tracer.process(payload.clone());
+        } else {
+            warn!(
+                "Invalid latency tracer from address: {}, ignoring",
+                payload.from
+            );
+        }
+    }
+
+    // Send all server requests
+    if let Some(payload) = most_recent_payload.take() {
+        writer.unreliable_to_host(payload);
+    }
+}
+
+pub fn update_state_latency(
+    mut state: ResMut<SilkState>,
+    mut tracer: Query<&mut LatencyTracer>,
+) {
+    let mut tracer = tracer.single_mut();
+    tracer.update_latency();
+    state.latency = Some(Duration::from_secs_f32(tracer.last_latency));
 }

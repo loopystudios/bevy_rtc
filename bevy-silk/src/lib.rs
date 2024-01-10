@@ -4,6 +4,7 @@ compile_error!(
 );
 
 pub(crate) mod events;
+pub(crate) mod latency;
 pub mod protocol;
 pub(crate) mod socket;
 

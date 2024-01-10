@@ -6,11 +6,13 @@ mod systems;
 
 use crate::{
     events::SocketRecvEvent,
+    latency::LatencyTracerPayload,
     socket::{common_socket_reader, SilkSocket},
 };
 use bevy::prelude::*;
 use std::net::Ipv4Addr;
 
+pub use self::state::SilkServerStatus;
 pub use events::SilkServerEvent;
 pub use router::AddNetworkMessageExt;
 pub use state::SilkState;
@@ -27,10 +29,11 @@ impl Plugin for SilkServerPlugin {
         // Initialize the schedule for silk
         app.add_event::<SocketRecvEvent>()
             .add_event::<SilkServerEvent>()
-            .insert_resource(SilkState {
-                addr: (Ipv4Addr::UNSPECIFIED, self.port).into(),
-                id: None,
-            })
+            .add_network_message::<LatencyTracerPayload>()
+            .add_state::<SilkServerStatus>()
+            .insert_resource(SilkState::new(
+                (Ipv4Addr::UNSPECIFIED, self.port).into(),
+            ))
             .add_systems(
                 Startup,
                 // We start a signaling server on localhost and the first peer
@@ -40,9 +43,18 @@ impl Plugin for SilkServerPlugin {
             )
             .add_systems(
                 First,
-                (common_socket_reader, systems::server_event_writer)
+                (
+                    common_socket_reader,
+                    systems::server_event_writer,
+                    systems::update_state_latency,
+                )
                     .chain()
                     .run_if(resource_exists::<SilkSocket>()),
+            )
+            .add_systems(
+                Update,
+                (systems::read_latency_tracers, systems::send_latency_tracers)
+                    .run_if(state_exists_and_equals(SilkServerStatus::Ready)),
             );
     }
 }

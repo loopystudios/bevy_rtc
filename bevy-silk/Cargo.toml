@@ -10,6 +10,7 @@ bevy = { workspace = true }
 silk-macros = { path = "../crates/silk-macros" }
 bevy_matchbox = { workspace = true }
 serde = "1"
+instant = "0.1"
 enum-display = "0.1"
 # Default encoding
 serde_json = { version = "1", optional = true }

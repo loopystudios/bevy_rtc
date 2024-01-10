@@ -1,7 +1,9 @@
+use std::time::Duration;
+
 use bevy::{log::LogPlugin, prelude::*};
 use bevy_silk::server::{
     AddNetworkMessageExt, NetworkReader, NetworkWriter, SilkServerEvent,
-    SilkServerPlugin,
+    SilkServerPlugin, SilkState,
 };
 use protocol::{ChatPayload, DrawLinePayload};
 
@@ -12,7 +14,10 @@ fn main() {
         .add_plugins(SilkServerPlugin { port: 3536 })
         .add_network_message::<ChatPayload>()
         .add_network_message::<DrawLinePayload>()
-        .add_systems(Update, (player_auth, send_draw_points, send_chats))
+        .add_systems(
+            Update,
+            (send_draw_points, send_chats, print_events, print_latencies),
+        )
         .run();
 }
 
@@ -36,16 +41,35 @@ fn send_chats(
     }
 }
 
-fn player_auth(mut event_rdr: EventReader<SilkServerEvent>) {
+fn print_events(mut event_rdr: EventReader<SilkServerEvent>) {
     for ev in event_rdr.read() {
         match ev {
             SilkServerEvent::ClientJoined(id) => {
-                info!("{id} joined");
+                info!("Client joined: {id}");
             }
             SilkServerEvent::ClientLeft(id) => {
-                info!("{id} left");
+                info!("Client left: {id}");
             }
-            _ => {}
+            SilkServerEvent::IdAssigned(id) => {
+                info!("Server ready as {id}");
+            }
+        }
+    }
+}
+
+fn print_latencies(
+    state: Res<SilkState>,
+    time: Res<Time>,
+    mut throttle: Local<Option<Timer>>,
+) {
+    let timer = throttle.get_or_insert(Timer::new(
+        Duration::from_secs(1),
+        TimerMode::Repeating,
+    ));
+    timer.tick(time.delta());
+    if timer.just_finished() {
+        for (peer, latency) in state.iter_latencies() {
+            info!("Latency to {peer}: {latency:.0?}");
         }
     }
 }

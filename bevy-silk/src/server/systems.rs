@@ -1,6 +1,12 @@
-use super::{events::SilkServerEvent, SilkState};
-use crate::socket::SilkSocket;
-use bevy::prelude::*;
+use super::{
+    events::SilkServerEvent, NetworkReader, NetworkWriter, SilkServerStatus,
+    SilkState,
+};
+use crate::{
+    latency::{LatencyTracer, LatencyTracerPayload},
+    socket::SilkSocket,
+};
+use bevy::{prelude::*, utils::HashMap};
 use bevy_matchbox::{
     matchbox_signaling::{
         topologies::client_server::{ClientServer, ClientServerState},
@@ -10,6 +16,7 @@ use bevy_matchbox::{
     prelude::ChannelConfig,
     OpenSocketExt, StartServerExt,
 };
+use instant::Duration;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc,
@@ -92,15 +99,19 @@ pub fn init_server_socket(mut commands: Commands, state: Res<SilkState>) {
 
 /// Translates socket events into Bevy events
 pub fn server_event_writer(
+    mut commands: Commands,
+    tracer_query: Query<(Entity, &LatencyTracer)>,
     mut state: ResMut<SilkState>,
     mut socket: ResMut<SilkSocket>,
     mut event_wtr: EventWriter<SilkServerEvent>,
+    mut next_server_status: ResMut<NextState<SilkServerStatus>>,
 ) {
     // Id changed events
     if let Some(id) = socket.id() {
         if state.id.is_none() {
             state.id.replace(id);
             event_wtr.send(SilkServerEvent::IdAssigned(id));
+            next_server_status.set(SilkServerStatus::Ready);
         }
     }
 
@@ -108,11 +119,95 @@ pub fn server_event_writer(
     for (peer, peer_state) in socket.update_peers() {
         match peer_state {
             PeerState::Connected => {
+                state.peers.insert(peer);
+                commands.spawn(LatencyTracer::new(peer));
                 event_wtr.send(SilkServerEvent::ClientJoined(peer));
             }
             PeerState::Disconnected => {
+                state.peers.remove(&peer);
+                let (entity, _) = tracer_query
+                    .iter()
+                    .find(|(_, tracer)| tracer.peer_id == peer)
+                    .expect("expected tracer");
+                commands.entity(entity).despawn();
                 event_wtr.send(SilkServerEvent::ClientLeft(peer));
             }
         }
+    }
+}
+
+pub fn send_latency_tracers(
+    state: Res<SilkState>,
+    mut writer: NetworkWriter<LatencyTracerPayload>,
+    time: Res<Time>,
+    mut throttle: Local<Option<Timer>>,
+) {
+    let timer = throttle.get_or_insert(Timer::new(
+        Duration::from_millis(100),
+        TimerMode::Repeating,
+    ));
+    timer.tick(time.delta());
+    if timer.just_finished() {
+        let peer_id = state.id.expect("expected peer id");
+        writer.unreliable_to_all(LatencyTracerPayload::new(peer_id));
+    }
+}
+
+pub fn read_latency_tracers(
+    state: Res<SilkState>,
+    mut tracers: Query<&mut LatencyTracer>,
+    mut reader: NetworkReader<LatencyTracerPayload>,
+    mut writer: NetworkWriter<LatencyTracerPayload>,
+) {
+    let host_id = state.id.expect("expected host id");
+
+    // Only collect the most recent payloads that happens this tick.
+    let mut most_recent_payloads = HashMap::new();
+
+    // Handle payloads
+    for (from, payload) in reader.iter() {
+        // 2 cases:
+        // 1) We sent a tracer to the client, and are receiving it
+        // 2) The client sent a tracer to us, and expect it back
+        if payload.from == host_id {
+            // Case 1
+            if let Some(mut tracer) =
+                tracers.iter_mut().find(|tracer| tracer.peer_id == *from)
+            {
+                tracer.process(payload.clone());
+            }
+        } else if payload.from == *from {
+            // Case 2
+            most_recent_payloads
+                .entry(*from)
+                .and_modify(|p: &mut LatencyTracerPayload| {
+                    if payload.age() < p.age() {
+                        *p = payload.clone();
+                    }
+                })
+                .or_insert_with(|| payload.clone());
+        } else {
+            warn!("Invalid latency tracer from {from}: {payload:?}, ignoring");
+        }
+    }
+
+    // Send all client requests
+    for client_payload in most_recent_payloads.into_values() {
+        writer.unreliable_to_peer(client_payload.from, client_payload);
+    }
+}
+
+pub fn update_state_latency(
+    mut state: ResMut<SilkState>,
+    mut tracers: Query<&mut LatencyTracer>,
+) {
+    state.latencies.clear();
+    // Update & Prune
+    for mut tracer in tracers.iter_mut() {
+        tracer.update_latency();
+        state.latencies.insert(
+            tracer.peer_id,
+            Duration::from_secs_f32(tracer.last_latency),
+        );
     }
 }
