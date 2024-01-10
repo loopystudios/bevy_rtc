@@ -68,7 +68,8 @@ cargo run -p client
 
 ```bash
 cargo install wasm-server-runner
-cargo run -p client --target wasm32-unknown-unknown
+cd demo/client
+cargo run --target wasm32-unknown-unknown
 ```
 
 ## Example Usage
