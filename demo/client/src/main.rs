@@ -191,8 +191,9 @@ fn app_ui(
                 }
                 ui.label(format!("Connected as {}", state.id.unwrap()));
                 ui.label(format!(
-                    "Latency: {:.0?}",
-                    state.latency.unwrap_or_default()
+                    "Latency: {:.0?} (smoothed = {:.0?})",
+                    state.latency.unwrap_or_default(),
+                    state.smoothed_latency.unwrap_or_default()
                 ));
 
                 ui.separator();

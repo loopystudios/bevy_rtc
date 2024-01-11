@@ -38,7 +38,7 @@ impl Plugin for SilkServerPlugin {
                 (
                     common_socket_reader,
                     systems::server_event_writer,
-                    systems::update_state_latency,
+                    systems::calculate_latency,
                 )
                     .chain()
                     .run_if(resource_exists::<SilkSocket>()),

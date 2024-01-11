@@ -63,13 +63,17 @@ fn print_latencies(
     mut throttle: Local<Option<Timer>>,
 ) {
     let timer = throttle.get_or_insert(Timer::new(
-        Duration::from_secs(1),
+        Duration::from_millis(100),
         TimerMode::Repeating,
     ));
     timer.tick(time.delta());
     if timer.just_finished() {
-        for (peer, latency) in state.iter_latencies() {
-            info!("Latency to {peer}: {latency:.0?}");
+        for ((peer, latency), (_peer, smoothed)) in
+            state.iter_latencies().zip(state.iter_smoothed_latencies())
+        {
+            info!(
+                "Latency to {peer}: {latency:.0?} (smoothed = {smoothed:.0?})"
+            );
         }
     }
 }

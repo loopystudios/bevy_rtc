@@ -52,6 +52,7 @@ pub(crate) fn reset_socket(
         host_id: None,
         id: None,
         latency: None,
+        smoothed_latency: None,
     };
 }
 
@@ -197,11 +198,20 @@ pub fn read_latency_tracers(
     }
 }
 
-pub fn update_state_latency(
+pub fn calculate_latency(
+    time: Res<Time>,
     mut state: ResMut<SilkState>,
     mut tracer: Query<&mut LatencyTracer>,
 ) {
     let mut tracer = tracer.single_mut();
     tracer.update_latency();
-    state.latency = Some(Duration::from_secs_f32(tracer.last_latency));
+    let last_latency = Duration::from_secs_f32(tracer.last_latency);
+    state.latency.replace(last_latency);
+    // Calculate smooth latency
+    let current_smoothed = state.smoothed_latency.get_or_insert(last_latency);
+    const AVG_SECS: f32 = 1.0; // 1 second average
+    let alpha = 1.0 - f32::exp(-time.delta_seconds() / AVG_SECS);
+    let current_f32 = current_smoothed.as_secs_f32() * (1.0 - alpha);
+    let delta = tracer.last_latency * alpha;
+    *current_smoothed = Duration::from_secs_f32(current_f32 + delta);
 }

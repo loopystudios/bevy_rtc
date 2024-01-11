@@ -24,4 +24,6 @@ pub struct SilkState {
     pub id: Option<PeerId>,
     /// The latency to the server
     pub latency: Option<Duration>,
+    /// The smooth latency to the server
+    pub smoothed_latency: Option<Duration>,
 }

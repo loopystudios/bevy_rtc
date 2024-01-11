@@ -197,17 +197,34 @@ pub fn read_latency_tracers(
     }
 }
 
-pub fn update_state_latency(
+pub fn calculate_latency(
+    time: Res<Time>,
     mut state: ResMut<SilkState>,
     mut tracers: Query<&mut LatencyTracer>,
 ) {
-    state.latencies.clear();
-    // Update & Prune
+    // Set latencies
     for mut tracer in tracers.iter_mut() {
+        if !state.peers.contains(&tracer.peer_id) {
+            state.latencies.remove(&tracer.peer_id);
+            state.smoothed_latencies.remove(&tracer.peer_id);
+            continue;
+        }
         tracer.update_latency();
         state.latencies.insert(
             tracer.peer_id,
             Duration::from_secs_f32(tracer.last_latency),
         );
+        // Calculate smooth latency
+        state
+            .smoothed_latencies
+            .entry(tracer.peer_id)
+            .and_modify(|current| {
+                const AVG_SECS: f32 = 1.0; // 1 second average
+                let alpha = 1.0 - f32::exp(-time.delta_seconds() / AVG_SECS);
+                let current_f32 = current.as_secs_f32() * (1.0 - alpha);
+                let delta = tracer.last_latency * alpha;
+                *current = Duration::from_secs_f32(current_f32 + delta);
+            })
+            .or_insert(Duration::from_secs_f32(tracer.last_latency));
     }
 }

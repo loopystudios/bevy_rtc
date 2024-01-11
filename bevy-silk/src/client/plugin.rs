@@ -37,7 +37,7 @@ impl Plugin for SilkClientPlugin {
             )
             .add_systems(
                 First,
-                systems::update_state_latency
+                systems::calculate_latency
                     .after(systems::client_event_writer)
                     .run_if(state_exists_and_equals(
                         SilkClientStatus::Connected,
