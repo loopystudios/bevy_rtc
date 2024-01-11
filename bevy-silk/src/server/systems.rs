@@ -210,21 +210,29 @@ pub fn calculate_latency(
             continue;
         }
         tracer.update_latency();
-        state.latencies.insert(
-            tracer.peer_id,
-            Duration::from_secs_f32(tracer.last_latency),
-        );
-        // Calculate smooth latency
-        state
-            .smoothed_latencies
-            .entry(tracer.peer_id)
-            .and_modify(|current| {
+
+        let last_latency = tracer.last_latency.map(Duration::from_secs_f32);
+        match last_latency {
+            Some(last_latency) => {
+                state.latencies.insert(tracer.peer_id, Some(last_latency));
+                // Calculate smooth latency
+                let current_smoothed = state
+                    .smoothed_latencies
+                    .entry(tracer.peer_id)
+                    .or_insert(Some(last_latency))
+                    .get_or_insert(last_latency);
                 const AVG_SECS: f32 = 1.0; // 1 second average
                 let alpha = 1.0 - f32::exp(-time.delta_seconds() / AVG_SECS);
-                let current_f32 = current.as_secs_f32() * (1.0 - alpha);
-                let delta = tracer.last_latency * alpha;
-                *current = Duration::from_secs_f32(current_f32 + delta);
-            })
-            .or_insert(Duration::from_secs_f32(tracer.last_latency));
+                let current_f32 =
+                    current_smoothed.as_secs_f32() * (1.0 - alpha);
+                let delta = last_latency.as_secs_f32() * alpha;
+                *current_smoothed =
+                    Duration::from_secs_f32(current_f32 + delta);
+            }
+            None => {
+                state.latencies.insert(tracer.peer_id, None);
+                state.smoothed_latencies.insert(tracer.peer_id, None);
+            }
+        }
     }
 }

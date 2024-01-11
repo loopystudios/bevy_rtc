@@ -205,13 +205,22 @@ pub fn calculate_latency(
 ) {
     let mut tracer = tracer.single_mut();
     tracer.update_latency();
-    let last_latency = Duration::from_secs_f32(tracer.last_latency);
-    state.latency.replace(last_latency);
-    // Calculate smooth latency
-    let current_smoothed = state.smoothed_latency.get_or_insert(last_latency);
-    const AVG_SECS: f32 = 1.0; // 1 second average
-    let alpha = 1.0 - f32::exp(-time.delta_seconds() / AVG_SECS);
-    let current_f32 = current_smoothed.as_secs_f32() * (1.0 - alpha);
-    let delta = tracer.last_latency * alpha;
-    *current_smoothed = Duration::from_secs_f32(current_f32 + delta);
+
+    let last_latency = tracer.last_latency.map(Duration::from_secs_f32);
+    match last_latency {
+        Some(last_latency) => {
+            state.latency.replace(last_latency);
+            let current_smoothed =
+                state.smoothed_latency.get_or_insert(last_latency);
+            const AVG_SECS: f32 = 1.0; // 1 second average
+            let alpha = 1.0 - f32::exp(-time.delta_seconds() / AVG_SECS);
+            let current_f32 = current_smoothed.as_secs_f32() * (1.0 - alpha);
+            let delta = last_latency.as_secs_f32() * alpha;
+            *current_smoothed = Duration::from_secs_f32(current_f32 + delta);
+        }
+        None => {
+            state.latency = None;
+            state.smoothed_latency = None;
+        }
+    }
 }

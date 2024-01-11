@@ -33,10 +33,10 @@ impl LatencyTracerPayload {
 pub struct LatencyTracer {
     /// the peer being tracked
     pub peer_id: PeerId,
-    /// latency network history.
+    /// latency network history
     pub(crate) latency_hist: Vec<(LatencyTracerPayload, Duration)>,
-    /// current latency
-    pub(crate) last_latency: f32,
+    /// last calculated latency (median over 3 seconds)
+    pub(crate) last_latency: Option<f32>,
 }
 
 impl LatencyTracer {
@@ -44,7 +44,7 @@ impl LatencyTracer {
         Self {
             peer_id,
             latency_hist: vec![],
-            last_latency: f32::NAN,
+            last_latency: None,
         }
     }
 
@@ -71,11 +71,8 @@ impl LatencyTracer {
                 .unwrap_or(std::cmp::Ordering::Equal)
         });
         let mid = self.latency_hist.len() / 2;
-        let median = self
-            .latency_hist
-            .get(mid)
-            .map(|(_, lat)| lat)
-            .unwrap_or(&Duration::ZERO);
-        self.last_latency = median.as_secs_f32();
+        let median =
+            self.latency_hist.get(mid).map(|(_, lat)| lat.as_secs_f32());
+        self.last_latency = median;
     }
 }

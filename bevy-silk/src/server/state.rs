@@ -29,10 +29,10 @@ pub struct SilkState {
     pub(crate) peers: HashSet<PeerId>,
 
     /// A map of user latencies
-    pub(crate) latencies: HashMap<PeerId, Duration>,
+    pub(crate) latencies: HashMap<PeerId, Option<Duration>>,
 
     /// A map of smoothed user latencies
-    pub(crate) smoothed_latencies: HashMap<PeerId, Duration>,
+    pub(crate) smoothed_latencies: HashMap<PeerId, Option<Duration>>,
 }
 
 impl SilkState {
@@ -55,19 +55,25 @@ impl SilkState {
     pub fn iter_latencies(
         &self,
     ) -> impl Iterator<Item = (PeerId, Duration)> + '_ {
-        self.latencies.iter().map(|(p, l)| (*p, *l))
+        self.latencies
+            .iter()
+            .filter_map(|(p, l)| l.map(|l| (p, l)))
+            .map(|(p, l)| (*p, l))
     }
 
     /// Return the smoothed latencies for all peers
     pub fn iter_smoothed_latencies(
         &self,
     ) -> impl Iterator<Item = (PeerId, Duration)> + '_ {
-        self.smoothed_latencies.iter().map(|(p, l)| (*p, *l))
+        self.smoothed_latencies
+            .iter()
+            .filter_map(|(p, l)| l.map(|l| (p, l)))
+            .map(|(p, l)| (*p, l))
     }
 
     /// Return the latency for a peer if they exist
     pub fn get_latency_for(&self, peer_id: PeerId) -> Option<Duration> {
-        self.latencies.get(&peer_id).copied()
+        *self.latencies.get(&peer_id)?
     }
 
     /// Return the smoothed latency for a peer if they exist
@@ -75,6 +81,6 @@ impl SilkState {
         &self,
         peer_id: PeerId,
     ) -> Option<Duration> {
-        self.smoothed_latencies.get(&peer_id).copied()
+        *self.smoothed_latencies.get(&peer_id)?
     }
 }
