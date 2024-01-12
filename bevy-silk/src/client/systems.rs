@@ -6,6 +6,7 @@ use super::{
 use crate::{
     latency::{LatencyTracer, LatencyTracerPayload},
     socket::{SilkSocket, SilkSocketPlurality},
+    system_param::NetworkThrottle,
 };
 use bevy::prelude::*;
 use bevy_matchbox::{
@@ -146,15 +147,9 @@ pub(crate) fn client_event_writer(
 pub fn send_latency_tracers(
     state: Res<SilkState>,
     mut writer: NetworkWriter<LatencyTracerPayload>,
-    time: Res<Time>,
-    mut throttle: Local<Option<Timer>>,
+    throttle: NetworkThrottle<100>,
 ) {
-    let timer = throttle.get_or_insert(Timer::new(
-        Duration::from_millis(100),
-        TimerMode::Repeating,
-    ));
-    timer.tick(time.delta());
-    if timer.just_finished() {
+    if throttle.ready() {
         let peer_id = state.id.expect("expected peer id");
         writer.unreliable_to_host(LatencyTracerPayload::new(peer_id));
     }

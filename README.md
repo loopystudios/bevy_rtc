@@ -7,6 +7,7 @@ bevy-silk is a simple, multi-platform WebRTC networking library for client<->ser
 - Bevy system parameters for reading and writing packets
 - Derive macros for creating protocols
 - Easily introspect latency
+- Easily throttle sending and receiving packets
 
 ## Quickstart
 
@@ -118,7 +119,7 @@ fn main() {
     App::new()
         .add_plugins(MinimalPlugins)
         .add_plugins(SilkClientPlugin)
-        .add_network_message::<Chat>()
+        .add_network_message::<MyPacket>()
         .add_systems(Startup,
         |mut connection_requests: EventWriter<ConnectionRequest>| {
             connection_requests.send(ConnectionRequest::Connect {
