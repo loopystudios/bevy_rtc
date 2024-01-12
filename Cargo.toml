@@ -9,5 +9,4 @@ license = "MIT/Apache-2.0"
 
 [workspace.dependencies]
 bevy = { version = "0.12", default-features = false }
-# TODO: Replace with 0.8.1 after https://github.com/johanhelsing/matchbox/issues/392
-bevy_matchbox = { git = "https://github.com/johanhelsing/matchbox", rev = "fa5c765" }
+bevy_matchbox = "0.8"
