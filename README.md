@@ -1,5 +1,9 @@
 # bevy-rtc
 
+![MIT/Apache 2.0](https://img.shields.io/badge/license-MIT%2FApache-blue.svg)
+[![crates.io](https://img.shields.io/crates/v/bevy-rtc.svg)](https://crates.io/crates/bevy-rtc)
+[![docs.rs](https://img.shields.io/docsrs/bevy-rtc)](https://docs.rs/bevy-rtc)
+
 bevy-rtc is a simple, multi-platform WebRTC networking library for client<->server topologies using Bevy.
 
 - Simple: no knowledge of WebRTC is needed
