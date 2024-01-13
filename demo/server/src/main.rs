@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use bevy::{log::LogPlugin, prelude::*, time::common_conditions::on_timer};
 use bevy_silk::server::{
-    AddNetworkMessageExt, NetworkReader, NetworkWriter, SilkServerEvent,
+    AddProtocolExt, NetworkReader, NetworkWriter, SilkServerEvent,
     SilkServerPlugin, SilkState,
 };
 use protocol::{ChatPayload, DrawLinePayload};
@@ -12,8 +12,8 @@ fn main() {
     app.add_plugins(MinimalPlugins)
         .add_plugins(LogPlugin::default())
         .add_plugins(SilkServerPlugin { port: 3536 })
-        .add_network_message::<ChatPayload>()
-        .add_network_message::<DrawLinePayload>()
+        .add_bounded_protocol::<ChatPayload>(1)
+        .add_bounded_protocol::<DrawLinePayload>(1)
         .add_systems(
             Update,
             (
@@ -31,7 +31,7 @@ fn send_draw_points(
     mut draw_read: NetworkReader<DrawLinePayload>,
     mut draw_send: NetworkWriter<DrawLinePayload>,
 ) {
-    for (peer, draw) in draw_read.drain() {
+    for (peer, draw) in draw_read.read() {
         draw_send.unreliable_to_all_except(peer, draw);
     }
 }
@@ -41,7 +41,7 @@ fn send_chats(
     mut chat_read: NetworkReader<ChatPayload>,
     mut chat_send: NetworkWriter<ChatPayload>,
 ) {
-    for (peer, chat) in chat_read.drain() {
+    for (peer, chat) in chat_read.read() {
         chat_send.reliable_to_all_except(peer, chat);
     }
 }

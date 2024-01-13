@@ -6,7 +6,7 @@ use crate::{
     latency::{LatencyTracer, LatencyTracerPayload},
     socket::SilkSocket,
 };
-use bevy::{prelude::*, utils::HashMap};
+use bevy::prelude::*;
 use bevy_matchbox::{
     matchbox_signaling::{
         topologies::client_server::{ClientServer, ClientServerState},
@@ -138,10 +138,10 @@ pub fn server_event_writer(
 
 pub fn send_latency_tracers(
     state: Res<SilkState>,
-    mut writer: NetworkWriter<LatencyTracerPayload, 100>,
+    mut writer: NetworkWriter<LatencyTracerPayload>,
 ) {
     let peer_id = state.id.expect("expected peer id");
-    writer.unreliable_to_all_with(|| LatencyTracerPayload::new(peer_id));
+    writer.unreliable_to_all(LatencyTracerPayload::new(peer_id));
 }
 
 pub fn read_latency_tracers(
@@ -152,11 +152,8 @@ pub fn read_latency_tracers(
 ) {
     let host_id = state.id.expect("expected host id");
 
-    // Only collect the most recent payloads that happens this tick.
-    let mut most_recent_payloads = HashMap::new();
-
     // Handle payloads
-    for (from, payload) in reader.drain() {
+    for (from, payload) in reader.read() {
         // 2 cases:
         // 1) We sent a tracer to the client, and are receiving it
         // 2) The client sent a tracer to us, and expect it back
@@ -169,22 +166,10 @@ pub fn read_latency_tracers(
             }
         } else if payload.from == from {
             // Case 2
-            most_recent_payloads
-                .entry(from)
-                .and_modify(|p: &mut LatencyTracerPayload| {
-                    if payload.age() < p.age() {
-                        *p = payload.clone();
-                    }
-                })
-                .or_insert(payload);
+            writer.unreliable_to_peer(from, payload);
         } else {
             warn!("Invalid latency tracer from {from}: {payload:?}, ignoring");
         }
-    }
-
-    // Send all client requests
-    for client_payload in most_recent_payloads.into_values() {
-        writer.unreliable_to_peer(client_payload.from, client_payload);
     }
 }
 
