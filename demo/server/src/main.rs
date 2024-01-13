@@ -26,8 +26,8 @@ fn send_draw_points(
     mut draw_read: NetworkReader<DrawLinePayload>,
     mut draw_send: NetworkWriter<DrawLinePayload>,
 ) {
-    for (peer, draw) in draw_read.iter() {
-        draw_send.unreliable_to_all_except(*peer, draw.clone());
+    for (peer, draw) in draw_read.read() {
+        draw_send.unreliable_to_all_except(peer, draw);
     }
 }
 
@@ -36,8 +36,8 @@ fn send_chats(
     mut chat_read: NetworkReader<ChatPayload>,
     mut chat_send: NetworkWriter<ChatPayload>,
 ) {
-    for (peer, chat) in chat_read.iter() {
-        chat_send.reliable_to_all_except(*peer, chat.clone());
+    for (peer, chat) in chat_read.read() {
+        chat_send.reliable_to_all_except(peer, chat);
     }
 }
 

@@ -6,7 +6,6 @@ use super::{
 use crate::{
     latency::{LatencyTracer, LatencyTracerPayload},
     socket::{SilkSocket, SilkSocketPlurality},
-    system_param::NetworkThrottle,
 };
 use bevy::prelude::*;
 use bevy_matchbox::{
@@ -146,13 +145,10 @@ pub(crate) fn client_event_writer(
 
 pub fn send_latency_tracers(
     state: Res<SilkState>,
-    mut writer: NetworkWriter<LatencyTracerPayload>,
-    throttle: NetworkThrottle<100>,
+    mut writer: NetworkWriter<LatencyTracerPayload, 100>,
 ) {
-    if throttle.ready() {
-        let peer_id = state.id.expect("expected peer id");
-        writer.unreliable_to_host(LatencyTracerPayload::new(peer_id));
-    }
+    let peer_id = state.id.expect("expected peer id");
+    writer.unreliable_to_host_with(|| LatencyTracerPayload::new(peer_id));
 }
 
 pub fn read_latency_tracers(
@@ -168,12 +164,16 @@ pub fn read_latency_tracers(
     // Only collect the most recent payloads that happens this tick.
     let mut most_recent_payload: Option<LatencyTracerPayload> = None;
 
-    for payload in reader.iter() {
+    for payload in reader.read() {
+        error!("received!");
         // Server time payloads get sent right back to the server
         if payload.from == host_id {
-            let mrp = most_recent_payload.get_or_insert(payload.clone());
-            if mrp.age() > payload.age() {
-                *mrp = payload.clone();
+            if let Some(ref mrp) = most_recent_payload {
+                if mrp.age() > payload.age() {
+                    most_recent_payload.replace(payload);
+                }
+            } else {
+                most_recent_payload.replace(payload);
             }
         }
         // Process payloads we sent out

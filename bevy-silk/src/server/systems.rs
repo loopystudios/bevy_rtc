@@ -5,7 +5,6 @@ use super::{
 use crate::{
     latency::{LatencyTracer, LatencyTracerPayload},
     socket::SilkSocket,
-    system_param::NetworkThrottle,
 };
 use bevy::{prelude::*, utils::HashMap};
 use bevy_matchbox::{
@@ -139,13 +138,10 @@ pub fn server_event_writer(
 
 pub fn send_latency_tracers(
     state: Res<SilkState>,
-    mut writer: NetworkWriter<LatencyTracerPayload>,
-    throttle: NetworkThrottle<100>,
+    mut writer: NetworkWriter<LatencyTracerPayload, 100>,
 ) {
-    if throttle.ready() {
-        let peer_id = state.id.expect("expected peer id");
-        writer.unreliable_to_all(LatencyTracerPayload::new(peer_id));
-    }
+    let peer_id = state.id.expect("expected peer id");
+    writer.unreliable_to_all_with(|| LatencyTracerPayload::new(peer_id));
 }
 
 pub fn read_latency_tracers(
@@ -160,27 +156,28 @@ pub fn read_latency_tracers(
     let mut most_recent_payloads = HashMap::new();
 
     // Handle payloads
-    for (from, payload) in reader.iter() {
+    for (from, payload) in reader.read() {
+        error!("received: {from}");
         // 2 cases:
         // 1) We sent a tracer to the client, and are receiving it
         // 2) The client sent a tracer to us, and expect it back
         if payload.from == host_id {
             // Case 1
             if let Some(mut tracer) =
-                tracers.iter_mut().find(|tracer| tracer.peer_id == *from)
+                tracers.iter_mut().find(|tracer| tracer.peer_id == from)
             {
-                tracer.process(payload.clone());
+                tracer.process(payload);
             }
-        } else if payload.from == *from {
+        } else if payload.from == from {
             // Case 2
             most_recent_payloads
-                .entry(*from)
+                .entry(from)
                 .and_modify(|p: &mut LatencyTracerPayload| {
                     if payload.age() < p.age() {
                         *p = payload.clone();
                     }
                 })
-                .or_insert_with(|| payload.clone());
+                .or_insert(payload);
         } else {
             warn!("Invalid latency tracer from {from}: {payload:?}, ignoring");
         }
