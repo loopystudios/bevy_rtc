@@ -165,7 +165,6 @@ pub fn read_latency_tracers(
     let mut most_recent_payload: Option<LatencyTracerPayload> = None;
 
     for payload in reader.read() {
-        error!("received!");
         // Server time payloads get sent right back to the server
         if payload.from == host_id {
             if let Some(ref mrp) = most_recent_payload {

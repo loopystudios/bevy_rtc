@@ -1,44 +1,47 @@
 use super::router::{IncomingMessages, OutgoingMessages};
 use crate::protocol::Payload;
 use bevy::{
-    ecs::{
-        component::Tick,
-        system::{
-            ExclusiveSystemParam, ReadOnlySystemParam, SystemMeta, SystemParam,
-        },
-        world::unsafe_world_cell::UnsafeWorldCell,
-    },
+    ecs::system::{SystemChangeTick, SystemParam},
     prelude::*,
-    utils::synccell::SyncCell,
 };
 use bevy_matchbox::prelude::PeerId;
 use instant::Duration;
 
-#[derive(Debug)]
-pub struct NetworkReader<'w, M: Payload, const RATE_MS: u64 = 0> {
-    pub(crate) timer: &'w mut Timer,
-    pub(crate) incoming: &'w mut IncomingMessages<M>,
+#[derive(SystemParam, Debug)]
+pub struct NetworkReader<'w, 's, M: Payload, const RATE_MS: u64 = 0> {
+    pub(crate) tick: SystemChangeTick,
+    pub(crate) time: Res<'w, Time>,
+    pub(crate) timer: Local<'s, Option<Timer>>,
+    pub(crate) last_tick: Local<'s, u32>,
+    pub(crate) incoming: ResMut<'w, IncomingMessages<M>>,
 }
 
-impl<'w, M: Payload, const RATE_MS: u64> NetworkReader<'w, M, RATE_MS> {
+impl<'w, 's, M: Payload, const RATE_MS: u64> NetworkReader<'w, 's, M, RATE_MS> {
     /// Returns true if the time since the last tick has passed the rate
     /// duration.
     #[inline]
-    pub(crate) fn ready(&self) -> bool {
+    pub(crate) fn ready(&mut self) -> bool {
         if RATE_MS == 0 {
             true
         } else {
-            self.timer.finished()
+            let tick = self.tick.this_run().get();
+            let timer = self.timer.get_or_insert(Timer::new(
+                Duration::from_millis(RATE_MS),
+                TimerMode::Repeating,
+            ));
+            if *self.last_tick != tick {
+                timer.tick(self.time.delta());
+                *self.last_tick = tick;
+            }
+            timer.finished()
         }
     }
 
     /// Consumes all messages in the buffer and iterate on them.
     pub fn read(&mut self) -> std::vec::Drain<(PeerId, M)> {
         if self.ready() {
-            error!("{}", self.incoming.messages.len());
             self.incoming.messages.drain(..)
         } else {
-            error!("{}", self.incoming.messages.len());
             self.incoming.messages.drain(0..0)
         }
     }
@@ -46,7 +49,7 @@ impl<'w, M: Payload, const RATE_MS: u64> NetworkReader<'w, M, RATE_MS> {
     /// Iterate over the messages in the buffer, without consuming them.
     /// This is useful if you have two systems which both need to read the same
     /// payload for different reasons.
-    pub fn iter(&self) -> core::slice::Iter<'_, (PeerId, M)> {
+    pub fn iter(&mut self) -> core::slice::Iter<'_, (PeerId, M)> {
         if self.ready() {
             self.incoming.messages.iter()
         } else {
@@ -55,86 +58,33 @@ impl<'w, M: Payload, const RATE_MS: u64> NetworkReader<'w, M, RATE_MS> {
     }
 }
 
-impl<'_s, M: Payload, const RATE_MS: u64> ExclusiveSystemParam
-    for NetworkReader<'_s, M, RATE_MS>
-{
-    type State = SyncCell<(Timer, instant::Instant, IncomingMessages<M>)>;
-    type Item<'s> = NetworkReader<'s, M, RATE_MS>;
-
-    fn init(_world: &mut World, _system_meta: &mut SystemMeta) -> Self::State {
-        let timer =
-            Timer::new(Duration::from_millis(RATE_MS), TimerMode::Repeating);
-        let instant = instant::Instant::now();
-        let incoming = IncomingMessages::<M> { messages: vec![] };
-        SyncCell::new((timer, instant, incoming))
-    }
-
-    fn get_param<'s>(
-        state: &'s mut Self::State,
-        _system_meta: &SystemMeta,
-    ) -> Self::Item<'s> {
-        let now = instant::Instant::now();
-        let (timer, last_instant, incoming) = state.get();
-        timer.tick(now - *last_instant);
-        *last_instant = now;
-        NetworkReader { timer, incoming }
-    }
+#[derive(SystemParam, Debug)]
+pub struct NetworkWriter<'w, 's, M: Payload, const RATE_MS: u64 = 0> {
+    pub(crate) tick: SystemChangeTick,
+    pub(crate) time: Res<'w, Time>,
+    pub(crate) timer: Local<'s, Option<Timer>>,
+    pub(crate) last_tick: Local<'s, u32>,
+    pub(crate) outgoing: ResMut<'w, OutgoingMessages<M>>,
 }
 
-// SAFETY: only local state is accessed
-unsafe impl<'s, M: Payload, const RATE_MS: u64> ReadOnlySystemParam
-    for NetworkReader<'s, M, RATE_MS>
-{
-}
-
-// SAFETY: only local state is accessed
-unsafe impl<'a, M: Payload, const RATE_MS: u64> SystemParam
-    for NetworkReader<'a, M, RATE_MS>
-{
-    type State = SyncCell<(Timer, instant::Instant, IncomingMessages<M>)>;
-    type Item<'w, 's> = NetworkReader<'s, M, RATE_MS>;
-
-    fn init_state(
-        _world: &mut World,
-        _system_meta: &mut SystemMeta,
-    ) -> Self::State {
-        let timer =
-            Timer::new(Duration::from_millis(RATE_MS), TimerMode::Repeating);
-        let instant = instant::Instant::now();
-        let incoming = IncomingMessages::<M> { messages: vec![] };
-        SyncCell::new((timer, instant, incoming))
-    }
-
-    #[inline]
-    unsafe fn get_param<'w, 's>(
-        state: &'s mut Self::State,
-        _system_meta: &SystemMeta,
-        _world: UnsafeWorldCell<'w>,
-        _change_tick: Tick,
-    ) -> Self::Item<'w, 's> {
-        let now = instant::Instant::now();
-        let (timer, last_instant, incoming) = state.get();
-        timer.tick(now - *last_instant);
-        *last_instant = now;
-        NetworkReader { timer, incoming }
-    }
-}
-
-#[derive(Debug)]
-pub struct NetworkWriter<'w, M: Payload, const RATE_MS: u64 = 0> {
-    pub(crate) timer: &'w mut Timer,
-    pub(crate) outgoing: &'w mut OutgoingMessages<M>,
-}
-
-impl<'w, M: Payload, const RATE_MS: u64> NetworkWriter<'w, M, RATE_MS> {
+impl<'w, 's, M: Payload, const RATE_MS: u64> NetworkWriter<'w, 's, M, RATE_MS> {
     /// Returns true if the time since the last tick has passed the rate
     /// duration.
     #[inline]
-    pub(crate) fn ready(&self) -> bool {
+    pub(crate) fn ready(&mut self) -> bool {
         if RATE_MS == 0 {
             true
         } else {
-            self.timer.finished()
+            let tick = self.tick.this_run().get();
+            let timer = self.timer.get_or_insert(Timer::new(
+                Duration::from_millis(RATE_MS),
+                TimerMode::Repeating,
+            ));
+            if *self.last_tick != tick {
+                timer.tick(self.time.delta());
+                *self.last_tick = tick;
+            }
+            timer.finished()
         }
     }
 
@@ -262,84 +212,5 @@ impl<'w, M: Payload, const RATE_MS: u64> NetworkWriter<'w, M, RATE_MS> {
                 .unreliable_to_all_except
                 .push((peer_id, message_fn()));
         }
-    }
-}
-
-impl<'_s, M: Payload, const RATE_MS: u64> ExclusiveSystemParam
-    for NetworkWriter<'_s, M, RATE_MS>
-{
-    type State = SyncCell<(Timer, instant::Instant, OutgoingMessages<M>)>;
-    type Item<'s> = NetworkWriter<'s, M, RATE_MS>;
-
-    fn init(_world: &mut World, _system_meta: &mut SystemMeta) -> Self::State {
-        let timer =
-            Timer::new(Duration::from_millis(RATE_MS), TimerMode::Repeating);
-        let instant = instant::Instant::now();
-        let outgoing = OutgoingMessages::<M> {
-            reliable_to_peer: vec![],
-            reliable_to_all: vec![],
-            reliable_to_all_except: vec![],
-            unreliable_to_peer: vec![],
-            unreliable_to_all: vec![],
-            unreliable_to_all_except: vec![],
-        };
-        SyncCell::new((timer, instant, outgoing))
-    }
-
-    fn get_param<'s>(
-        state: &'s mut Self::State,
-        _system_meta: &SystemMeta,
-    ) -> Self::Item<'s> {
-        let now = instant::Instant::now();
-        let (timer, last_instant, outgoing) = state.get();
-        timer.tick(now - *last_instant);
-        *last_instant = now;
-        NetworkWriter { timer, outgoing }
-    }
-}
-
-// SAFETY: only local state is accessed
-unsafe impl<'s, M: Payload, const RATE_MS: u64> ReadOnlySystemParam
-    for NetworkWriter<'s, M, RATE_MS>
-{
-}
-
-// SAFETY: only local state is accessed
-unsafe impl<'a, M: Payload, const RATE_MS: u64> SystemParam
-    for NetworkWriter<'a, M, RATE_MS>
-{
-    type State = SyncCell<(Timer, instant::Instant, OutgoingMessages<M>)>;
-    type Item<'w, 's> = NetworkWriter<'s, M, RATE_MS>;
-
-    fn init_state(
-        _world: &mut World,
-        _system_meta: &mut SystemMeta,
-    ) -> Self::State {
-        let timer =
-            Timer::new(Duration::from_millis(RATE_MS), TimerMode::Repeating);
-        let instant = instant::Instant::now();
-        let outgoing = OutgoingMessages::<M> {
-            reliable_to_peer: vec![],
-            reliable_to_all: vec![],
-            reliable_to_all_except: vec![],
-            unreliable_to_peer: vec![],
-            unreliable_to_all: vec![],
-            unreliable_to_all_except: vec![],
-        };
-        SyncCell::new((timer, instant, outgoing))
-    }
-
-    #[inline]
-    unsafe fn get_param<'w, 's>(
-        state: &'s mut Self::State,
-        _system_meta: &SystemMeta,
-        _world: UnsafeWorldCell<'w>,
-        _change_tick: Tick,
-    ) -> Self::Item<'w, 's> {
-        let now = instant::Instant::now();
-        let (timer, last_instant, outgoing) = state.get();
-        timer.tick(now - *last_instant);
-        *last_instant = now;
-        NetworkWriter { timer, outgoing }
     }
 }

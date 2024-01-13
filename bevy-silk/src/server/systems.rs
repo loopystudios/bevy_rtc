@@ -157,7 +157,6 @@ pub fn read_latency_tracers(
 
     // Handle payloads
     for (from, payload) in reader.read() {
-        error!("received: {from}");
         // 2 cases:
         // 1) We sent a tracer to the client, and are receiving it
         // 2) The client sent a tracer to us, and expect it back
