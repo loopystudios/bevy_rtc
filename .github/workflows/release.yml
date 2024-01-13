@@ -17,4 +17,5 @@ jobs:
 
     - name: Cargo | Publish
       run: |
+        cargo publish -p bevy-silk-macros --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
         cargo publish -p bevy-silk --token ${{ secrets.CARGO_REGISTRY_TOKEN }}

@@ -1,5 +1,5 @@
 [workspace]
-members = ["bevy-silk", "crates/*", "demos/*"]
+members = ["bevy-silk", "bevy-silk-macros", "demos/*"]
 resolver = "2"
 
 [workspace.package]

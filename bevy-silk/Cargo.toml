@@ -7,7 +7,7 @@ edition.workspace = true
 
 [dependencies]
 bevy = { workspace = true }
-silk-macros = { path = "../crates/silk-macros" }
+bevy-silk-macros = { path = "../bevy-silk-macros" }
 bevy_matchbox = { workspace = true }
 serde = "1"
 instant = "0.1"

@@ -1,5 +1,5 @@
 [package]
-name = "silk-macros"
+name = "bevy-silk-macros"
 version.workspace = true
 license.workspace = true
 edition.workspace = true
