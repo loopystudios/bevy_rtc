@@ -90,7 +90,9 @@ impl<'w, 's, M: Payload, const RATE_MS: u64> NetworkWriter<'w, 's, M, RATE_MS> {
     /// Send a payload to the host with reliability. The payload is only sent
     /// when the send rate allows.
     pub fn reliable_to_host(&mut self, message: M) {
-        self.outgoing.reliable_to_host.push(message);
+        if self.ready() {
+            self.outgoing.reliable_to_host.push(message);
+        }
     }
 
     /// Send a payload to the host with no expectation of delivery. The payload
