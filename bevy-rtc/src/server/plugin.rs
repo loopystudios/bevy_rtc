@@ -21,7 +21,7 @@ impl Plugin for RtcServerPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<SocketRecvEvent>()
             .add_event::<RtcServerEvent>()
-            .add_bounded_protocol::<LatencyTracerPayload>(1)
+            .add_bounded_protocol::<LatencyTracerPayload>(2)
             .add_state::<RtcServerStatus>()
             .insert_resource(RtcState::new(
                 (Ipv4Addr::UNSPECIFIED, self.port).into(),

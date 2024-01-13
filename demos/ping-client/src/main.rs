@@ -12,7 +12,7 @@ fn main() {
         .add_plugins(MinimalPlugins)
         .add_plugins(LogPlugin::default())
         .add_plugins(RtcClientPlugin)
-        .add_bounded_protocol::<PingPayload>(1)
+        .add_bounded_protocol::<PingPayload>(2)
         .add_systems(
             OnEnter(RtcClientStatus::Disconnected), // Automatically-reconnect
             |mut connection_requests: EventWriter<ConnectionRequest>| {

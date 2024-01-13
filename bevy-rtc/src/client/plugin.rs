@@ -17,7 +17,7 @@ impl Plugin for RtcClientPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<SocketRecvEvent>()
             .insert_resource(RtcState::default())
-            .add_bounded_protocol::<LatencyTracerPayload>(1)
+            .add_bounded_protocol::<LatencyTracerPayload>(2)
             .add_state::<RtcClientStatus>()
             .add_event::<ConnectionRequest>()
             .add_event::<RtcClientEvent>()

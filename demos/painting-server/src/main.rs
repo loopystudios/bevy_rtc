@@ -12,8 +12,8 @@ fn main() {
     app.add_plugins(MinimalPlugins)
         .add_plugins(LogPlugin::default())
         .add_plugins(RtcServerPlugin { port: 3536 })
-        .add_bounded_protocol::<ChatPayload>(1)
-        .add_bounded_protocol::<DrawLinePayload>(1)
+        .add_bounded_protocol::<ChatPayload>(2)
+        .add_bounded_protocol::<DrawLinePayload>(2)
         .add_systems(
             Update,
             (
