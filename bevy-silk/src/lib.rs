@@ -10,7 +10,6 @@ pub(crate) mod events;
 pub(crate) mod latency;
 pub mod protocol;
 pub(crate) mod socket;
-pub mod system_param;
 
 // Re-exports
 pub use bevy_matchbox;

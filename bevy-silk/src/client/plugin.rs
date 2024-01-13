@@ -1,5 +1,5 @@
 use super::{
-    systems, AddNetworkMessageExt, ConnectionRequest, SilkClientEvent,
+    systems, AddProtocolExt, ConnectionRequest, SilkClientEvent,
     SilkClientStatus, SilkState,
 };
 use crate::{
@@ -7,16 +7,17 @@ use crate::{
     latency::LatencyTracerPayload,
     socket::{common_socket_reader, SilkSocket},
 };
-use bevy::prelude::*;
+use bevy::{prelude::*, time::common_conditions::on_timer};
+use instant::Duration;
 
-/// The socket client abstraction
+/// A plugin to connect to a WebRTC server.
 pub struct SilkClientPlugin;
 
 impl Plugin for SilkClientPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<SocketRecvEvent>()
             .insert_resource(SilkState::default())
-            .add_network_message::<LatencyTracerPayload>()
+            .add_bounded_protocol::<LatencyTracerPayload>(1)
             .add_state::<SilkClientStatus>()
             .add_event::<ConnectionRequest>()
             .add_event::<SilkClientEvent>()
@@ -45,7 +46,11 @@ impl Plugin for SilkClientPlugin {
             )
             .add_systems(
                 Update,
-                (systems::read_latency_tracers, systems::send_latency_tracers)
+                (
+                    systems::read_latency_tracers,
+                    systems::send_latency_tracers
+                        .run_if(on_timer(Duration::from_millis(100))),
+                )
                     .run_if(state_exists_and_equals(
                         SilkClientStatus::Connected,
                     )),

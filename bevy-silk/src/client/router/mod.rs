@@ -6,16 +6,25 @@ use crate::{
     socket::{common_socket_reader, SilkSocket},
 };
 use bevy::prelude::*;
+use std::collections::VecDeque;
 
 pub use receive::IncomingMessages;
 pub use send::OutgoingMessages;
 
-pub trait AddNetworkMessageExt {
-    fn add_network_message<M: Payload>(&mut self) -> &mut Self;
+pub trait AddProtocolExt {
+    /// Register a protocol, dually allocating a sized buffer for
+    /// payloads received, per peer.
+    fn add_bounded_protocol<M: Payload>(&mut self, bound: usize) -> &mut Self;
+    /// Register a protocol, with a growable buffer.
+    fn add_unbounded_protocol<M: Payload>(&mut self) -> &mut Self;
 }
 
-impl AddNetworkMessageExt for App {
-    fn add_network_message<M>(&mut self) -> &mut Self
+impl AddProtocolExt for App {
+    fn add_unbounded_protocol<M: Payload>(&mut self) -> &mut Self {
+        self.add_bounded_protocol::<M>(usize::MAX)
+    }
+
+    fn add_bounded_protocol<M>(&mut self, bound: usize) -> &mut Self
     where
         M: Payload,
     {
@@ -24,26 +33,25 @@ impl AddNetworkMessageExt for App {
         {
             panic!("client already contains resource: {}", M::reflect_name());
         }
-        self.insert_resource(IncomingMessages::<M> { messages: vec![] })
-            .insert_resource(OutgoingMessages::<M> {
-                reliable_to_host: vec![],
-                unreliable_to_host: vec![],
-            })
-            .add_systems(
-                First,
-                (
-                    IncomingMessages::<M>::flush,
-                    IncomingMessages::<M>::receive_payloads,
-                )
-                    .chain()
-                    .after(common_socket_reader)
-                    .run_if(resource_exists::<SilkSocket>()),
-            )
-            .add_systems(
-                Last,
-                OutgoingMessages::<M>::send_payloads
-                    .run_if(resource_exists::<SilkSocket>()),
-            );
+        self.insert_resource(IncomingMessages::<M> {
+            bound,
+            messages: VecDeque::new(),
+        })
+        .insert_resource(OutgoingMessages::<M> {
+            reliable_to_host: vec![],
+            unreliable_to_host: vec![],
+        })
+        .add_systems(
+            First,
+            IncomingMessages::<M>::receive_payloads
+                .after(common_socket_reader)
+                .run_if(resource_exists::<SilkSocket>()),
+        )
+        .add_systems(
+            Last,
+            OutgoingMessages::<M>::send_payloads
+                .run_if(resource_exists::<SilkSocket>()),
+        );
         self
     }
 }

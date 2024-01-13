@@ -11,7 +11,7 @@ use bevy_egui::{
     EguiContexts, EguiPlugin,
 };
 use bevy_silk::client::{
-    AddNetworkMessageExt, ConnectionRequest, NetworkReader, NetworkWriter,
+    AddProtocolExt, ConnectionRequest, NetworkReader, NetworkWriter,
     SilkClientEvent, SilkClientPlugin, SilkClientStatus, SilkState,
 };
 use chat::ChatState;
@@ -35,8 +35,8 @@ fn main() {
         ))
         .add_plugins(EguiPlugin)
         .add_plugins(SilkClientPlugin)
-        .add_network_message::<ChatPayload>()
-        .add_network_message::<DrawLinePayload>()
+        .add_unbounded_protocol::<ChatPayload>()
+        .add_unbounded_protocol::<DrawLinePayload>()
         .insert_resource(ChatState::default())
         .insert_resource(PaintingState::default())
         .add_systems(Startup, |mut commands: Commands| {
@@ -101,8 +101,8 @@ fn read_chats(
     mut chat_state: ResMut<ChatState>,
     mut chat_read: NetworkReader<ChatPayload>,
 ) {
-    for chat in chat_read.iter() {
-        chat_state.messages.insert(0, chat.to_owned());
+    for chat in chat_read.read() {
+        chat_state.messages.insert(0, chat);
     }
 }
 
@@ -124,11 +124,11 @@ fn read_lines(
     mut painting_state: ResMut<PaintingState>,
     mut painting_read: NetworkReader<DrawLinePayload>,
 ) {
-    for draw in painting_read.iter() {
+    for draw in painting_read.read() {
         let DrawLinePayload { x1, y1, x2, y2 } = draw;
         painting_state
             .lines
-            .push(vec![Pos2::new(*x1, *y1), Pos2::new(*x2, *y2)]);
+            .push(vec![Pos2::new(x1, y1), Pos2::new(x2, y2)]);
     }
 }
 

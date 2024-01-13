@@ -7,7 +7,7 @@ bevy-silk is a simple, multi-platform WebRTC networking library for client<->ser
 - Bevy system parameters for reading and writing packets
 - Derive macros for creating protocols
 - Easily introspect latency
-- Easily throttle sending and receiving packets
+- Support for unbounded and bounded network buffers
 
 ## Quickstart
 
