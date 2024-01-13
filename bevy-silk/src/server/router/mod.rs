@@ -11,7 +11,10 @@ pub use receive::IncomingMessages;
 pub use send::OutgoingMessages;
 
 pub trait AddProtocolExt {
+    /// Register a protocol, dually allocating a sized buffer for
+    /// payloads received, per peer.
     fn add_bounded_protocol<M: Payload>(&mut self, bound: usize) -> &mut Self;
+    /// Register a protocol, with a growable buffer.
     fn add_unbounded_protocol<M: Payload>(&mut self) -> &mut Self;
 }
 

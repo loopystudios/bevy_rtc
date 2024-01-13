@@ -1,20 +1,22 @@
 mod receive;
 mod send;
 
-use std::collections::VecDeque;
-
 use crate::{
     protocol::Payload,
     socket::{common_socket_reader, SilkSocket},
 };
 use bevy::prelude::*;
+use std::collections::VecDeque;
 
 pub use receive::IncomingMessages;
 pub use send::OutgoingMessages;
 
 pub trait AddProtocolExt {
-    fn add_unbounded_protocol<M: Payload>(&mut self) -> &mut Self;
+    /// Register a protocol, dually allocating a sized buffer for
+    /// payloads received, per peer.
     fn add_bounded_protocol<M: Payload>(&mut self, bound: usize) -> &mut Self;
+    /// Register a protocol, with a growable buffer.
+    fn add_unbounded_protocol<M: Payload>(&mut self) -> &mut Self;
 }
 
 impl AddProtocolExt for App {
