@@ -3,6 +3,10 @@ name = "bevy-silk-macros"
 version.workspace = true
 license.workspace = true
 edition.workspace = true
+description.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords.workspace = true
 
 [lib]
 proc-macro = true

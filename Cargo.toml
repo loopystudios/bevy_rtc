@@ -6,6 +6,10 @@ resolver = "2"
 edition = "2021"
 version = "0.8.8"
 license = "MIT/Apache-2.0"
+description = "A client-server library designed over WebRTC for Bevy"
+repository = "https://github.com/vectorgameexperts/bevy-silk"
+authors = ["Spencer C. Imbleau"]
+keywords = ["gamedev"]
 
 [workspace.dependencies]
 bevy = { version = "0.12", default-features = false }

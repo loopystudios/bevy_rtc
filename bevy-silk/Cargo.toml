@@ -1,9 +1,12 @@
 [package]
 name = "bevy-silk"
-description = "A client-server library designed over WebRTC for Bevy"
 version.workspace = true
 license.workspace = true
 edition.workspace = true
+description.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords.workspace = true
 
 [dependencies]
 bevy = { workspace = true }
