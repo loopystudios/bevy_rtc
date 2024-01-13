@@ -164,7 +164,7 @@ pub fn read_latency_tracers(
     // Only collect the most recent payloads that happens this tick.
     let mut most_recent_payload: Option<LatencyTracerPayload> = None;
 
-    for payload in reader.read() {
+    for payload in reader.drain() {
         // Server time payloads get sent right back to the server
         if payload.from == host_id {
             if let Some(ref mrp) = most_recent_payload {

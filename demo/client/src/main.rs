@@ -101,7 +101,7 @@ fn read_chats(
     mut chat_state: ResMut<ChatState>,
     mut chat_read: NetworkReader<ChatPayload>,
 ) {
-    for chat in chat_read.read() {
+    for chat in chat_read.drain() {
         chat_state.messages.insert(0, chat);
     }
 }
@@ -124,7 +124,7 @@ fn read_lines(
     mut painting_state: ResMut<PaintingState>,
     mut painting_read: NetworkReader<DrawLinePayload>,
 ) {
-    for draw in painting_read.read() {
+    for draw in painting_read.drain() {
         let DrawLinePayload { x1, y1, x2, y2 } = draw;
         painting_state
             .lines

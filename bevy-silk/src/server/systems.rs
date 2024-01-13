@@ -156,7 +156,7 @@ pub fn read_latency_tracers(
     let mut most_recent_payloads = HashMap::new();
 
     // Handle payloads
-    for (from, payload) in reader.read() {
+    for (from, payload) in reader.drain() {
         // 2 cases:
         // 1) We sent a tracer to the client, and are receiving it
         // 2) The client sent a tracer to us, and expect it back
