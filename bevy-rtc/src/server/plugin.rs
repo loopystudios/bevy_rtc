@@ -1,30 +1,29 @@
 use crate::{
     events::SocketRecvEvent,
     latency::LatencyTracerPayload,
-    socket::{common_socket_reader, SilkSocket},
+    socket::{common_socket_reader, RtcSocket},
 };
 use bevy::{prelude::*, time::common_conditions::on_timer};
 use instant::Duration;
 use std::net::Ipv4Addr;
 
 use super::{
-    systems, AddProtocolExt, SilkServerEvent, SilkServerStatus, SilkState,
+    systems, AddProtocolExt, RtcServerEvent, RtcServerStatus, RtcState,
 };
 
 /// A plugin to serve a WebRTC server.
-pub struct SilkServerPlugin {
+pub struct RtcServerPlugin {
     /// Which port to serve the signaling server on
     pub port: u16,
 }
 
-impl Plugin for SilkServerPlugin {
+impl Plugin for RtcServerPlugin {
     fn build(&self, app: &mut App) {
-        // Initialize the schedule for silk
         app.add_event::<SocketRecvEvent>()
-            .add_event::<SilkServerEvent>()
+            .add_event::<RtcServerEvent>()
             .add_bounded_protocol::<LatencyTracerPayload>(1)
-            .add_state::<SilkServerStatus>()
-            .insert_resource(SilkState::new(
+            .add_state::<RtcServerStatus>()
+            .insert_resource(RtcState::new(
                 (Ipv4Addr::UNSPECIFIED, self.port).into(),
             ))
             .add_systems(
@@ -42,7 +41,7 @@ impl Plugin for SilkServerPlugin {
                     systems::calculate_latency,
                 )
                     .chain()
-                    .run_if(resource_exists::<SilkSocket>()),
+                    .run_if(resource_exists::<RtcSocket>()),
             )
             .add_systems(
                 Update,
@@ -51,7 +50,7 @@ impl Plugin for SilkServerPlugin {
                     systems::send_latency_tracers
                         .run_if(on_timer(Duration::from_millis(100))),
                 )
-                    .run_if(state_exists_and_equals(SilkServerStatus::Ready)),
+                    .run_if(state_exists_and_equals(RtcServerStatus::Ready)),
             );
     }
 }

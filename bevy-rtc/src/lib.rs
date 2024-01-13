@@ -3,9 +3,6 @@ compile_error!(
     "The 'server' feature is not supported on the wasm32 target architecture."
 );
 
-#[cfg(not(any(feature = "server", feature = "client")))]
-compile_error!("Either 'server' or 'client' feature must be enabled.");
-
 pub(crate) mod events;
 pub(crate) mod latency;
 pub mod protocol;

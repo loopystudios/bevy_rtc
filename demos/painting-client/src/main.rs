@@ -10,9 +10,9 @@ use bevy_egui::{
     egui::{self, Pos2},
     EguiContexts, EguiPlugin,
 };
-use bevy_silk::client::{
+use bevy_rtc::client::{
     AddProtocolExt, ConnectionRequest, NetworkReader, NetworkWriter,
-    SilkClientEvent, SilkClientPlugin, SilkClientStatus, SilkState,
+    RtcClientEvent, RtcClientPlugin, RtcClientStatus, RtcState,
 };
 use chat::ChatState;
 use painting::PaintingState;
@@ -34,7 +34,7 @@ fn main() {
             },
         ))
         .add_plugins(EguiPlugin)
-        .add_plugins(SilkClientPlugin)
+        .add_plugins(RtcClientPlugin)
         .add_unbounded_protocol::<ChatPayload>()
         .add_unbounded_protocol::<DrawLinePayload>()
         .insert_resource(ChatState::default())
@@ -55,19 +55,19 @@ fn main() {
             ),
         )
         .add_systems(
-            OnEnter(SilkClientStatus::Establishing),
+            OnEnter(RtcClientStatus::Establishing),
             |mut commands: Commands| {
                 commands.insert_resource(ClearColor(Color::ORANGE))
             },
         )
         .add_systems(
-            OnEnter(SilkClientStatus::Connected),
+            OnEnter(RtcClientStatus::Connected),
             |mut commands: Commands| {
                 commands.insert_resource(ClearColor(Color::GREEN))
             },
         )
         .add_systems(
-            OnEnter(SilkClientStatus::Disconnected),
+            OnEnter(RtcClientStatus::Disconnected),
             |mut commands: Commands,
              mut chat_state: ResMut<ChatState>,
              mut painting_state: ResMut<PaintingState>| {
@@ -79,17 +79,17 @@ fn main() {
         .run();
 }
 
-fn print_events(mut events: EventReader<SilkClientEvent>) {
+fn print_events(mut events: EventReader<RtcClientEvent>) {
     for ev in events.read() {
         match ev {
-            SilkClientEvent::IdAssigned(id) => {
+            RtcClientEvent::IdAssigned(id) => {
                 info!("ID assigned: {id:?}");
             }
-            SilkClientEvent::ConnectedToHost(host) => {
+            RtcClientEvent::ConnectedToHost(host) => {
                 // Connected to host
                 info!("Connected to host ({host})");
             }
-            SilkClientEvent::DisconnectedFromHost { reason } => {
+            RtcClientEvent::DisconnectedFromHost { reason } => {
                 // Disconnected from host
                 warn!("Disconnected from host, reason: {reason:?}");
             }
@@ -109,11 +109,11 @@ fn read_chats(
 fn send_chats(
     mut chat_state: ResMut<ChatState>,
     mut chat_send: NetworkWriter<ChatPayload>,
-    silk_state: Res<SilkState>,
+    rtc_state: Res<RtcState>,
 ) {
     if let Some(message) = chat_state.out.take() {
         let payload = ChatPayload {
-            from: silk_state.id.unwrap().to_string(),
+            from: rtc_state.id.unwrap().to_string(),
             message,
         };
         chat_send.reliable_to_host(payload);
@@ -145,8 +145,8 @@ fn send_lines(
 
 #[allow(clippy::too_many_arguments)]
 fn app_ui(
-    state: Res<SilkState>,
-    connection_status: Res<State<SilkClientStatus>>,
+    state: Res<RtcState>,
+    connection_status: Res<State<RtcClientStatus>>,
     mut contexts: EguiContexts,
     mut painting_state: ResMut<PaintingState>,
     mut connection_requests: EventWriter<ConnectionRequest>,
@@ -162,10 +162,10 @@ fn app_ui(
         .collapsible(false);
     window.show(contexts.ctx_mut(), |ui| {
         ui.vertical_centered(|ui| match connection_status.get() {
-            SilkClientStatus::Establishing => {
+            RtcClientStatus::Establishing => {
                 ui.label("Connecting...");
             }
-            SilkClientStatus::Disconnected => {
+            RtcClientStatus::Disconnected => {
                 ui.horizontal_wrapped(|ui| {
                     ui.label("Room URL:");
                     ui.add(
@@ -185,7 +185,7 @@ fn app_ui(
                     });
                 }
             }
-            SilkClientStatus::Connected => {
+            RtcClientStatus::Connected => {
                 if ui.button("Disconnect").clicked() {
                     connection_requests.send(ConnectionRequest::Disconnect);
                 }

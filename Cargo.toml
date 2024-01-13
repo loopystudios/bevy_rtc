@@ -1,5 +1,5 @@
 [workspace]
-members = ["bevy-silk", "bevy-silk-macros", "demos/*"]
+members = ["bevy-rtc", "bevy-rtc-macros", "demos/*"]
 resolver = "2"
 
 [workspace.package]
@@ -7,7 +7,7 @@ edition = "2021"
 version = "0.8.8"
 license = "MIT/Apache-2.0"
 description = "A client-server library designed over WebRTC for Bevy"
-repository = "https://github.com/vectorgameexperts/bevy-silk"
+repository = "https://github.com/vectorgameexperts/bevy-rtc"
 authors = ["Spencer C. Imbleau"]
 keywords = ["gamedev"]
 

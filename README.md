@@ -1,6 +1,6 @@
-# bevy-silk
+# bevy-rtc
 
-bevy-silk is a simple, multi-platform WebRTC networking library for client<->server topologies using Bevy.
+bevy-rtc is a simple, multi-platform WebRTC networking library for client<->server topologies using Bevy.
 
 - Simple: no knowledge of WebRTC is needed
 - Easy unreliable (UDP-like) and reliable (TCP-like) networking on web
@@ -14,20 +14,20 @@ bevy-silk is a simple, multi-platform WebRTC networking library for client<->ser
 For your client:
 
 ```shell
-cargo add bevy-silk -F client
+cargo add bevy-rtc -F client
 ```
 
 For your server:
 
 ```shell
-cargo add bevy-silk -F server
+cargo add bevy-rtc -F server
 ```
 
 Run the [demos](#demos) and [instructions](#instructions).
 
 ## Compatibility
 
-| bevy  |  bevy-silk  |
+| bevy  |  bevy-rtc   |
 |-------|-------------|
 | 0.12  | 0.9, main   |
 | < 0.11| unsupported |
@@ -93,13 +93,13 @@ pub enum MyPacket {
 - Ensure your client has the `server` feature
 
   ```shell
-  cargo add bevy-silk -F server
+  cargo add bevy-rtc -F server
   ```
 
-- Add the `SilkServerPlugin` to your app.
+- Add the `RtcServerPlugin` to your app.
 
   ```rust
-  .add_plugins(SilkServerPlugin { port: 3536 })
+  .add_plugins(RtcServerPlugin { port: 3536 })
   ```
 
 - Register your protocols as bounded or unbounded.
@@ -136,13 +136,13 @@ For the client:
 - Ensure your client has the `client` feature
 
   ```shell
-  cargo add bevy-silk -F client
+  cargo add bevy-rtc -F client
   ```
 
-- Add the `SilkClientPlugin` to your app.
+- Add the `RtcClientPlugin` to your app.
 
   ```rust
-  .add_plugins(SilkClientPlugin)
+  .add_plugins(RtcClientPlugin)
   ```
 
 - Register your protocols as bounded or unbounded.
@@ -171,7 +171,7 @@ For the client:
         .run_if(
             // Only send every second, and if we are connected.
             on_timer(Duration::from_secs(1)).and_then(
-                state_exists_and_equals(SilkClientStatus::Connected),
+                state_exists_and_equals(RtcClientStatus::Connected),
             ),
         ),
     )

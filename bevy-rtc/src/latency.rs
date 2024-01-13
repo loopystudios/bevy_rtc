@@ -4,7 +4,7 @@ use instant::Duration;
 use serde::{Deserialize, Serialize};
 
 // A name import hack to ensure the Payload macro works correctly.
-mod bevy_silk {
+mod bevy_rtc {
     pub use crate::protocol;
 }
 

@@ -1,6 +1,6 @@
 use bevy::{log::LogPlugin, prelude::*};
-use bevy_silk::server::{
-    AddProtocolExt, NetworkReader, NetworkWriter, SilkServerPlugin,
+use bevy_rtc::server::{
+    AddProtocolExt, NetworkReader, NetworkWriter, RtcServerPlugin,
 };
 use protocol::PingPayload;
 
@@ -8,7 +8,7 @@ fn main() {
     App::new()
         .add_plugins(MinimalPlugins)
         .add_plugins(LogPlugin::default())
-        .add_plugins(SilkServerPlugin { port: 3536 })
+        .add_plugins(RtcServerPlugin { port: 3536 })
         .add_bounded_protocol::<PingPayload>(1)
         .add_systems(
             Update,

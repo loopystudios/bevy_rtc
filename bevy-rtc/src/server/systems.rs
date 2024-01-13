@@ -1,10 +1,10 @@
 use super::{
-    events::SilkServerEvent, NetworkReader, NetworkWriter, SilkServerStatus,
-    SilkState,
+    events::RtcServerEvent, NetworkReader, NetworkWriter, RtcServerStatus,
+    RtcState,
 };
 use crate::{
     latency::{LatencyTracer, LatencyTracerPayload},
-    socket::SilkSocket,
+    socket::RtcSocket,
 };
 use bevy::prelude::*;
 use bevy_matchbox::{
@@ -23,19 +23,16 @@ use std::sync::{
 };
 
 /// Initialize the signaling server
-pub fn init_signaling_server(
-    mut commands: Commands,
-    silk_state: Res<SilkState>,
-) {
+pub fn init_signaling_server(mut commands: Commands, rtc_state: Res<RtcState>) {
     let host_ready: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
     let builder = SignalingServerBuilder::new(
-        silk_state.addr,
+        rtc_state.addr,
         ClientServer,
         ClientServerState::default(),
     )
     .on_id_assignment(|(socket, id)| info!("{socket} assigned {id}"))
     .on_host_connected({
-        let addr = silk_state.addr;
+        let addr = rtc_state.addr;
         let host_ready = host_ready.clone();
         move |id| {
             host_ready.store(true, Ordering::Relaxed);
@@ -83,7 +80,7 @@ pub fn init_signaling_server(
 }
 
 /// Initialize the server socket
-pub fn init_server_socket(mut commands: Commands, state: Res<SilkState>) {
+pub fn init_server_socket(mut commands: Commands, state: Res<RtcState>) {
     // Create matchbox socket
     let room_url = format!("ws://{}", state.addr);
     let socker_builder = WebRtcSocket::builder(room_url)
@@ -101,17 +98,17 @@ pub fn init_server_socket(mut commands: Commands, state: Res<SilkState>) {
 pub fn server_event_writer(
     mut commands: Commands,
     tracer_query: Query<(Entity, &LatencyTracer)>,
-    mut state: ResMut<SilkState>,
-    mut socket: ResMut<SilkSocket>,
-    mut event_wtr: EventWriter<SilkServerEvent>,
-    mut next_server_status: ResMut<NextState<SilkServerStatus>>,
+    mut state: ResMut<RtcState>,
+    mut socket: ResMut<RtcSocket>,
+    mut event_wtr: EventWriter<RtcServerEvent>,
+    mut next_server_status: ResMut<NextState<RtcServerStatus>>,
 ) {
     // Id changed events
     if let Some(id) = socket.id() {
         if state.id.is_none() {
             state.id.replace(id);
-            event_wtr.send(SilkServerEvent::IdAssigned(id));
-            next_server_status.set(SilkServerStatus::Ready);
+            event_wtr.send(RtcServerEvent::IdAssigned(id));
+            next_server_status.set(RtcServerStatus::Ready);
         }
     }
 
@@ -121,7 +118,7 @@ pub fn server_event_writer(
             PeerState::Connected => {
                 state.peers.insert(peer);
                 commands.spawn(LatencyTracer::new(peer));
-                event_wtr.send(SilkServerEvent::ClientJoined(peer));
+                event_wtr.send(RtcServerEvent::ClientJoined(peer));
             }
             PeerState::Disconnected => {
                 state.peers.remove(&peer);
@@ -130,14 +127,14 @@ pub fn server_event_writer(
                     .find(|(_, tracer)| tracer.peer_id == peer)
                     .expect("expected tracer");
                 commands.entity(entity).despawn();
-                event_wtr.send(SilkServerEvent::ClientLeft(peer));
+                event_wtr.send(RtcServerEvent::ClientLeft(peer));
             }
         }
     }
 }
 
 pub fn send_latency_tracers(
-    state: Res<SilkState>,
+    state: Res<RtcState>,
     mut writer: NetworkWriter<LatencyTracerPayload>,
 ) {
     let peer_id = state.id.expect("expected peer id");
@@ -145,7 +142,7 @@ pub fn send_latency_tracers(
 }
 
 pub fn read_latency_tracers(
-    state: Res<SilkState>,
+    state: Res<RtcState>,
     mut tracers: Query<&mut LatencyTracer>,
     mut reader: NetworkReader<LatencyTracerPayload>,
     mut writer: NetworkWriter<LatencyTracerPayload>,
@@ -175,7 +172,7 @@ pub fn read_latency_tracers(
 
 pub fn calculate_latency(
     time: Res<Time>,
-    mut state: ResMut<SilkState>,
+    mut state: ResMut<RtcState>,
     mut tracers: Query<&mut LatencyTracer>,
 ) {
     // Set latencies

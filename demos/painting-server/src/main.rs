@@ -1,9 +1,9 @@
 use std::time::Duration;
 
 use bevy::{log::LogPlugin, prelude::*, time::common_conditions::on_timer};
-use bevy_silk::server::{
-    AddProtocolExt, NetworkReader, NetworkWriter, SilkServerEvent,
-    SilkServerPlugin, SilkState,
+use bevy_rtc::server::{
+    AddProtocolExt, NetworkReader, NetworkWriter, RtcServerEvent,
+    RtcServerPlugin, RtcState,
 };
 use protocol::{ChatPayload, DrawLinePayload};
 
@@ -11,7 +11,7 @@ fn main() {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins)
         .add_plugins(LogPlugin::default())
-        .add_plugins(SilkServerPlugin { port: 3536 })
+        .add_plugins(RtcServerPlugin { port: 3536 })
         .add_bounded_protocol::<ChatPayload>(1)
         .add_bounded_protocol::<DrawLinePayload>(1)
         .add_systems(
@@ -46,23 +46,23 @@ fn send_chats(
     }
 }
 
-fn print_events(mut event_rdr: EventReader<SilkServerEvent>) {
+fn print_events(mut event_rdr: EventReader<RtcServerEvent>) {
     for ev in event_rdr.read() {
         match ev {
-            SilkServerEvent::ClientJoined(id) => {
+            RtcServerEvent::ClientJoined(id) => {
                 info!("Client joined: {id}");
             }
-            SilkServerEvent::ClientLeft(id) => {
+            RtcServerEvent::ClientLeft(id) => {
                 info!("Client left: {id}");
             }
-            SilkServerEvent::IdAssigned(id) => {
+            RtcServerEvent::IdAssigned(id) => {
                 info!("Server ready as {id}");
             }
         }
     }
 }
 
-fn print_latencies(state: Res<SilkState>) {
+fn print_latencies(state: Res<RtcState>) {
     for ((peer, latency), (_peer, smoothed)) in
         state.iter_latencies().zip(state.iter_smoothed_latencies())
     {

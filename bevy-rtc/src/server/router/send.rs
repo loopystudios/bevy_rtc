@@ -1,6 +1,6 @@
 use crate::{
     protocol::Payload,
-    socket::{SilkSocket, RELIABLE_CHANNEL_INDEX, UNRELIABLE_CHANNEL_INDEX},
+    socket::{RtcSocket, RELIABLE_CHANNEL_INDEX, UNRELIABLE_CHANNEL_INDEX},
 };
 use bevy::prelude::*;
 use bevy_matchbox::prelude::PeerId;
@@ -29,7 +29,7 @@ impl<M: Payload> OutgoingMessages<M> {
 
     pub(crate) fn send_payloads(
         mut queue: ResMut<Self>,
-        mut socket: ResMut<SilkSocket>,
+        mut socket: ResMut<RtcSocket>,
     ) {
         // Server is sending
         for message in queue.reliable_to_all.iter() {

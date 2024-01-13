@@ -1,4 +1,4 @@
-use bevy_silk::protocol::Payload;
+use bevy_rtc::protocol::Payload;
 use serde::{Deserialize, Serialize};
 
 // Used by painting demo

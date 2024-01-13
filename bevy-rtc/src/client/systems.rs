@@ -1,11 +1,11 @@
 use super::{
-    events::{ConnectionRequest, SilkClientEvent},
-    state::{SilkClientStatus, SilkState},
+    events::{ConnectionRequest, RtcClientEvent},
+    state::{RtcClientStatus, RtcState},
     NetworkReader, NetworkWriter,
 };
 use crate::{
     latency::{LatencyTracer, LatencyTracerPayload},
-    socket::{SilkSocket, SilkSocketPlurality},
+    socket::{RtcSocket, RtcSocketPlurality},
 };
 use bevy::prelude::*;
 use bevy_matchbox::{
@@ -15,7 +15,7 @@ use bevy_matchbox::{
 use instant::Duration;
 
 /// Initialize the socket
-pub(crate) fn init_socket(mut commands: Commands, socket_res: Res<SilkState>) {
+pub(crate) fn init_socket(mut commands: Commands, socket_res: Res<RtcState>) {
     if let Some(addr) = socket_res.addr.as_ref() {
         debug!("connecting to: {addr:?}");
 
@@ -40,13 +40,13 @@ pub(crate) fn init_socket(mut commands: Commands, socket_res: Res<SilkState>) {
 pub(crate) fn reset_socket(
     mut commands: Commands,
     tracer_query: Query<Entity, With<LatencyTracer>>,
-    mut state: ResMut<SilkState>,
+    mut state: ResMut<RtcState>,
 ) {
-    commands.close_socket::<SilkSocketPlurality>();
+    commands.close_socket::<RtcSocketPlurality>();
     if let Ok(entity) = tracer_query.get_single() {
         commands.entity(entity).despawn();
     }
-    *state = SilkState {
+    *state = RtcState {
         // Keep for reconnecting
         addr: state.addr.clone(),
         host_id: None,
@@ -59,14 +59,14 @@ pub(crate) fn reset_socket(
 /// Reads and handles connection request events
 pub(crate) fn connection_request_handler(
     mut cxn_event_reader: EventReader<ConnectionRequest>,
-    mut state: ResMut<SilkState>,
-    mut next_connection_state: ResMut<NextState<SilkClientStatus>>,
-    current_connection_state: Res<State<SilkClientStatus>>,
-    mut event_wtr: EventWriter<SilkClientEvent>,
+    mut state: ResMut<RtcState>,
+    mut next_connection_state: ResMut<NextState<RtcClientStatus>>,
+    current_connection_state: Res<State<RtcClientStatus>>,
+    mut event_wtr: EventWriter<RtcClientEvent>,
 ) {
     match cxn_event_reader.read().next() {
         Some(ConnectionRequest::Connect { addr }) => {
-            if let SilkClientStatus::Disconnected =
+            if let RtcClientStatus::Disconnected =
                 current_connection_state.get()
             {
                 debug!(
@@ -74,7 +74,7 @@ pub(crate) fn connection_request_handler(
                     "set state: connecting"
                 );
                 state.addr.replace(addr.to_owned());
-                next_connection_state.set(SilkClientStatus::Establishing);
+                next_connection_state.set(RtcClientStatus::Establishing);
             }
         }
         Some(ConnectionRequest::Disconnect) => {
@@ -82,8 +82,8 @@ pub(crate) fn connection_request_handler(
                 previous = format!("{current_connection_state:?}"),
                 "set state: disconnected"
             );
-            next_connection_state.set(SilkClientStatus::Disconnected);
-            event_wtr.send(SilkClientEvent::DisconnectedFromHost {
+            next_connection_state.set(RtcClientStatus::Disconnected);
+            event_wtr.send(RtcClientEvent::DisconnectedFromHost {
                 reason: Some("Client requested to disconnect".to_string()),
             });
         }
@@ -94,18 +94,18 @@ pub(crate) fn connection_request_handler(
 /// Translates socket updates into bevy events
 pub(crate) fn client_event_writer(
     mut commands: Commands,
-    mut state: ResMut<SilkState>,
-    mut socket: ResMut<SilkSocket>,
-    mut event_wtr: EventWriter<SilkClientEvent>,
-    mut next_connection_state: ResMut<NextState<SilkClientStatus>>,
+    mut state: ResMut<RtcState>,
+    mut socket: ResMut<RtcSocket>,
+    mut event_wtr: EventWriter<RtcClientEvent>,
+    mut next_connection_state: ResMut<NextState<RtcClientStatus>>,
 ) {
-    // Create socket events for Silk
+    // Create events
 
     // Id changed events
     if let Some(id) = socket.id() {
         if state.id.is_none() {
             state.id.replace(id);
-            event_wtr.send(SilkClientEvent::IdAssigned(id));
+            event_wtr.send(RtcClientEvent::IdAssigned(id));
         }
     }
 
@@ -117,13 +117,13 @@ pub(crate) fn client_event_writer(
                     matchbox_socket::PeerState::Connected => {
                         state.host_id.replace(id);
                         commands.spawn(LatencyTracer::new(id));
-                        next_connection_state.set(SilkClientStatus::Connected);
-                        event_wtr.send(SilkClientEvent::ConnectedToHost(id));
+                        next_connection_state.set(RtcClientStatus::Connected);
+                        event_wtr.send(RtcClientEvent::ConnectedToHost(id));
                     }
                     matchbox_socket::PeerState::Disconnected => {
                         next_connection_state
-                            .set(SilkClientStatus::Disconnected);
-                        event_wtr.send(SilkClientEvent::DisconnectedFromHost {
+                            .set(RtcClientStatus::Disconnected);
+                        event_wtr.send(RtcClientEvent::DisconnectedFromHost {
                             reason: Some("Server reset".to_string()),
                         });
                     }
@@ -136,15 +136,15 @@ pub(crate) fn client_event_writer(
     }
 
     if socket.any_closed() {
-        next_connection_state.set(SilkClientStatus::Disconnected);
-        event_wtr.send(SilkClientEvent::DisconnectedFromHost {
+        next_connection_state.set(RtcClientStatus::Disconnected);
+        event_wtr.send(RtcClientEvent::DisconnectedFromHost {
             reason: Some("Connection closed".to_string()),
         });
     }
 }
 
 pub fn send_latency_tracers(
-    state: Res<SilkState>,
+    state: Res<RtcState>,
     mut writer: NetworkWriter<LatencyTracerPayload>,
 ) {
     let peer_id = state.id.expect("expected peer id");
@@ -152,7 +152,7 @@ pub fn send_latency_tracers(
 }
 
 pub fn read_latency_tracers(
-    state: Res<SilkState>,
+    state: Res<RtcState>,
     mut trace_query: Query<&mut LatencyTracer>,
     mut reader: NetworkReader<LatencyTracerPayload>,
     mut writer: NetworkWriter<LatencyTracerPayload>,
@@ -180,7 +180,7 @@ pub fn read_latency_tracers(
 
 pub fn calculate_latency(
     time: Res<Time>,
-    mut state: ResMut<SilkState>,
+    mut state: ResMut<RtcState>,
     mut tracer: Query<&mut LatencyTracer>,
 ) {
     let mut tracer = tracer.single_mut();

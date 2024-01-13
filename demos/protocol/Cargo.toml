@@ -6,5 +6,5 @@ edition.workspace = true
 publish = false
 
 [dependencies]
-bevy-silk = { path = "../../bevy-silk" }
+bevy-rtc = { path = "../../bevy-rtc" }
 serde = "1"

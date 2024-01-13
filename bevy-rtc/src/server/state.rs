@@ -9,7 +9,7 @@ use std::net::SocketAddr;
 
 /// State of the server
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash, States)]
-pub enum SilkServerStatus {
+pub enum RtcServerStatus {
     /// Not ready
     #[default]
     NotReady,
@@ -18,7 +18,7 @@ pub enum SilkServerStatus {
 }
 
 #[derive(Resource)]
-pub struct SilkState {
+pub struct RtcState {
     /// The socket address bound
     pub addr: SocketAddr,
 
@@ -35,7 +35,7 @@ pub struct SilkState {
     pub(crate) smoothed_latencies: HashMap<PeerId, Option<Duration>>,
 }
 
-impl SilkState {
+impl RtcState {
     pub fn new(addr: SocketAddr) -> Self {
         Self {
             addr,

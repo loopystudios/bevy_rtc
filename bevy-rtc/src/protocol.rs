@@ -8,7 +8,7 @@ pub use proc_macro_payload::Payload;
 
 #[derive(Deserialize, Serialize)]
 #[serde(bound = "M: DeserializeOwned")]
-pub struct SilkPacket<M: Payload> {
+pub struct RtcPacket<M: Payload> {
     pub msg_id: u16,
     pub data: M,
 }
@@ -22,40 +22,37 @@ pub trait Payload:
 
     #[cfg(not(feature = "binary"))]
     fn from_packet(packet: &Packet) -> Option<Self> {
-        serde_json::from_slice::<SilkPacket<Self>>(packet)
+        serde_json::from_slice::<RtcPacket<Self>>(packet)
             .ok()
-            .filter(|silk_packet| silk_packet.msg_id == Self::id())
-            .map(|silk_packet| silk_packet.data)
+            .filter(|packet| packet.msg_id == Self::id())
+            .map(|packet| packet.data)
     }
 
     #[cfg(feature = "binary")]
     fn from_packet(packet: &Packet) -> Option<Self> {
-        bincode::deserialize::<SilkPacket<Self>>(packet)
+        bincode::deserialize::<RtcPacket<Self>>(packet)
             .ok()
-            .filter(|silk_packet| silk_packet.msg_id == Self::id())
-            .map(|silk_packet| silk_packet.data)
+            .filter(|packet| packet.msg_id == Self::id())
+            .map(|packet| packet.data)
     }
 
     #[cfg(not(feature = "binary"))]
     fn to_packet(&self) -> Packet {
-        let silk_packet = SilkPacket {
+        let packet = RtcPacket {
             msg_id: Self::id(),
             data: self.clone(),
         };
 
-        serde_json::to_string(&silk_packet)
-            .unwrap()
-            .as_bytes()
-            .into()
+        serde_json::to_string(&packet).unwrap().as_bytes().into()
     }
 
     #[cfg(feature = "binary")]
     fn to_packet(&self) -> Packet {
-        let silk_packet = SilkPacket {
+        let packet = RtcPacket {
             msg_id: Self::id(),
             data: self.clone(),
         };
 
-        bincode::serialize(&silk_packet).unwrap().into_boxed_slice()
+        bincode::serialize(&packet).unwrap().into_boxed_slice()
     }
 }

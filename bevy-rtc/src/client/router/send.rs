@@ -1,7 +1,7 @@
 use crate::{
-    client::state::SilkState,
+    client::state::RtcState,
     protocol::Payload,
-    socket::{SilkSocket, RELIABLE_CHANNEL_INDEX, UNRELIABLE_CHANNEL_INDEX},
+    socket::{RtcSocket, RELIABLE_CHANNEL_INDEX, UNRELIABLE_CHANNEL_INDEX},
 };
 use bevy::prelude::*;
 
@@ -21,8 +21,8 @@ impl<M: Payload> OutgoingMessages<M> {
 
     pub(crate) fn send_payloads(
         mut queue: ResMut<Self>,
-        mut socket: ResMut<SilkSocket>,
-        state: Res<SilkState>,
+        mut socket: ResMut<RtcSocket>,
+        state: Res<RtcState>,
     ) {
         if let Some(host) = state.host_id {
             // Client is sending

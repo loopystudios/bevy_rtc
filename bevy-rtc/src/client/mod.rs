@@ -5,8 +5,8 @@ mod state;
 mod system_params;
 mod systems;
 
-pub use events::SilkServerEvent;
-pub use plugin::SilkServerPlugin;
+pub use events::{ConnectionRequest, RtcClientEvent};
+pub use plugin::RtcClientPlugin;
 pub use router::AddProtocolExt;
-pub use state::{SilkServerStatus, SilkState};
+pub use state::{RtcClientStatus, RtcState};
 pub use system_params::{NetworkReader, NetworkWriter};

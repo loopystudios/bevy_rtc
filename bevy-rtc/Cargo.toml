@@ -1,5 +1,5 @@
 [package]
-name = "bevy-silk"
+name = "bevy-rtc"
 version.workspace = true
 license.workspace = true
 edition.workspace = true
@@ -10,7 +10,7 @@ keywords.workspace = true
 
 [dependencies]
 bevy = { workspace = true }
-bevy-silk-macros = { path = "../bevy-silk-macros" }
+bevy-rtc-macros = { path = "../bevy-rtc-macros" }
 bevy_matchbox = { workspace = true }
 serde = "1"
 instant = "0.1"

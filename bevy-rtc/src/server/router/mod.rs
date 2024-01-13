@@ -3,10 +3,9 @@ mod send;
 
 use crate::{
     protocol::Payload,
-    socket::{common_socket_reader, SilkSocket},
+    socket::{common_socket_reader, RtcSocket},
 };
-use bevy::prelude::*;
-use std::collections::VecDeque;
+use bevy::{prelude::*, utils::hashbrown::HashMap};
 
 pub use receive::IncomingMessages;
 pub use send::OutgoingMessages;
@@ -24,34 +23,39 @@ impl AddProtocolExt for App {
         self.add_bounded_protocol::<M>(usize::MAX)
     }
 
-    fn add_bounded_protocol<M>(&mut self, bound: usize) -> &mut Self
+    fn add_bounded_protocol<M: Payload>(&mut self, bound: usize) -> &mut Self
     where
         M: Payload,
     {
         if self.world.contains_resource::<IncomingMessages<M>>()
             || self.world.contains_resource::<OutgoingMessages<M>>()
         {
-            panic!("client already contains resource: {}", M::reflect_name());
+            panic!("server already contains resource: {}", M::reflect_name());
         }
         self.insert_resource(IncomingMessages::<M> {
+            messages: HashMap::new(),
             bound,
-            messages: VecDeque::new(),
         })
         .insert_resource(OutgoingMessages::<M> {
-            reliable_to_host: vec![],
-            unreliable_to_host: vec![],
+            reliable_to_all: vec![],
+            unreliable_to_all: vec![],
+            reliable_to_all_except: vec![],
+            unreliable_to_all_except: vec![],
+            reliable_to_peer: vec![],
+            unreliable_to_peer: vec![],
         })
         .add_systems(
             First,
             IncomingMessages::<M>::receive_payloads
                 .after(common_socket_reader)
-                .run_if(resource_exists::<SilkSocket>()),
+                .run_if(resource_exists::<RtcSocket>()),
         )
         .add_systems(
             Last,
             OutgoingMessages::<M>::send_payloads
-                .run_if(resource_exists::<SilkSocket>()),
+                .run_if(resource_exists::<RtcSocket>()),
         );
+
         self
     }
 }

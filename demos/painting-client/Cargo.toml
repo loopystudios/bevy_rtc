@@ -7,7 +7,7 @@ publish = false
 
 [dependencies]
 bevy = { workspace = true, default-features = true }
-bevy-silk = { path = "../../bevy-silk", features = ["client"] }
+bevy-rtc = { path = "../../bevy-rtc", features = ["client"] }
 protocol = { path = "../protocol" }
 bevy_egui = "0.24"
 log = { version = "0.4", default-features = false }

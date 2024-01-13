@@ -16,7 +16,7 @@ pub fn derive_payload_fn(item: TokenStream) -> TokenStream {
     let id = s.finish() as u16;
     let reflect_name = ident.to_string();
     quote! {
-        impl bevy_silk::protocol::Payload for #ident {
+        impl bevy_rtc::protocol::Payload for #ident {
             fn id() -> u16 {
                 #id
             }

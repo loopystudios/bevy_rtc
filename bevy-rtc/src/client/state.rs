@@ -4,7 +4,7 @@ use instant::Duration;
 
 /// State of the socket
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash, States)]
-pub enum SilkClientStatus {
+pub enum RtcClientStatus {
     /// Disconnected
     #[default]
     Disconnected,
@@ -15,7 +15,7 @@ pub enum SilkClientStatus {
 }
 
 #[derive(Resource, Default)]
-pub struct SilkState {
+pub struct RtcState {
     /// The socket address, used for connecting/reconnecting
     pub addr: Option<String>,
     /// The ID of the host

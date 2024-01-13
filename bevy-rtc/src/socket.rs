@@ -3,9 +3,9 @@ use bevy::prelude::*;
 use bevy_matchbox::{prelude::MultipleChannels, MatchboxSocket};
 
 /// A type alias to the underlying matchbox socket.
-pub type SilkSocket = MatchboxSocket<SilkSocketPlurality>;
+pub type RtcSocket = MatchboxSocket<RtcSocketPlurality>;
 /// A type alias to the underlying matchbox socket plurality.
-pub type SilkSocketPlurality = MultipleChannels;
+pub type RtcSocketPlurality = MultipleChannels;
 
 /// The index of the unreliable channel in the [`WebRtcSocket`].
 pub const UNRELIABLE_CHANNEL_INDEX: usize = 0;
@@ -13,7 +13,7 @@ pub const UNRELIABLE_CHANNEL_INDEX: usize = 0;
 pub const RELIABLE_CHANNEL_INDEX: usize = 1;
 
 pub fn common_socket_reader(
-    mut socket: ResMut<SilkSocket>,
+    mut socket: ResMut<RtcSocket>,
     mut event_wtr: EventWriter<SocketRecvEvent>,
 ) {
     let messages = socket
