@@ -1,10 +1,10 @@
 [workspace]
-members = ["bevy-silk", "crates/*", "demo/*"]
+members = ["bevy-silk", "crates/*", "demos/*"]
 resolver = "2"
 
 [workspace.package]
 edition = "2021"
-version = "0.8.7"
+version = "0.8.8"
 license = "MIT/Apache-2.0"
 
 [workspace.dependencies]

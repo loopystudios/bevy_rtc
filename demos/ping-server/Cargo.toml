@@ -1,0 +1,11 @@
+[package]
+name = "ping-server"
+version.workspace = true
+license.workspace = true
+edition.workspace = true
+publish = false
+
+[dependencies]
+bevy = { workspace = true }
+bevy-silk = { path = "../../bevy-silk", features = ["server"] }
+protocol = { path = "../protocol" }

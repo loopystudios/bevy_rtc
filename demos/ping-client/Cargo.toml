@@ -1,0 +1,12 @@
+[package]
+name = "ping-client"
+version.workspace = true
+license.workspace = true
+edition.workspace = true
+publish = false
+
+[dependencies]
+bevy = { workspace = true, default-features = true }
+bevy-silk = { path = "../../bevy-silk", features = ["client"] }
+protocol = { path = "../protocol" }
+log = { version = "0.4", default-features = false }
