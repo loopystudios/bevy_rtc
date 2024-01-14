@@ -8,6 +8,9 @@ repository.workspace = true
 authors.workspace = true
 keywords.workspace = true
 
+[package.metadata.docs.rs]
+all-features = true # document all features
+
 [dependencies]
 bevy = { workspace = true }
 bevy-rtc-macros = { path = "../bevy-rtc-macros" }

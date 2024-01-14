@@ -25,4 +25,5 @@ jobs:
         cargo publish -p bevy-rtc-macros --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
         VERSION=$(cat Cargo.toml | dasel -r toml 'workspace.package.version')
         sed -i 's/{ path = "..\/bevy-rtc-macros" }/'"$VERSION"'/' bevy-rtc/Cargo.toml
+        sed -i '1s/^/#![feature(doc_auto_cfg)]\n/' bevy-rtc/src/lib.rs
         cargo publish -p bevy-rtc --allow-dirty --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
