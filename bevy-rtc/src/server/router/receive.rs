@@ -27,7 +27,7 @@ impl<M: Payload> IncomingMessages<M> {
                 // Insert the new message
                 messages_for_peer.push_back(message);
                 // Ensure only the last BOUND messages are kept
-                while messages_for_peer.len() > bound {
+                if messages_for_peer.len() > bound {
                     messages_for_peer.pop_front();
                     warn!(
                         "The `{}` protocol is overflowing its bounded buffer ({bound}) and dropping packets! The payloads may not being read fast enough, or {peer_id} is exceeding rate!",
