@@ -4,7 +4,13 @@ This changelog follows the patterns described here: <https://keepachangelog.com/
 
 Subheadings to categorize changes are `added, changed, deprecated, removed, fixed, security`.
 
-## 0.8.10
+## 0.8.11
+
+## fixed
+
+- <docs.rs> now properly documents all features
+
+## 0.8.10 (Yanked)
 
 ### added
 

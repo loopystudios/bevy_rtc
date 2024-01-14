@@ -10,6 +10,10 @@ keywords.workspace = true
 
 [package.metadata.docs.rs]
 all-features = true # document all features
+rustdoc-args = [
+  "--cfg",
+  "docsrs",
+] # defines the configuration attribute `docsrs`
 
 [dependencies]
 bevy = { workspace = true }
