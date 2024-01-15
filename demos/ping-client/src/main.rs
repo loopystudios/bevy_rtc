@@ -12,7 +12,7 @@ fn main() {
         .add_plugins(MinimalPlugins)
         .add_plugins(LogPlugin::default())
         .add_plugins(RtcClientPlugin)
-        .add_bounded_protocol::<PingPayload>(2)
+        .add_bounded_protocol::<PingPayload>(1)
         .add_systems(
             OnEnter(RtcClientStatus::Disconnected), // Automatically-reconnect
             |mut connection_requests: EventWriter<ConnectionRequest>| {
@@ -26,7 +26,7 @@ fn main() {
             {
                 |mut writer: NetworkWriter<PingPayload>| {
                     writer.reliable_to_host(PingPayload::Ping);
-                    info!("Sent ping..")
+                    info!("Sent ping...")
                 }
             }
             .run_if(
@@ -38,7 +38,7 @@ fn main() {
         .add_systems(Update, |mut reader: NetworkReader<PingPayload>| {
             for payload in reader.read() {
                 if let PingPayload::Pong = payload {
-                    info!("..Received pong!");
+                    info!("...Received pong!");
                 }
             }
         })

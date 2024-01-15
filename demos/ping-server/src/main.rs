@@ -9,7 +9,7 @@ fn main() {
         .add_plugins(MinimalPlugins)
         .add_plugins(LogPlugin::default())
         .add_plugins(RtcServerPlugin { port: 3536 })
-        .add_bounded_protocol::<PingPayload>(2)
+        .add_bounded_protocol::<PingPayload>(1)
         .add_systems(
             Update,
             |mut reader: NetworkReader<PingPayload>,
