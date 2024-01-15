@@ -4,6 +4,17 @@ This changelog follows the patterns described here: <https://keepachangelog.com/
 
 Subheadings to categorize changes are `added, changed, deprecated, removed, fixed, security`.
 
+
+## 0.8.12
+
+## changed
+
+- Optimized client and server to skip deserializing packets if the bound has been reached
+
+## fixed
+
+- A rare server panic when a client disconnects
+
 ## 0.8.11
 
 ## fixed
