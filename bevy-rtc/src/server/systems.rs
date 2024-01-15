@@ -122,11 +122,12 @@ pub fn server_event_writer(
             }
             PeerState::Disconnected => {
                 state.peers.remove(&peer);
-                let (entity, _) = tracer_query
+                if let Some((entity, _)) = tracer_query
                     .iter()
                     .find(|(_, tracer)| tracer.peer_id == peer)
-                    .expect("expected tracer");
-                commands.entity(entity).despawn();
+                {
+                    commands.entity(entity).despawn();
+                }
                 event_wtr.send(RtcServerEvent::ClientLeft(peer));
             }
         }
