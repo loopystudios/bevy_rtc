@@ -1,8 +1,7 @@
-use std::collections::VecDeque;
-
 use crate::{events::SocketRecvEvent, protocol::Payload};
-use bevy::{prelude::*, utils::HashMap};
+use bevy::{prelude::*, utils::hashbrown::HashMap};
 use bevy_matchbox::prelude::PeerId;
+use std::collections::VecDeque;
 
 #[derive(Default, Debug, Resource)]
 pub struct IncomingMessages<M: Payload> {
@@ -15,30 +14,38 @@ impl<M: Payload> IncomingMessages<M> {
         mut incoming: ResMut<Self>,
         mut events: EventReader<SocketRecvEvent>,
     ) {
-        let mut read = 0;
         let bound = incoming.bound;
-        for SocketRecvEvent((peer_id, packet)) in events.read() {
-            if let Some(message) = M::from_packet(packet) {
-                // Get or insert the VecDeque for the peer_id
-                let messages_for_peer = incoming
-                    .messages
-                    .entry(*peer_id)
-                    .or_insert_with(VecDeque::new);
-                // Insert the new message
-                messages_for_peer.push_back(message);
-                // Ensure only the last BOUND messages are kept
-                if messages_for_peer.len() > bound {
-                    messages_for_peer.pop_front();
-                    warn!(
-                        "The `{}` protocol is overflowing its bounded buffer ({bound}) and dropping packets! The payloads may not being read fast enough, or {peer_id} is exceeding rate!",
-                        M::reflect_name()
-                    );
+        let packets: HashMap<PeerId, Vec<M>> = events.read().fold(
+            HashMap::new(),
+            |mut acc, &SocketRecvEvent((peer_id, ref packet))| {
+                let buf = acc.entry(peer_id).or_insert(vec![]);
+                if buf.len() >= bound {
+                    return acc;
                 }
-                read += 1;
+                if let Some(packet) = M::from_packet(packet) {
+                    buf.push(packet);
+                }
+                acc
+            },
+        );
+        for (peer_id, payloads) in packets {
+            // Get or insert the VecDeque for the peer_id
+            let messages_for_peer = incoming
+                .messages
+                .entry(peer_id)
+                .or_insert_with(VecDeque::new);
+            for payload in payloads.into_iter() {
+                messages_for_peer.push_back(payload);
             }
-        }
-        if read > 0 {
-            trace!("received {} {} packets", read, M::reflect_name());
+            if messages_for_peer.len() > bound {
+                warn!(
+                    "The `{}` protocol is overflowing its bounded buffer ({bound}) and dropping packets! Is it being read?",
+                    M::reflect_name()
+                );
+                while messages_for_peer.len() > bound {
+                    messages_for_peer.pop_front();
+                }
+            }
         }
     }
 }

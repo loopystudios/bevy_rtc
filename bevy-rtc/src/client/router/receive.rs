@@ -13,26 +13,27 @@ impl<M: Payload> IncomingMessages<M> {
         mut incoming: ResMut<Self>,
         mut events: EventReader<SocketRecvEvent>,
     ) {
-        let mut read = 0;
         let bound = incoming.bound;
-        for SocketRecvEvent((peer_id, packet)) in events.read() {
-            if let Some(message) = M::from_packet(packet) {
-                // Insert the new message
-                incoming.messages.push_back(message);
-                // Ensure only the last BOUND messages are kept
-                while incoming.messages.len() > bound {
-                    incoming.messages.pop_front();
-                    warn!(
-                        "The `{}` protocol is overflowing its bounded buffer ({bound}) and dropping packets! The payloads may not being read fast enough, or {peer_id} is exceeding rate!",
-                        M::reflect_name()
-                    );
-                }
-
-                read += 1;
-            }
+        let packets: Vec<_> = events
+            .read()
+            .map(|&SocketRecvEvent((_peer_id, ref packet))| packet)
+            .filter_map(M::from_packet)
+            .enumerate()
+            .take_while(|(read, _)| *read <= bound)
+            .map(|(_, packet)| packet)
+            .collect();
+        trace!("Read {} {} packets", packets.len(), M::reflect_name());
+        for packet in packets.into_iter() {
+            incoming.messages.push_back(packet);
         }
-        if read > 0 {
-            trace!("received {} {} packets", read, M::reflect_name());
+        if incoming.messages.len() > bound {
+            warn!(
+                "The `{}` protocol is overflowing its bounded buffer ({bound}) and dropping packets! Is it being read?",
+                M::reflect_name()
+            );
+            while incoming.messages.len() > bound {
+                incoming.messages.pop_front();
+            }
         }
     }
 }
