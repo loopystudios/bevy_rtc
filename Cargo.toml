@@ -12,5 +12,5 @@ authors = ["Spencer C. Imbleau"]
 keywords = ["gamedev"]
 
 [workspace.dependencies]
-bevy = { version = "0.12", default-features = false }
+bevy = { version = "0.13", default-features = false }
 bevy_matchbox = "0.8"
