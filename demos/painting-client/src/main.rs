@@ -25,7 +25,6 @@ fn main() {
             WindowPlugin {
                 primary_window: Some(bevy::window::Window {
                     present_mode: PresentMode::AutoVsync,
-                    fit_canvas_to_parent: true,
                     prevent_default_event_handling: true,
                     resolution: WindowResolution::new(450., 500.),
                     ..default()

@@ -7,6 +7,7 @@ description.workspace = true
 repository.workspace = true
 authors.workspace = true
 keywords.workspace = true
+categories.workspace = true
 
 [package.metadata.docs.rs]
 all-features = true # document all features

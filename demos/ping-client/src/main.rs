@@ -30,9 +30,8 @@ fn main() {
                 }
             }
             .run_if(
-                on_timer(Duration::from_secs(1)).and_then(
-                    state_exists_and_equals(RtcClientStatus::Connected),
-                ),
+                on_timer(Duration::from_secs(1))
+                    .and_then(in_state(RtcClientStatus::Connected)),
             ),
         )
         .add_systems(Update, |mut reader: NetworkReader<PingPayload>| {
