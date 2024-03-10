@@ -19,5 +19,4 @@ categories = [
 
 [workspace.dependencies]
 bevy = { version = "0.13", default-features = false }
-# FIXME: Change to 0.9 after https://github.com/johanhelsing/matchbox/pull/424
-bevy_matchbox = { git = "https://github.com/johanhelsing/matchbox", branch = "bevy-0.13" }
+bevy_matchbox = "0.9"
