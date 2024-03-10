@@ -33,7 +33,8 @@ Run the [demos](#demos) and [instructions](#instructions).
 
 | bevy  |  bevy-rtc   |
 |-------|-------------|
-| 0.12  | 0.8, main   |
+| 0.13  | 0.9, main   |
+| 0.12  | 0.8         |
 | < 0.11| unsupported |
 
 ## Cargo features
