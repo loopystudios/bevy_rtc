@@ -22,7 +22,7 @@ impl Plugin for RtcServerPlugin {
         app.add_event::<SocketRecvEvent>()
             .add_event::<RtcServerEvent>()
             .add_bounded_protocol::<LatencyTracerPayload>(2)
-            .add_state::<RtcServerStatus>()
+            .init_state::<RtcServerStatus>()
             .insert_resource(RtcState::new(
                 (Ipv4Addr::UNSPECIFIED, self.port).into(),
             ))
@@ -41,7 +41,7 @@ impl Plugin for RtcServerPlugin {
                     systems::calculate_latency,
                 )
                     .chain()
-                    .run_if(resource_exists::<RtcSocket>()),
+                    .run_if(resource_exists::<RtcSocket>),
             )
             .add_systems(
                 Update,
@@ -50,7 +50,7 @@ impl Plugin for RtcServerPlugin {
                     systems::send_latency_tracers
                         .run_if(on_timer(Duration::from_millis(100))),
                 )
-                    .run_if(state_exists_and_equals(RtcServerStatus::Ready)),
+                    .run_if(in_state(RtcServerStatus::Ready)),
             );
     }
 }

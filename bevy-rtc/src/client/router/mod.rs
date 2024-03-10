@@ -44,7 +44,7 @@ impl AddProtocolExt for App {
         .add_systems(
             Last,
             OutgoingMessages::<M>::send_payloads
-                .run_if(resource_exists::<RtcSocket>()),
+                .run_if(resource_exists::<RtcSocket>),
         );
         self
     }
@@ -68,7 +68,7 @@ impl AddProtocolExt for App {
             First,
             IncomingMessages::<M>::receive_payloads
                 .after(common_socket_reader)
-                .run_if(resource_exists::<RtcSocket>()),
+                .run_if(resource_exists::<RtcSocket>),
         );
         self
     }
@@ -98,12 +98,12 @@ impl AddProtocolExt for App {
             First,
             IncomingMessages::<M>::receive_payloads
                 .after(common_socket_reader)
-                .run_if(resource_exists::<RtcSocket>()),
+                .run_if(resource_exists::<RtcSocket>),
         )
         .add_systems(
             Last,
             OutgoingMessages::<M>::send_payloads
-                .run_if(resource_exists::<RtcSocket>()),
+                .run_if(resource_exists::<RtcSocket>),
         );
         self
     }

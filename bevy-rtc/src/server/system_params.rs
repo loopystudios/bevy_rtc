@@ -10,6 +10,21 @@ pub struct NetworkReader<'w, M: Payload> {
 }
 
 impl<'w, M: Payload> NetworkReader<'w, M> {
+    /// Returns the capacity of this network reader.
+    pub fn capacity(&self) -> usize {
+        self.incoming.bound
+    }
+
+    /// Returns the number of messages waiting in the buffer without draining them.
+    pub fn len(&self) -> usize {
+        self.incoming.messages.len()
+    }
+
+    /// Returns the number of messages waiting in the buffer without draining them.
+    pub fn is_empty(&self) -> bool {
+        self.incoming.messages.is_empty()
+    }
+
     /// Consumes all messages in the buffer and iterate on them.
     pub fn read(&mut self) -> Vec<(PeerId, M)> {
         self.incoming.messages.drain().fold(

@@ -18,7 +18,7 @@ impl Plugin for RtcClientPlugin {
         app.add_event::<SocketRecvEvent>()
             .insert_resource(RtcState::default())
             .add_bounded_protocol::<LatencyTracerPayload>(2)
-            .add_state::<RtcClientStatus>()
+            .init_state::<RtcClientStatus>()
             .add_event::<ConnectionRequest>()
             .add_event::<RtcClientEvent>()
             .add_systems(
@@ -34,15 +34,13 @@ impl Plugin for RtcClientPlugin {
                 First,
                 (common_socket_reader, systems::client_event_writer)
                     .chain()
-                    .run_if(resource_exists::<RtcSocket>()),
+                    .run_if(resource_exists::<RtcSocket>),
             )
             .add_systems(
                 First,
                 systems::calculate_latency
                     .after(systems::client_event_writer)
-                    .run_if(state_exists_and_equals(
-                        RtcClientStatus::Connected,
-                    )),
+                    .run_if(in_state(RtcClientStatus::Connected)),
             )
             .add_systems(
                 Update,
@@ -51,9 +49,7 @@ impl Plugin for RtcClientPlugin {
                     systems::send_latency_tracers
                         .run_if(on_timer(Duration::from_millis(100))),
                 )
-                    .run_if(state_exists_and_equals(
-                        RtcClientStatus::Connected,
-                    )),
+                    .run_if(in_state(RtcClientStatus::Connected)),
             );
     }
 }

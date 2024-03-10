@@ -4,20 +4,29 @@ This changelog follows the patterns described here: <https://keepachangelog.com/
 
 Subheadings to categorize changes are `added, changed, deprecated, removed, fixed, security`.
 
+## 0.9.0
+
+### added
+
+- Added `.capacity()`, `.len()`, and `.is_empty()` to `NetworkReader`
+
+### changed
+
+- To bevy 0.13
 
 ## 0.8.12
 
-## changed
+### changed
 
 - Optimized client and server to skip deserializing packets if the bound has been reached
 
-## fixed
+### fixed
 
 - A rare server panic when a client disconnects
 
 ## 0.8.11
 
-## fixed
+### fixed
 
 - <docs.rs> now properly documents all features
 
