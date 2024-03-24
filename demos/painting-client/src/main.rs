@@ -11,8 +11,8 @@ use bevy_egui::{
     EguiContexts, EguiPlugin,
 };
 use bevy_rtc::client::{
-    AddProtocolExt, ConnectionRequest, NetworkReader, NetworkWriter,
-    RtcClientEvent, RtcClientPlugin, RtcClientStatus, RtcState,
+    AddProtocolExt, ConnectionRequest, NetworkReader, NetworkWriter, RtcClientEvent,
+    RtcClientPlugin, RtcClientStatus, RtcState,
 };
 use chat::ChatState;
 use painting::PaintingState;
@@ -21,17 +21,15 @@ use std::ops::DerefMut;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins.set(LogPlugin::default()).set(
-            WindowPlugin {
-                primary_window: Some(bevy::window::Window {
-                    present_mode: PresentMode::AutoVsync,
-                    prevent_default_event_handling: true,
-                    resolution: WindowResolution::new(450., 500.),
-                    ..default()
-                }),
+        .add_plugins(DefaultPlugins.set(LogPlugin::default()).set(WindowPlugin {
+            primary_window: Some(bevy::window::Window {
+                present_mode: PresentMode::AutoVsync,
+                prevent_default_event_handling: true,
+                resolution: WindowResolution::new(450., 500.),
                 ..default()
-            },
-        ))
+            }),
+            ..default()
+        }))
         .add_plugins(EguiPlugin)
         .add_plugins(RtcClientPlugin)
         .add_unbounded_protocol::<ChatPayload>()
@@ -55,15 +53,11 @@ fn main() {
         )
         .add_systems(
             OnEnter(RtcClientStatus::Establishing),
-            |mut commands: Commands| {
-                commands.insert_resource(ClearColor(Color::ORANGE))
-            },
+            |mut commands: Commands| commands.insert_resource(ClearColor(Color::ORANGE)),
         )
         .add_systems(
             OnEnter(RtcClientStatus::Connected),
-            |mut commands: Commands| {
-                commands.insert_resource(ClearColor(Color::GREEN))
-            },
+            |mut commands: Commands| commands.insert_resource(ClearColor(Color::GREEN)),
         )
         .add_systems(
             OnEnter(RtcClientStatus::Disconnected),
@@ -96,10 +90,7 @@ fn print_events(mut events: EventReader<RtcClientEvent>) {
     }
 }
 
-fn read_chats(
-    mut chat_state: ResMut<ChatState>,
-    mut chat_read: NetworkReader<ChatPayload>,
-) {
+fn read_chats(mut chat_state: ResMut<ChatState>, mut chat_read: NetworkReader<ChatPayload>) {
     for chat in chat_read.read() {
         chat_state.messages.insert(0, chat);
     }

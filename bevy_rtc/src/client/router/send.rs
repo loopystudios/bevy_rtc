@@ -32,9 +32,7 @@ impl<M: Payload> OutgoingMessages<M> {
                     .try_send(message.to_packet(), host)
                     .is_err()
                 {
-                    error!(
-                        "failed to send reliable packet to {host}: {message:?}"
-                    );
+                    error!("failed to send reliable packet to {host}: {message:?}");
                 }
             }
             if !queue.reliable_to_host.is_empty() {

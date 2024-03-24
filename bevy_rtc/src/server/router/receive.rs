@@ -10,10 +10,7 @@ pub struct IncomingMessages<M: Payload> {
 }
 
 impl<M: Payload> IncomingMessages<M> {
-    pub fn receive_payloads(
-        mut incoming: ResMut<Self>,
-        mut events: EventReader<SocketRecvEvent>,
-    ) {
+    pub fn receive_payloads(mut incoming: ResMut<Self>, mut events: EventReader<SocketRecvEvent>) {
         let bound = incoming.bound;
         let packets: HashMap<PeerId, Vec<M>> = events.read().fold(
             HashMap::new(),

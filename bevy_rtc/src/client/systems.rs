@@ -66,9 +66,7 @@ pub(crate) fn connection_request_handler(
 ) {
     match cxn_event_reader.read().next() {
         Some(ConnectionRequest::Connect { addr }) => {
-            if let RtcClientStatus::Disconnected =
-                current_connection_state.get()
-            {
+            if let RtcClientStatus::Disconnected = current_connection_state.get() {
                 debug!(
                     previous = format!("{current_connection_state:?}"),
                     "set state: connecting"
@@ -121,8 +119,7 @@ pub(crate) fn client_event_writer(
                         event_wtr.send(RtcClientEvent::ConnectedToHost(id));
                     }
                     matchbox_socket::PeerState::Disconnected => {
-                        next_connection_state
-                            .set(RtcClientStatus::Disconnected);
+                        next_connection_state.set(RtcClientStatus::Disconnected);
                         event_wtr.send(RtcClientEvent::DisconnectedFromHost {
                             reason: Some("Server reset".to_string()),
                         });
@@ -143,10 +140,7 @@ pub(crate) fn client_event_writer(
     }
 }
 
-pub fn send_latency_tracers(
-    state: Res<RtcState>,
-    mut writer: NetworkWriter<LatencyTracerPayload>,
-) {
+pub fn send_latency_tracers(state: Res<RtcState>, mut writer: NetworkWriter<LatencyTracerPayload>) {
     let peer_id = state.id.expect("expected peer id");
     writer.unreliable_to_host(LatencyTracerPayload::new(peer_id));
 }
@@ -190,8 +184,7 @@ pub fn calculate_latency(
     match last_latency {
         Some(last_latency) => {
             state.latency.replace(last_latency);
-            let current_smoothed =
-                state.smoothed_latency.get_or_insert(last_latency);
+            let current_smoothed = state.smoothed_latency.get_or_insert(last_latency);
             const AVG_SECS: f32 = 1.0; // 1 second average
             let alpha = 1.0 - f32::exp(-time.delta_seconds() / AVG_SECS);
             let current_f32 = current_smoothed.as_secs_f32() * (1.0 - alpha);

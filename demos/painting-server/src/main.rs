@@ -2,8 +2,7 @@ use std::time::Duration;
 
 use bevy::{log::LogPlugin, prelude::*, time::common_conditions::on_timer};
 use bevy_rtc::server::{
-    AddProtocolExt, NetworkReader, NetworkWriter, RtcServerEvent,
-    RtcServerPlugin, RtcState,
+    AddProtocolExt, NetworkReader, NetworkWriter, RtcServerEvent, RtcServerPlugin, RtcState,
 };
 use protocol::{ChatPayload, DrawLinePayload};
 

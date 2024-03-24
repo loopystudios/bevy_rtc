@@ -1,6 +1,5 @@
 use super::{
-    systems, AddProtocolExt, ConnectionRequest, RtcClientEvent,
-    RtcClientStatus, RtcState,
+    systems, AddProtocolExt, ConnectionRequest, RtcClientEvent, RtcClientStatus, RtcState,
 };
 use crate::{
     events::SocketRecvEvent,
@@ -21,10 +20,7 @@ impl Plugin for RtcClientPlugin {
             .init_state::<RtcClientStatus>()
             .add_event::<ConnectionRequest>()
             .add_event::<RtcClientEvent>()
-            .add_systems(
-                OnEnter(RtcClientStatus::Establishing),
-                systems::init_socket,
-            )
+            .add_systems(OnEnter(RtcClientStatus::Establishing), systems::init_socket)
             .add_systems(
                 OnEnter(RtcClientStatus::Disconnected),
                 systems::reset_socket,
@@ -46,8 +42,7 @@ impl Plugin for RtcClientPlugin {
                 Update,
                 (
                     systems::read_latency_tracers,
-                    systems::send_latency_tracers
-                        .run_if(on_timer(Duration::from_millis(100))),
+                    systems::send_latency_tracers.run_if(on_timer(Duration::from_millis(100))),
                 )
                     .run_if(in_state(RtcClientStatus::Connected)),
             );

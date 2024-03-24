@@ -1,7 +1,4 @@
-use super::{
-    events::RtcServerEvent, NetworkReader, NetworkWriter, RtcServerStatus,
-    RtcState,
-};
+use super::{events::RtcServerEvent, NetworkReader, NetworkWriter, RtcServerStatus, RtcState};
 use crate::{
     latency::{LatencyTracer, LatencyTracerPayload},
     socket::RtcSocket,
@@ -25,57 +22,54 @@ use std::sync::{
 /// Initialize the signaling server
 pub fn init_signaling_server(mut commands: Commands, rtc_state: Res<RtcState>) {
     let host_ready: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
-    let builder = SignalingServerBuilder::new(
-        rtc_state.addr,
-        ClientServer,
-        ClientServerState::default(),
-    )
-    .on_id_assignment(|(socket, id)| info!("{socket} assigned {id}"))
-    .on_host_connected({
-        let addr = rtc_state.addr;
-        let host_ready = host_ready.clone();
-        move |id| {
-            host_ready.store(true, Ordering::Relaxed);
-            info!("Host ready: {id}");
-            info!("Ready for clients (broadcasting on {addr})");
-        }
-    })
-    .on_host_disconnected(|id| panic!("Host left: {id}"))
-    .on_client_connected(|id| info!("Client joined: {id}"))
-    .on_client_disconnected(|id| info!("Client left: {id}"))
-    .on_connection_request({
-        // The bevy_matchbox signaling server assigns the first connected
-        // peer as host/server. As a result, we deny all connections until a
-        // loopback (localhost) address has successfully connected. This
-        // loopback address is ourselves, and that logic is in
-        // `init_server_socket` below.
-        let ready = host_ready.clone();
-        move |request| {
-            if ready.load(Ordering::Relaxed) {
-                Ok(true)
-            } else {
-                let origin = request.origin.ip();
-                match origin {
-                    std::net::IpAddr::V4(ip) => {
-                        if ip.is_loopback() {
-                            Ok(true)
-                        } else {
-                            Ok(false)
-                        }
-                    }
-                    std::net::IpAddr::V6(ip) => {
-                        if ip.is_loopback() {
-                            Ok(true)
-                        } else {
-                            Ok(false)
+    let builder =
+        SignalingServerBuilder::new(rtc_state.addr, ClientServer, ClientServerState::default())
+            .on_id_assignment(|(socket, id)| info!("{socket} assigned {id}"))
+            .on_host_connected({
+                let addr = rtc_state.addr;
+                let host_ready = host_ready.clone();
+                move |id| {
+                    host_ready.store(true, Ordering::Relaxed);
+                    info!("Host ready: {id}");
+                    info!("Ready for clients (broadcasting on {addr})");
+                }
+            })
+            .on_host_disconnected(|id| panic!("Host left: {id}"))
+            .on_client_connected(|id| info!("Client joined: {id}"))
+            .on_client_disconnected(|id| info!("Client left: {id}"))
+            .on_connection_request({
+                // The bevy_matchbox signaling server assigns the first connected
+                // peer as host/server. As a result, we deny all connections until a
+                // loopback (localhost) address has successfully connected. This
+                // loopback address is ourselves, and that logic is in
+                // `init_server_socket` below.
+                let ready = host_ready.clone();
+                move |request| {
+                    if ready.load(Ordering::Relaxed) {
+                        Ok(true)
+                    } else {
+                        let origin = request.origin.ip();
+                        match origin {
+                            std::net::IpAddr::V4(ip) => {
+                                if ip.is_loopback() {
+                                    Ok(true)
+                                } else {
+                                    Ok(false)
+                                }
+                            }
+                            std::net::IpAddr::V6(ip) => {
+                                if ip.is_loopback() {
+                                    Ok(true)
+                                } else {
+                                    Ok(false)
+                                }
+                            }
                         }
                     }
                 }
-            }
-        }
-    })
-    .cors()
-    .trace();
+            })
+            .cors()
+            .trace();
     commands.start_server(builder);
 }
 
@@ -134,10 +128,7 @@ pub fn server_event_writer(
     }
 }
 
-pub fn send_latency_tracers(
-    state: Res<RtcState>,
-    mut writer: NetworkWriter<LatencyTracerPayload>,
-) {
+pub fn send_latency_tracers(state: Res<RtcState>, mut writer: NetworkWriter<LatencyTracerPayload>) {
     let peer_id = state.id.expect("expected peer id");
     writer.unreliable_to_all(LatencyTracerPayload::new(peer_id));
 }
@@ -157,9 +148,7 @@ pub fn read_latency_tracers(
         // 2) The client sent a tracer to us, and expect it back
         if payload.from == host_id {
             // Case 1
-            if let Some(mut tracer) =
-                tracers.iter_mut().find(|tracer| tracer.peer_id == from)
-            {
+            if let Some(mut tracer) = tracers.iter_mut().find(|tracer| tracer.peer_id == from) {
                 tracer.process(payload);
             }
         } else if payload.from == from {
@@ -197,11 +186,9 @@ pub fn calculate_latency(
                     .get_or_insert(last_latency);
                 const AVG_SECS: f32 = 1.0; // 1 second average
                 let alpha = 1.0 - f32::exp(-time.delta_seconds() / AVG_SECS);
-                let current_f32 =
-                    current_smoothed.as_secs_f32() * (1.0 - alpha);
+                let current_f32 = current_smoothed.as_secs_f32() * (1.0 - alpha);
                 let delta = last_latency.as_secs_f32() * alpha;
-                *current_smoothed =
-                    Duration::from_secs_f32(current_f32 + delta);
+                *current_smoothed = Duration::from_secs_f32(current_f32 + delta);
             }
             None => {
                 state.latencies.insert(tracer.peer_id, None);

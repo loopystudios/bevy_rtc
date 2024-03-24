@@ -27,10 +27,7 @@ impl<M: Payload> OutgoingMessages<M> {
         self.unreliable_to_peer.clear();
     }
 
-    pub(crate) fn send_payloads(
-        mut queue: ResMut<Self>,
-        mut socket: ResMut<RtcSocket>,
-    ) {
+    pub(crate) fn send_payloads(mut queue: ResMut<Self>, mut socket: ResMut<RtcSocket>) {
         // Server is sending
         for message in queue.reliable_to_all.iter() {
             let peers: Vec<PeerId> = socket.connected_peers().collect();
@@ -40,9 +37,7 @@ impl<M: Payload> OutgoingMessages<M> {
                     .try_send(message.to_packet(), peer)
                     .is_err()
                 {
-                    error!(
-                        "failed to send reliable packet to {peer}: {message:?}"
-                    );
+                    error!("failed to send reliable packet to {peer}: {message:?}");
                 }
             })
         }
@@ -56,12 +51,14 @@ impl<M: Payload> OutgoingMessages<M> {
         for message in queue.unreliable_to_all.iter() {
             let peers: Vec<PeerId> = socket.connected_peers().collect();
             peers.into_iter().for_each(|peer| {
-                    if socket
-                        .channel_mut(UNRELIABLE_CHANNEL_INDEX)
-                        .try_send(message.to_packet(), peer).is_err() {
-                        error!("failed to send unreliable packet to {peer}: {message:?}");
-                    }
-                })
+                if socket
+                    .channel_mut(UNRELIABLE_CHANNEL_INDEX)
+                    .try_send(message.to_packet(), peer)
+                    .is_err()
+                {
+                    error!("failed to send unreliable packet to {peer}: {message:?}");
+                }
+            })
         }
         if !queue.unreliable_to_all.is_empty() {
             trace!(
@@ -71,17 +68,14 @@ impl<M: Payload> OutgoingMessages<M> {
             );
         }
         for (peer, message) in queue.reliable_to_all_except.iter() {
-            let peers: Vec<PeerId> =
-                socket.connected_peers().filter(|p| p != peer).collect();
+            let peers: Vec<PeerId> = socket.connected_peers().filter(|p| p != peer).collect();
             peers.into_iter().for_each(|peer| {
                 if socket
                     .channel_mut(RELIABLE_CHANNEL_INDEX)
                     .try_send(message.to_packet(), peer)
                     .is_err()
                 {
-                    error!(
-                        "failed to send reliable packet to {peer}: {message:?}"
-                    );
+                    error!("failed to send reliable packet to {peer}: {message:?}");
                 }
             });
         }
@@ -93,15 +87,16 @@ impl<M: Payload> OutgoingMessages<M> {
             );
         }
         for (peer, message) in queue.unreliable_to_all_except.iter() {
-            let peers: Vec<PeerId> =
-                socket.connected_peers().filter(|p| p != peer).collect();
+            let peers: Vec<PeerId> = socket.connected_peers().filter(|p| p != peer).collect();
             peers.into_iter().for_each(|peer| {
-                    if socket
-                        .channel_mut(UNRELIABLE_CHANNEL_INDEX)
-                        .try_send(message.to_packet(), peer).is_err() {
-                        error!("failed to send unreliable packet to {peer}: {message:?}");
-                    }
-                });
+                if socket
+                    .channel_mut(UNRELIABLE_CHANNEL_INDEX)
+                    .try_send(message.to_packet(), peer)
+                    .is_err()
+                {
+                    error!("failed to send unreliable packet to {peer}: {message:?}");
+                }
+            });
         }
         if !queue.unreliable_to_all_except.is_empty() {
             trace!(
@@ -132,9 +127,7 @@ impl<M: Payload> OutgoingMessages<M> {
                 .try_send(message.to_packet(), *peer)
                 .is_err()
             {
-                error!(
-                    "failed to send unreliable packet to {peer}: {message:?}"
-                );
+                error!("failed to send unreliable packet to {peer}: {message:?}");
             }
         }
         if !queue.unreliable_to_peer.is_empty() {

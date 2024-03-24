@@ -52,9 +52,7 @@ impl RtcState {
     }
 
     /// Return the instantaneous latencies for all peers
-    pub fn iter_latencies(
-        &self,
-    ) -> impl Iterator<Item = (PeerId, Duration)> + '_ {
+    pub fn iter_latencies(&self) -> impl Iterator<Item = (PeerId, Duration)> + '_ {
         self.latencies
             .iter()
             .filter_map(|(p, l)| l.map(|l| (p, l)))
@@ -62,9 +60,7 @@ impl RtcState {
     }
 
     /// Return the smoothed latencies for all peers
-    pub fn iter_smoothed_latencies(
-        &self,
-    ) -> impl Iterator<Item = (PeerId, Duration)> + '_ {
+    pub fn iter_smoothed_latencies(&self) -> impl Iterator<Item = (PeerId, Duration)> + '_ {
         self.smoothed_latencies
             .iter()
             .filter_map(|(p, l)| l.map(|l| (p, l)))
@@ -77,10 +73,7 @@ impl RtcState {
     }
 
     /// Return the smoothed latency for a peer if they exist
-    pub fn get_smoothed_latency_for(
-        &self,
-        peer_id: PeerId,
-    ) -> Option<Duration> {
+    pub fn get_smoothed_latency_for(&self, peer_id: PeerId) -> Option<Duration> {
         *self.smoothed_latencies.get(&peer_id)?
     }
 }

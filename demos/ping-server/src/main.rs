@@ -1,7 +1,5 @@
 use bevy::{log::LogPlugin, prelude::*};
-use bevy_rtc::server::{
-    AddProtocolExt, NetworkReader, NetworkWriter, RtcServerPlugin,
-};
+use bevy_rtc::server::{AddProtocolExt, NetworkReader, NetworkWriter, RtcServerPlugin};
 use protocol::PingPayload;
 
 fn main() {
@@ -12,8 +10,7 @@ fn main() {
         .add_bounded_protocol::<PingPayload>(1)
         .add_systems(
             Update,
-            |mut reader: NetworkReader<PingPayload>,
-             mut writer: NetworkWriter<PingPayload>| {
+            |mut reader: NetworkReader<PingPayload>, mut writer: NetworkWriter<PingPayload>| {
                 for (peer_id, packet) in reader.read() {
                     if let PingPayload::Ping = packet {
                         info!("Received ping! Sending pong...");

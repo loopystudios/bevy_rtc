@@ -2,8 +2,8 @@ use std::time::Duration;
 
 use bevy::{log::LogPlugin, prelude::*, time::common_conditions::on_timer};
 use bevy_rtc::client::{
-    AddProtocolExt, ConnectionRequest, NetworkReader, NetworkWriter,
-    RtcClientPlugin, RtcClientStatus,
+    AddProtocolExt, ConnectionRequest, NetworkReader, NetworkWriter, RtcClientPlugin,
+    RtcClientStatus,
 };
 use protocol::PingPayload;
 
@@ -30,8 +30,7 @@ fn main() {
                 }
             }
             .run_if(
-                on_timer(Duration::from_secs(1))
-                    .and_then(in_state(RtcClientStatus::Connected)),
+                on_timer(Duration::from_secs(1)).and_then(in_state(RtcClientStatus::Connected)),
             ),
         )
         .add_systems(Update, |mut reader: NetworkReader<PingPayload>| {

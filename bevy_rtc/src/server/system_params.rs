@@ -27,13 +27,13 @@ impl<'w, M: Payload> NetworkReader<'w, M> {
 
     /// Consumes all messages in the buffer and iterate on them.
     pub fn read(&mut self) -> Vec<(PeerId, M)> {
-        self.incoming.messages.drain().fold(
-            vec![],
-            |mut v, (peer, payloads)| {
+        self.incoming
+            .messages
+            .drain()
+            .fold(vec![], |mut v, (peer, payloads)| {
                 v.extend(payloads.into_iter().map(|p| (peer, p)));
                 v
-            },
-        )
+            })
     }
 }
 
@@ -93,22 +93,14 @@ impl<'w, M: Payload> NetworkWriter<'w, M> {
 
     /// Send a payload to a peer with reliability. The payload is
     /// created with lazy behavior, only when the send rate allows.
-    pub fn reliable_to_peer_with(
-        &mut self,
-        peer_id: PeerId,
-        message_fn: impl Fn() -> M,
-    ) {
+    pub fn reliable_to_peer_with(&mut self, peer_id: PeerId, message_fn: impl Fn() -> M) {
         self.outgoing.reliable_to_peer.push((peer_id, message_fn()));
     }
 
     /// Send a payload to a peer with no expectation of delivery.
     /// The payload is created with lazy behavior, only when the send rate
     /// allows.
-    pub fn unreliable_to_peer_with(
-        &mut self,
-        peer_id: PeerId,
-        message_fn: impl Fn() -> M,
-    ) {
+    pub fn unreliable_to_peer_with(&mut self, peer_id: PeerId, message_fn: impl Fn() -> M) {
         self.outgoing
             .unreliable_to_peer
             .push((peer_id, message_fn()));
@@ -117,11 +109,7 @@ impl<'w, M: Payload> NetworkWriter<'w, M> {
     /// Send a payload to all connected peers except one with reliability. The
     /// payload is created with lazy behavior, only when the send rate
     /// allows.
-    pub fn reliable_to_all_except_with(
-        &mut self,
-        peer_id: PeerId,
-        message_fn: impl Fn() -> M,
-    ) {
+    pub fn reliable_to_all_except_with(&mut self, peer_id: PeerId, message_fn: impl Fn() -> M) {
         self.outgoing
             .reliable_to_all_except
             .push((peer_id, message_fn()));
@@ -130,11 +118,7 @@ impl<'w, M: Payload> NetworkWriter<'w, M> {
     /// Send a payload to all connected peers except one with no expectation of
     /// delivery. The payload is created with lazy behavior, only when the
     /// send rate allows.
-    pub fn unreliable_to_all_except_with(
-        &mut self,
-        peer_id: PeerId,
-        message_fn: impl Fn() -> M,
-    ) {
+    pub fn unreliable_to_all_except_with(&mut self, peer_id: PeerId, message_fn: impl Fn() -> M) {
         self.outgoing
             .unreliable_to_all_except
             .push((peer_id, message_fn()));

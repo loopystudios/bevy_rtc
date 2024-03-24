@@ -17,10 +17,7 @@ pub trait AddProtocolExt {
     fn add_sendonly_protocol<M: Payload>(&mut self) -> &mut Self;
     /// Register a protocol that is only read, never sent. Allocate a bounded
     /// buffer per peer for receiving, and do not run systems for sending.
-    fn add_readonly_bounded_protocol<M: Payload>(
-        &mut self,
-        bound: usize,
-    ) -> &mut Self;
+    fn add_readonly_bounded_protocol<M: Payload>(&mut self, bound: usize) -> &mut Self;
     /// Register a protocol that is only read, never sent. Use a growable buffer
     /// for receiving, and do not run systems for sending.
     fn add_readonly_unbounded_protocol<M: Payload>(&mut self) -> &mut Self;
@@ -43,8 +40,7 @@ impl AddProtocolExt for App {
         })
         .add_systems(
             Last,
-            OutgoingMessages::<M>::send_payloads
-                .run_if(resource_exists::<RtcSocket>),
+            OutgoingMessages::<M>::send_payloads.run_if(resource_exists::<RtcSocket>),
         );
         self
     }
@@ -53,10 +49,7 @@ impl AddProtocolExt for App {
         self.add_readonly_bounded_protocol::<M>(usize::MAX)
     }
 
-    fn add_readonly_bounded_protocol<M: Payload>(
-        &mut self,
-        bound: usize,
-    ) -> &mut Self {
+    fn add_readonly_bounded_protocol<M: Payload>(&mut self, bound: usize) -> &mut Self {
         if self.world.contains_resource::<IncomingMessages<M>>() {
             panic!("client already contains resource: {}", M::reflect_name());
         }
@@ -102,8 +95,7 @@ impl AddProtocolExt for App {
         )
         .add_systems(
             Last,
-            OutgoingMessages::<M>::send_payloads
-                .run_if(resource_exists::<RtcSocket>),
+            OutgoingMessages::<M>::send_payloads.run_if(resource_exists::<RtcSocket>),
         );
         self
     }

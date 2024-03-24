@@ -69,12 +69,7 @@ impl PaintingState {
             if current_line.last() != Some(&canvas_pos) {
                 if let Some(last_point) = current_line.last() {
                     // Line = current_line.last() -> canvas_pos
-                    let (x1, y1, x2, y2) = (
-                        last_point.x,
-                        last_point.y,
-                        canvas_pos.x,
-                        canvas_pos.y,
-                    );
+                    let (x1, y1, x2, y2) = (last_point.x, last_point.y, canvas_pos.x, canvas_pos.y);
                     // Send to out
                     out.replace((x1, y1, x2, y2));
                 }
@@ -86,15 +81,14 @@ impl PaintingState {
             response.mark_changed();
         }
 
-        let shapes =
-            self.lines
-                .iter()
-                .filter(|line| line.len() >= 2)
-                .map(|line| {
-                    let points: Vec<Pos2> =
-                        line.iter().map(|p| to_screen * *p).collect();
-                    egui::Shape::line(points, self.stroke)
-                });
+        let shapes = self
+            .lines
+            .iter()
+            .filter(|line| line.len() >= 2)
+            .map(|line| {
+                let points: Vec<Pos2> = line.iter().map(|p| to_screen * *p).collect();
+                egui::Shape::line(points, self.stroke)
+            });
 
         painter.extend(shapes);
 

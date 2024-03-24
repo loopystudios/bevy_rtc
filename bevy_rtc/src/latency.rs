@@ -71,8 +71,7 @@ impl LatencyTracer {
                 .unwrap_or(std::cmp::Ordering::Equal)
         });
         let mid = self.latency_hist.len() / 2;
-        let median =
-            self.latency_hist.get(mid).map(|(_, lat)| lat.as_secs_f32());
+        let median = self.latency_hist.get(mid).map(|(_, lat)| lat.as_secs_f32());
         self.last_latency = median;
     }
 }

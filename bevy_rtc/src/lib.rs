@@ -1,9 +1,7 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[cfg(all(target_arch = "wasm32", feature = "server"))]
-compile_error!(
-    "The 'server' feature is not supported on the wasm32 target architecture."
-);
+compile_error!("The 'server' feature is not supported on the wasm32 target architecture.");
 
 pub(crate) mod events;
 pub(crate) mod latency;
