@@ -6,6 +6,10 @@ Subheadings to categorize changes are `added, changed, deprecated, removed, fixe
 
 ## Unreleased
 
+## 0.1.1
+
+- Fixed blank README on crates.io
+
 ## 0.1.0
 
 - Initial release. Crate was renamed to `bevy_rtc` from `bevy-rtc` and republished.
