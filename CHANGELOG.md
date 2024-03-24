@@ -8,4 +8,4 @@ Subheadings to categorize changes are `added, changed, deprecated, removed, fixe
 
 ## 0.1.0
 
-- Initial release
+- Initial release. Crate was renamed to `bevy_rtc` from `bevy-rtc` and republished.
