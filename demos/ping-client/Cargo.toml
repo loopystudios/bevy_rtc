@@ -7,6 +7,6 @@ publish = false
 
 [dependencies]
 bevy = { workspace = true, default-features = true }
-bevy-rtc = { path = "../../bevy-rtc", features = ["client"] }
+bevy_rtc = { path = "../../bevy_rtc", features = ["client"] }
 protocol = { path = "../protocol" }
 log = { version = "0.4", default-features = false }

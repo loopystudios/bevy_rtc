@@ -22,7 +22,7 @@ jobs:
 
     - name: Cargo | Publish
       run: |
-        cargo publish -p bevy-rtc-macros --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        cargo publish -p bevy_rtc_macros --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
         VERSION=$(cat Cargo.toml | dasel -r toml 'workspace.package.version')
-        sed -i 's/{ path = "..\/bevy-rtc-macros" }/'"$VERSION"'/' bevy-rtc/Cargo.toml
-        cargo publish -p bevy-rtc --allow-dirty --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        sed -i 's/{ path = "..\/bevy_rtc_macros" }/'"$VERSION"'/' bevy_rtc/Cargo.toml
+        cargo publish -p bevy_rtc --allow-dirty --token ${{ secrets.CARGO_REGISTRY_TOKEN }}

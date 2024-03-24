@@ -1,10 +1,10 @@
-# bevy-rtc
+# bevy_rtc
 
 ![MIT/Apache 2.0](https://img.shields.io/badge/license-MIT%2FApache-blue.svg)
-[![crates.io](https://img.shields.io/crates/v/bevy-rtc.svg)](https://crates.io/crates/bevy-rtc)
-[![docs.rs](https://img.shields.io/docsrs/bevy-rtc)](https://docs.rs/bevy-rtc)
+[![crates.io](https://img.shields.io/crates/v/bevy_rtc.svg)](https://crates.io/crates/bevy_rtc)
+[![docs.rs](https://img.shields.io/docsrs/bevy_rtc)](https://docs.rs/bevy_rtc)
 
-bevy-rtc is a simple, multi-platform WebRTC networking library for client<->server topologies using Bevy.
+bevy_rtc is a simple, multi-platform WebRTC networking library for client<->server topologies using Bevy.
 
 - Simple: no knowledge of WebRTC is needed
 - Easy unreliable (UDP-like) and reliable (TCP-like) networking on web
@@ -18,24 +18,23 @@ bevy-rtc is a simple, multi-platform WebRTC networking library for client<->serv
 For your client:
 
 ```shell
-cargo add bevy-rtc -F client
+cargo add bevy_rtc -F client
 ```
 
 For your server:
 
 ```shell
-cargo add bevy-rtc -F server
+cargo add bevy_rtc -F server
 ```
 
 Run the [demos](#demos) and [instructions](#instructions).
 
-## Compatibility
+## Bevy version support
 
-| bevy  |  bevy-rtc   |
+| bevy  |  bevy_rtc   |
 |-------|-------------|
-| 0.13  | 0.9, main   |
-| 0.12  | 0.8         |
-| < 0.11| unsupported |
+| 0.13  | 0.1, main   |
+| < 0.13| unsupported |
 
 ## Cargo features
 
@@ -98,7 +97,7 @@ pub enum MyPacket {
 - Ensure your client has the `server` feature
 
   ```shell
-  cargo add bevy-rtc -F server
+  cargo add bevy_rtc -F server
   ```
 
 - Add the `RtcServerPlugin` to your app.
@@ -136,12 +135,12 @@ pub enum MyPacket {
 
   **Need help?** See the [ping-server](demos/ping-server/) or [painting-server](demos/painting-server/) source or [open an issue](/issues).
 
-For the client:
+### Client
 
 - Ensure your client has the `client` feature
 
   ```shell
-  cargo add bevy-rtc -F client
+  cargo add bevy_rtc -F client
   ```
 
 - Add the `RtcClientPlugin` to your app.
@@ -190,3 +189,26 @@ For the client:
     ```
 
   **Need help?** See the [ping-client](demos/ping-client/) or [ping-server](demos/ping-server/) source or [open an issue](/issues).
+
+## Community
+
+All Loopy projects and development happens in the [Loopy Discord](https://discord.gg/zrjnQzdjCB). The discord is open to the public.
+
+Contributions are welcome by pull request. The [Rust code of conduct](https://www.rust-lang.org/policies/code-of-conduct) applies.
+
+## License
+
+Licensed under either of
+
+- Apache License, Version 2.0
+   ([LICENSE-APACHE](LICENSE-APACHE) or <http://www.apache.org/licenses/LICENSE-2.0>)
+- MIT license
+   ([LICENSE-MIT](LICENSE-MIT) or <http://opensource.org/licenses/MIT>)
+
+at your option
+
+## Contribution
+
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
+dual licensed as above, without any additional terms or conditions.

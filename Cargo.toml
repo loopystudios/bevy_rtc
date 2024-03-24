@@ -1,5 +1,5 @@
 [workspace]
-members = ["bevy-rtc", "bevy-rtc-macros", "demos/*"]
+members = ["bevy_rtc", "bevy_rtc_macros", "demos/*"]
 resolver = "2"
 
 [workspace.package]
@@ -7,7 +7,7 @@ edition = "2021"
 version = "0.9.0"
 license = "MIT OR Apache-2.0"
 description = "A client-server library designed over WebRTC for Bevy"
-repository = "https://github.com/vectorgameexperts/bevy-rtc"
+repository = "https://github.com/loopystudios/bevy_rtc"
 authors = ["Spencer C. Imbleau"]
 keywords = ["bevy", "webrtc", "networking", "wasm"]
 categories = [

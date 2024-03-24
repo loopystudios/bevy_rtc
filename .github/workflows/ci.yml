@@ -19,7 +19,7 @@ jobs:
           components: clippy,rustfmt
 
       - name: Rust Cache
-        uses: Swatinem/rust-cache@v2.7.3
+        uses: Swatinem/rust-cache@v2
 
       - name: Build | Clippy
         run: cargo clippy -- -D warnings
@@ -40,13 +40,13 @@ jobs:
             wasm32-unknown-unknown
 
       - name: Rust Cache
-        uses: Swatinem/rust-cache@v2.7.3
+        uses: Swatinem/rust-cache@v2
 
-      - name: Build | Check bevy-rtc server (native)
-        run: cargo check -p bevy-rtc -F server
+      - name: Build | Check bevy_rtc server (native)
+        run: cargo check -p bevy_rtc -F server
 
-      - name: Build | Check bevy-rtc client (wasm)
-        run: cargo check -p bevy-rtc -F client --target wasm32-unknown-unknown
+      - name: Build | Check bevy_rtc client (wasm)
+        run: cargo check -p bevy_rtc -F client --target wasm32-unknown-unknown
 
-      - name: Build | Check bevy-rtc client (native)
-        run: cargo check -p bevy-rtc -F client
+      - name: Build | Check bevy_rtc client (native)
+        run: cargo check -p bevy_rtc -F client
