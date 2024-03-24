@@ -4,51 +4,8 @@ This changelog follows the patterns described here: <https://keepachangelog.com/
 
 Subheadings to categorize changes are `added, changed, deprecated, removed, fixed, security`.
 
-## 0.9.0
+## Unreleased
 
-### added
+## 0.1.0
 
-- Added `.capacity()`, `.len()`, and `.is_empty()` to `NetworkReader`
-
-### changed
-
-- To bevy 0.13
-
-## 0.8.12
-
-### changed
-
-- Optimized client and server to skip deserializing packets if the bound has been reached
-
-### fixed
-
-- A rare server panic when a client disconnects
-
-## 0.8.11
-
-### fixed
-
-- <docs.rs> now properly documents all features
-
-## 0.8.10 (Yanked)
-
-### added
-
-- `.add_sendonly_protocol()` for protocols that are never read.
-- `.add_readonly_bounded_protocol(usize)` for protocols that are never sent, with a bounded receiver.
-- `.add_readonly_unbounded_protocol()` for protocols that are never sent, with an unbounded receiver.
-
-### fixed
-
-- README compatibility table
-
-
-## 0.8.9
-
-### fixed
-
-- Upped the `LatencyTracerPayload` buffer bound from 1 to 2, to avoid warnings when updates aren't in sync.
-
-## 0.8.8
-
-- First public release. Previous versions are untracked.
+- Initial release
