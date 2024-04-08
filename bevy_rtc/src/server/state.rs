@@ -18,7 +18,7 @@ pub enum RtcServerStatus {
 }
 
 #[derive(Resource)]
-pub struct RtcState {
+pub struct RtcServerState {
     /// The socket address bound
     pub addr: SocketAddr,
 
@@ -35,7 +35,7 @@ pub struct RtcState {
     pub(crate) smoothed_latencies: HashMap<PeerId, Option<Duration>>,
 }
 
-impl RtcState {
+impl RtcServerState {
     pub fn new(addr: SocketAddr) -> Self {
         Self {
             addr,

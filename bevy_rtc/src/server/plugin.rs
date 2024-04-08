@@ -7,7 +7,7 @@ use bevy::{prelude::*, time::common_conditions::on_timer};
 use instant::Duration;
 use std::net::Ipv4Addr;
 
-use super::{systems, AddProtocolExt, RtcServerEvent, RtcServerStatus, RtcState};
+use super::{systems, AddProtocolExt, RtcServerEvent, RtcServerState, RtcServerStatus};
 
 /// A plugin to serve a WebRTC server.
 pub struct RtcServerPlugin {
@@ -21,7 +21,9 @@ impl Plugin for RtcServerPlugin {
             .add_event::<RtcServerEvent>()
             .add_bounded_protocol::<LatencyTracerPayload>(2)
             .init_state::<RtcServerStatus>()
-            .insert_resource(RtcState::new((Ipv4Addr::UNSPECIFIED, self.port).into()))
+            .insert_resource(RtcServerState::new(
+                (Ipv4Addr::UNSPECIFIED, self.port).into(),
+            ))
             .add_systems(
                 Startup,
                 // We start a signaling server on localhost and the first peer

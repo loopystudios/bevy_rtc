@@ -1,7 +1,7 @@
 use super::{
     events::{ConnectionRequest, RtcClientEvent},
-    state::{RtcClientStatus, RtcState},
-    NetworkReader, NetworkWriter,
+    state::{RtcClientState, RtcClientStatus},
+    RtcClient,
 };
 use crate::{
     latency::{LatencyTracer, LatencyTracerPayload},
@@ -15,7 +15,7 @@ use bevy_matchbox::{
 use instant::Duration;
 
 /// Initialize the socket
-pub(crate) fn init_socket(mut commands: Commands, socket_res: Res<RtcState>) {
+pub(crate) fn init_socket(mut commands: Commands, socket_res: Res<RtcClientState>) {
     if let Some(addr) = socket_res.addr.as_ref() {
         debug!("connecting to: {addr:?}");
 
@@ -40,13 +40,13 @@ pub(crate) fn init_socket(mut commands: Commands, socket_res: Res<RtcState>) {
 pub(crate) fn reset_socket(
     mut commands: Commands,
     tracer_query: Query<Entity, With<LatencyTracer>>,
-    mut state: ResMut<RtcState>,
+    mut state: ResMut<RtcClientState>,
 ) {
     commands.close_socket::<RtcSocketPlurality>();
     if let Ok(entity) = tracer_query.get_single() {
         commands.entity(entity).despawn();
     }
-    *state = RtcState {
+    *state = RtcClientState {
         // Keep for reconnecting
         addr: state.addr.clone(),
         host_id: None,
@@ -59,7 +59,7 @@ pub(crate) fn reset_socket(
 /// Reads and handles connection request events
 pub(crate) fn connection_request_handler(
     mut cxn_event_reader: EventReader<ConnectionRequest>,
-    mut state: ResMut<RtcState>,
+    mut state: ResMut<RtcClientState>,
     mut next_connection_state: ResMut<NextState<RtcClientStatus>>,
     current_connection_state: Res<State<RtcClientStatus>>,
     mut event_wtr: EventWriter<RtcClientEvent>,
@@ -92,7 +92,7 @@ pub(crate) fn connection_request_handler(
 /// Translates socket updates into bevy events
 pub(crate) fn client_event_writer(
     mut commands: Commands,
-    mut state: ResMut<RtcState>,
+    mut state: ResMut<RtcClientState>,
     mut socket: ResMut<RtcSocket>,
     mut event_wtr: EventWriter<RtcClientEvent>,
     mut next_connection_state: ResMut<NextState<RtcClientStatus>>,
@@ -140,27 +140,30 @@ pub(crate) fn client_event_writer(
     }
 }
 
-pub fn send_latency_tracers(state: Res<RtcState>, mut writer: NetworkWriter<LatencyTracerPayload>) {
+pub fn send_latency_tracers(
+    state: Res<RtcClientState>,
+    mut client: RtcClient<LatencyTracerPayload>,
+) {
     let peer_id = state.id.expect("expected peer id");
-    writer.unreliable_to_host(LatencyTracerPayload::new(peer_id));
+    client.unreliable_to_host(LatencyTracerPayload::new(peer_id));
 }
 
 pub fn read_latency_tracers(
-    state: Res<RtcState>,
+    state: Res<RtcClientState>,
     mut trace_query: Query<&mut LatencyTracer>,
-    mut reader: NetworkReader<LatencyTracerPayload>,
-    mut writer: NetworkWriter<LatencyTracerPayload>,
+    mut client: RtcClient<LatencyTracerPayload>,
 ) {
     let host_id = state.host_id.expect("expected host id");
     let peer_id = state.id.expect("expected peer id");
     let mut tracer = trace_query.single_mut();
 
-    for payload in reader.read() {
+    let mut server_tracer = None;
+    for payload in client.read() {
         if payload.from == peer_id {
             tracer.process(payload);
         } else if payload.from == host_id {
             // Server time payloads get sent right back to the server
-            writer.unreliable_to_host(payload);
+            server_tracer.replace(payload);
         }
         // Process payloads we sent out
         else {
@@ -170,11 +173,14 @@ pub fn read_latency_tracers(
             );
         }
     }
+    if let Some(payload) = server_tracer.take() {
+        client.unreliable_to_host(payload);
+    }
 }
 
 pub fn calculate_latency(
     time: Res<Time>,
-    mut state: ResMut<RtcState>,
+    mut state: ResMut<RtcClientState>,
     mut tracer: Query<&mut LatencyTracer>,
 ) {
     let mut tracer = tracer.single_mut();

@@ -1,9 +1,9 @@
-use super::{events::RtcServerEvent, NetworkReader, NetworkWriter, RtcServerStatus, RtcState};
+use super::{events::RtcServerEvent, RtcServer, RtcServerState, RtcServerStatus};
 use crate::{
     latency::{LatencyTracer, LatencyTracerPayload},
     socket::RtcSocket,
 };
-use bevy::prelude::*;
+use bevy::{prelude::*, utils::hashbrown::HashMap};
 use bevy_matchbox::{
     matchbox_signaling::{
         topologies::client_server::{ClientServer, ClientServerState},
@@ -20,7 +20,7 @@ use std::sync::{
 };
 
 /// Initialize the signaling server
-pub fn init_signaling_server(mut commands: Commands, rtc_state: Res<RtcState>) {
+pub fn init_signaling_server(mut commands: Commands, rtc_state: Res<RtcServerState>) {
     let host_ready: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
     let builder =
         SignalingServerBuilder::new(rtc_state.addr, ClientServer, ClientServerState::default())
@@ -74,7 +74,7 @@ pub fn init_signaling_server(mut commands: Commands, rtc_state: Res<RtcState>) {
 }
 
 /// Initialize the server socket
-pub fn init_server_socket(mut commands: Commands, state: Res<RtcState>) {
+pub fn init_server_socket(mut commands: Commands, state: Res<RtcServerState>) {
     // Create matchbox socket
     let room_url = format!("ws://{}", state.addr);
     let socker_builder = WebRtcSocket::builder(room_url)
@@ -92,7 +92,7 @@ pub fn init_server_socket(mut commands: Commands, state: Res<RtcState>) {
 pub fn server_event_writer(
     mut commands: Commands,
     tracer_query: Query<(Entity, &LatencyTracer)>,
-    mut state: ResMut<RtcState>,
+    mut state: ResMut<RtcServerState>,
     mut socket: ResMut<RtcSocket>,
     mut event_wtr: EventWriter<RtcServerEvent>,
     mut next_server_status: ResMut<NextState<RtcServerStatus>>,
@@ -128,21 +128,24 @@ pub fn server_event_writer(
     }
 }
 
-pub fn send_latency_tracers(state: Res<RtcState>, mut writer: NetworkWriter<LatencyTracerPayload>) {
+pub fn send_latency_tracers(
+    state: Res<RtcServerState>,
+    mut server: RtcServer<LatencyTracerPayload>,
+) {
     let peer_id = state.id.expect("expected peer id");
-    writer.unreliable_to_all(LatencyTracerPayload::new(peer_id));
+    server.unreliable_to_all(LatencyTracerPayload::new(peer_id));
 }
 
 pub fn read_latency_tracers(
-    state: Res<RtcState>,
+    state: Res<RtcServerState>,
     mut tracers: Query<&mut LatencyTracer>,
-    mut reader: NetworkReader<LatencyTracerPayload>,
-    mut writer: NetworkWriter<LatencyTracerPayload>,
+    mut server: RtcServer<LatencyTracerPayload>,
 ) {
     let host_id = state.id.expect("expected host id");
 
     // Handle payloads
-    for (from, payload) in reader.read() {
+    let mut client_tracers = HashMap::new();
+    for (from, payload) in server.read() {
         // 2 cases:
         // 1) We sent a tracer to the client, and are receiving it
         // 2) The client sent a tracer to us, and expect it back
@@ -153,16 +156,20 @@ pub fn read_latency_tracers(
             }
         } else if payload.from == from {
             // Case 2
-            writer.unreliable_to_peer(from, payload);
+            client_tracers.insert(from, payload);
         } else {
             warn!("Invalid latency tracer from {from}: {payload:?}, ignoring");
         }
+    }
+
+    for (client, payload) in client_tracers.into_iter() {
+        server.unreliable_to_peer(client, payload);
     }
 }
 
 pub fn calculate_latency(
     time: Res<Time>,
-    mut state: ResMut<RtcState>,
+    mut state: ResMut<RtcServerState>,
     mut tracers: Query<&mut LatencyTracer>,
 ) {
     // Set latencies

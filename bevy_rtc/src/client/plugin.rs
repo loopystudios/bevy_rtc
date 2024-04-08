@@ -1,5 +1,5 @@
 use super::{
-    systems, AddProtocolExt, ConnectionRequest, RtcClientEvent, RtcClientStatus, RtcState,
+    systems, AddProtocolExt, ConnectionRequest, RtcClientEvent, RtcClientState, RtcClientStatus,
 };
 use crate::{
     events::SocketRecvEvent,
@@ -15,7 +15,7 @@ pub struct RtcClientPlugin;
 impl Plugin for RtcClientPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<SocketRecvEvent>()
-            .insert_resource(RtcState::default())
+            .insert_resource(RtcClientState::default())
             .add_bounded_protocol::<LatencyTracerPayload>(2)
             .init_state::<RtcClientStatus>()
             .add_event::<ConnectionRequest>()

@@ -2,8 +2,7 @@ use std::time::Duration;
 
 use bevy::{log::LogPlugin, prelude::*, time::common_conditions::on_timer};
 use bevy_rtc::client::{
-    AddProtocolExt, ConnectionRequest, NetworkReader, NetworkWriter, RtcClientPlugin,
-    RtcClientStatus,
+    AddProtocolExt, ConnectionRequest, RtcClient, RtcClientPlugin, RtcClientStatus,
 };
 use protocol::PingPayload;
 
@@ -24,8 +23,8 @@ fn main() {
         .add_systems(
             Update,
             {
-                |mut writer: NetworkWriter<PingPayload>| {
-                    writer.reliable_to_host(PingPayload::Ping);
+                |mut client: RtcClient<PingPayload>| {
+                    client.reliable_to_host(PingPayload::Ping);
                     info!("Sent ping...")
                 }
             }
@@ -33,7 +32,7 @@ fn main() {
                 on_timer(Duration::from_secs(1)).and_then(in_state(RtcClientStatus::Connected)),
             ),
         )
-        .add_systems(Update, |mut reader: NetworkReader<PingPayload>| {
+        .add_systems(Update, |mut reader: RtcClient<PingPayload>| {
             for payload in reader.read() {
                 if let PingPayload::Pong = payload {
                     info!("...Received pong!");

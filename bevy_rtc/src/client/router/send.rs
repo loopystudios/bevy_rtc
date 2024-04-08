@@ -1,5 +1,5 @@
 use crate::{
-    client::state::RtcState,
+    client::state::RtcClientState,
     protocol::Payload,
     socket::{RtcSocket, RELIABLE_CHANNEL_INDEX, UNRELIABLE_CHANNEL_INDEX},
 };
@@ -22,7 +22,7 @@ impl<M: Payload> OutgoingMessages<M> {
     pub(crate) fn send_payloads(
         mut queue: ResMut<Self>,
         mut socket: ResMut<RtcSocket>,
-        state: Res<RtcState>,
+        state: Res<RtcClientState>,
     ) {
         if let Some(host) = state.host_id {
             // Client is sending

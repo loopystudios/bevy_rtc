@@ -124,10 +124,10 @@ pub enum MyPacket {
     ```rust
     .add_systems(
         Update,
-        |mut reader: NetworkReader<MyPacket>, mut writer: NetworkWriter<MyPacket>| {
-            for (peer_id, packet) in reader.read() {
+        |mut server: RtcServer<MyPacket>| {
+            for (peer_id, packet) in server.read() {
                 if let MyPacket::Ping = packet {
-                    writer.reliable_to_peer(peer_id, MyPacket::Pong);
+                    server.reliable_to_peer(peer_id, MyPacket::Pong);
                 }
             }
         })
@@ -168,8 +168,8 @@ pub enum MyPacket {
     .add_systems(
         Update,
         {
-            |mut writer: NetworkWriter<PingPayload>| {
-                writer.reliable_to_host(PingPayload::Ping);
+            |mut client: RtcClient<PingPayload>| {
+                client.reliable_to_host(PingPayload::Ping);
             }
         }
         .run_if(
@@ -179,8 +179,8 @@ pub enum MyPacket {
             ),
         ),
     )
-    .add_systems(Update, |mut reader: NetworkReader<PingPayload>| {
-        for payload in reader.read() {
+    .add_systems(Update, |mut client: RtcClient<PingPayload>| {
+        for payload in client.read() {
             if let PingPayload::Pong = payload {
                 info!("..Received pong!");
             }
