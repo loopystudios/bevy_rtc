@@ -1,12 +1,12 @@
 use crate::{
-    protocol::Payload,
+    protocol::Protocol,
     socket::{RtcSocket, RELIABLE_CHANNEL_INDEX, UNRELIABLE_CHANNEL_INDEX},
 };
 use bevy::prelude::*;
 use bevy_matchbox::prelude::PeerId;
 
 #[derive(Default, Debug, Resource)]
-pub struct OutgoingMessages<M: Payload> {
+pub struct OutgoingMessages<M: Protocol> {
     pub reliable_to_all: Vec<M>,
     pub unreliable_to_all: Vec<M>,
     pub reliable_to_all_except: Vec<(PeerId, M)>,
@@ -15,7 +15,7 @@ pub struct OutgoingMessages<M: Payload> {
     pub unreliable_to_peer: Vec<(PeerId, M)>,
 }
 
-impl<M: Payload> OutgoingMessages<M> {
+impl<M: Protocol> OutgoingMessages<M> {
     /// Swaps the event buffers and clears the oldest event buffer. In general,
     /// this should be called once per frame/update.
     pub fn flush(&mut self) {

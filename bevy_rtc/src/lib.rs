@@ -11,6 +11,14 @@ pub(crate) mod socket;
 // Re-exports
 pub use bevy_matchbox;
 
+pub mod prelude {
+    #[cfg(feature = "client")]
+    pub use crate::client::*;
+    pub use crate::protocol::Protocol;
+    #[cfg(feature = "server")]
+    pub use crate::server::*;
+}
+
 #[cfg(feature = "server")]
 #[cfg_attr(docsrs, doc(cfg(feature = "server")))]
 pub mod server;

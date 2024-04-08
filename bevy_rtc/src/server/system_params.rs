@@ -1,16 +1,16 @@
 use super::router::{IncomingMessages, OutgoingMessages};
-use crate::protocol::Payload;
+use crate::protocol::Protocol;
 use bevy::{ecs::system::SystemParam, prelude::*};
 use bevy_matchbox::prelude::PeerId;
 
 /// A [`SystemParam`] for reading payloads of a particular type.
 #[derive(SystemParam, Debug)]
-pub struct RtcServer<'w, M: Payload> {
+pub struct RtcServer<'w, M: Protocol> {
     pub(crate) incoming: ResMut<'w, IncomingMessages<M>>,
     pub(crate) outgoing: ResMut<'w, OutgoingMessages<M>>,
 }
 
-impl<'w, M: Payload> RtcServer<'w, M> {
+impl<'w, M: Protocol> RtcServer<'w, M> {
     /// Returns the capacity of incoming messages.
     pub fn capacity(&self) -> usize {
         self.incoming.bound

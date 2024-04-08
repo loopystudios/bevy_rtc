@@ -1,14 +1,14 @@
-use crate::{events::SocketRecvEvent, protocol::Payload};
+use crate::{events::SocketRecvEvent, protocol::Protocol};
 use bevy::prelude::*;
 use std::collections::VecDeque;
 
 #[derive(Default, Debug, Resource)]
-pub struct IncomingMessages<M: Payload> {
+pub struct IncomingMessages<M: Protocol> {
     pub bound: usize,
     pub messages: VecDeque<M>,
 }
 
-impl<M: Payload> IncomingMessages<M> {
+impl<M: Protocol> IncomingMessages<M> {
     pub fn receive_payloads(mut incoming: ResMut<Self>, mut events: EventReader<SocketRecvEvent>) {
         let bound = incoming.bound;
         let packets: Vec<_> = events

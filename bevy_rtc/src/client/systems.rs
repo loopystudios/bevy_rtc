@@ -1,5 +1,5 @@
 use super::{
-    events::{ConnectionRequest, RtcClientEvent},
+    events::{RtcClientEvent, RtcClientRequestEvent},
     state::{RtcClientState, RtcClientStatus},
     RtcClient,
 };
@@ -49,8 +49,8 @@ pub(crate) fn reset_socket(
     *state = RtcClientState {
         // Keep for reconnecting
         addr: state.addr.clone(),
-        host_id: None,
-        id: None,
+        host_peer_id: None,
+        peer_id: None,
         latency: None,
         smoothed_latency: None,
     };
@@ -58,14 +58,14 @@ pub(crate) fn reset_socket(
 
 /// Reads and handles connection request events
 pub(crate) fn connection_request_handler(
-    mut cxn_event_reader: EventReader<ConnectionRequest>,
+    mut request_reader: EventReader<RtcClientRequestEvent>,
     mut state: ResMut<RtcClientState>,
     mut next_connection_state: ResMut<NextState<RtcClientStatus>>,
     current_connection_state: Res<State<RtcClientStatus>>,
     mut event_wtr: EventWriter<RtcClientEvent>,
 ) {
-    match cxn_event_reader.read().next() {
-        Some(ConnectionRequest::Connect { addr }) => {
+    match request_reader.read().next() {
+        Some(RtcClientRequestEvent::Connect { addr }) => {
             if let RtcClientStatus::Disconnected = current_connection_state.get() {
                 debug!(
                     previous = format!("{current_connection_state:?}"),
@@ -75,7 +75,7 @@ pub(crate) fn connection_request_handler(
                 next_connection_state.set(RtcClientStatus::Establishing);
             }
         }
-        Some(ConnectionRequest::Disconnect) => {
+        Some(RtcClientRequestEvent::Disconnect) => {
             debug!(
                 previous = format!("{current_connection_state:?}"),
                 "set state: disconnected"
@@ -100,10 +100,10 @@ pub(crate) fn client_event_writer(
     // Create events
 
     // Id changed events
-    if let Some(id) = socket.id() {
-        if state.id.is_none() {
-            state.id.replace(id);
-            event_wtr.send(RtcClientEvent::IdAssigned(id));
+    if let Some(peer_id) = socket.id() {
+        if state.peer_id.is_none() {
+            state.peer_id.replace(peer_id);
+            event_wtr.send(RtcClientEvent::IdAssigned(peer_id));
         }
     }
 
@@ -113,7 +113,7 @@ pub(crate) fn client_event_writer(
             for (id, peer_state) in updates {
                 match peer_state {
                     matchbox_socket::PeerState::Connected => {
-                        state.host_id.replace(id);
+                        state.host_peer_id.replace(id);
                         commands.spawn(LatencyTracer::new(id));
                         next_connection_state.set(RtcClientStatus::Connected);
                         event_wtr.send(RtcClientEvent::ConnectedToHost(id));
@@ -144,7 +144,7 @@ pub fn send_latency_tracers(
     state: Res<RtcClientState>,
     mut client: RtcClient<LatencyTracerPayload>,
 ) {
-    let peer_id = state.id.expect("expected peer id");
+    let peer_id = state.peer_id.expect("expected peer id");
     client.unreliable_to_host(LatencyTracerPayload::new(peer_id));
 }
 
@@ -153,8 +153,8 @@ pub fn read_latency_tracers(
     mut trace_query: Query<&mut LatencyTracer>,
     mut client: RtcClient<LatencyTracerPayload>,
 ) {
-    let host_id = state.host_id.expect("expected host id");
-    let peer_id = state.id.expect("expected peer id");
+    let host_id = state.host_peer_id.expect("expected host id");
+    let peer_id = state.peer_id.expect("expected peer id");
     let mut tracer = trace_query.single_mut();
 
     for payload in client.read() {

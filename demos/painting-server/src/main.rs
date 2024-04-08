@@ -1,18 +1,15 @@
-use std::time::Duration;
-
 use bevy::{log::LogPlugin, prelude::*, time::common_conditions::on_timer};
-use bevy_rtc::server::{
-    AddProtocolExt, RtcServer, RtcServerEvent, RtcServerPlugin, RtcServerState,
-};
+use bevy_rtc::prelude::*;
 use protocol::{ChatPayload, DrawLinePayload};
+use std::time::Duration;
 
 fn main() {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins)
         .add_plugins(LogPlugin::default())
         .add_plugins(RtcServerPlugin { port: 3536 })
-        .add_bounded_protocol::<ChatPayload>(2)
-        .add_bounded_protocol::<DrawLinePayload>(2)
+        .add_server_rw_protocol::<ChatPayload>(2)
+        .add_server_rw_protocol::<DrawLinePayload>(2)
         .add_systems(
             Update,
             (

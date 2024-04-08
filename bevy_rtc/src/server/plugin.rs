@@ -7,7 +7,7 @@ use bevy::{prelude::*, time::common_conditions::on_timer};
 use instant::Duration;
 use std::net::Ipv4Addr;
 
-use super::{systems, AddProtocolExt, RtcServerEvent, RtcServerState, RtcServerStatus};
+use super::{systems, AddServerProtocolExt, RtcServerEvent, RtcServerState, RtcServerStatus};
 
 /// A plugin to serve a WebRTC server.
 pub struct RtcServerPlugin {
@@ -19,7 +19,7 @@ impl Plugin for RtcServerPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<SocketRecvEvent>()
             .add_event::<RtcServerEvent>()
-            .add_bounded_protocol::<LatencyTracerPayload>(2)
+            .add_server_rw_protocol::<LatencyTracerPayload>(2)
             .init_state::<RtcServerStatus>()
             .insert_resource(RtcServerState::new(
                 (Ipv4Addr::UNSPECIFIED, self.port).into(),

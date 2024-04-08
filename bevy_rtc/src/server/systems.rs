@@ -99,8 +99,8 @@ pub fn server_event_writer(
 ) {
     // Id changed events
     if let Some(id) = socket.id() {
-        if state.id.is_none() {
-            state.id.replace(id);
+        if state.peer_id.is_none() {
+            state.peer_id.replace(id);
             event_wtr.send(RtcServerEvent::IdAssigned(id));
             next_server_status.set(RtcServerStatus::Ready);
         }
@@ -116,11 +116,16 @@ pub fn server_event_writer(
             }
             PeerState::Disconnected => {
                 state.peers.remove(&peer);
-                if let Some((entity, _)) = tracer_query
+                state.latencies.remove(&peer);
+                state.smoothed_latencies.remove(&peer);
+                if let Some(entity) = tracer_query
                     .iter()
                     .find(|(_, tracer)| tracer.peer_id == peer)
+                    .map(|(e, _)| e)
                 {
                     commands.entity(entity).despawn();
+                } else {
+                    error!("No latency tracer found for {peer}");
                 }
                 event_wtr.send(RtcServerEvent::ClientLeft(peer));
             }
@@ -132,7 +137,7 @@ pub fn send_latency_tracers(
     state: Res<RtcServerState>,
     mut server: RtcServer<LatencyTracerPayload>,
 ) {
-    let peer_id = state.id.expect("expected peer id");
+    let peer_id = state.peer_id.expect("expected peer id");
     server.unreliable_to_all(LatencyTracerPayload::new(peer_id));
 }
 
@@ -141,7 +146,7 @@ pub fn read_latency_tracers(
     mut tracers: Query<&mut LatencyTracer>,
     mut server: RtcServer<LatencyTracerPayload>,
 ) {
-    let host_id = state.id.expect("expected host id");
+    let host_id = state.peer_id.expect("expected host id");
 
     // Handle payloads
     for (from, payload) in server.read() {

@@ -4,16 +4,16 @@ use std::fmt::Debug;
 
 // Note: Intentional name collision with the trait Payload!
 // This is done commonly, like `serde::Serialize` is a trait and a derive macro.
-pub use proc_macro_payload::Payload;
+pub use proc_macro_protocol::Protocol;
 
 #[derive(Deserialize, Serialize)]
 #[serde(bound = "M: DeserializeOwned")]
-pub struct RtcPacket<M: Payload> {
+pub(crate) struct RtcPacket<M: Protocol> {
     pub msg_id: u16,
     pub data: M,
 }
 
-pub trait Payload:
+pub trait Protocol:
     Debug + Clone + Send + Sync + for<'a> Deserialize<'a> + Serialize + 'static
 {
     fn id() -> u16;
