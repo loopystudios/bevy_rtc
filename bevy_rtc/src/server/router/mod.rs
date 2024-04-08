@@ -2,7 +2,7 @@ mod receive;
 mod send;
 
 use crate::{
-    protocol::Payload,
+    protocol::Protocol,
     socket::{common_socket_reader, RtcSocket},
 };
 use bevy::{prelude::*, utils::hashbrown::HashMap};
@@ -10,26 +10,25 @@ use bevy::{prelude::*, utils::hashbrown::HashMap};
 pub use receive::IncomingMessages;
 pub use send::OutgoingMessages;
 
-pub trait AddProtocolExt {
-    /// Register a protocol that is only sent, never read. Hence, allocate no
-    /// buffer and do not run systems for receiving.
-    fn add_sendonly_protocol<M: Payload>(&mut self) -> &mut Self;
-    /// Register a protocol that is only read, never sent. Allocate a bounded
-    /// buffer per peer for receiving, and do not run systems for sending.
-    fn add_readonly_bounded_protocol<M: Payload>(&mut self, bound: usize) -> &mut Self;
-    /// Register a protocol that is only read, never sent. Use a growable buffer
-    /// for receiving, and do not run systems for sending.
-    fn add_readonly_unbounded_protocol<M: Payload>(&mut self) -> &mut Self;
-    /// Register a protocol for sending and receiving. Allocate a bounded buffer
-    /// per peer for receiving.
-    fn add_bounded_protocol<M: Payload>(&mut self, bound: usize) -> &mut Self;
+pub trait AddServerProtocolExt {
+    /// Register a protocol that is only written, never read.
+    fn add_server_wo_protocol<M: Protocol>(&mut self) -> &mut Self;
+    /// Register a protocol that is only read, never written. Allocate a bounded
+    /// buffer per peer for receiving.
+    fn add_server_ro_protocol<M: Protocol>(&mut self, bound: usize) -> &mut Self;
+    /// Register a protocol that is only read, never written. Use a growable buffer
+    /// for reading.
+    fn add_server_ro_unbounded_protocol<M: Protocol>(&mut self) -> &mut Self;
+    /// Register a protocol for reading and writing. Allocate a bounded buffer
+    /// per peer for reading.
+    fn add_server_rw_protocol<M: Protocol>(&mut self, bound: usize) -> &mut Self;
     /// Register a protocol for sending and receiving. Use a growable buffer
-    /// for receiving.
-    fn add_unbounded_protocol<M: Payload>(&mut self) -> &mut Self;
+    /// for reading.
+    fn add_server_rw_unbounded_protocol<M: Protocol>(&mut self) -> &mut Self;
 }
 
-impl AddProtocolExt for App {
-    fn add_sendonly_protocol<M: Payload>(&mut self) -> &mut Self {
+impl AddServerProtocolExt for App {
+    fn add_server_wo_protocol<M: Protocol>(&mut self) -> &mut Self {
         if self.world.contains_resource::<OutgoingMessages<M>>() {
             panic!("server already contains resource: {}", M::reflect_name());
         }
@@ -49,11 +48,7 @@ impl AddProtocolExt for App {
         self
     }
 
-    fn add_readonly_unbounded_protocol<M: Payload>(&mut self) -> &mut Self {
-        self.add_readonly_bounded_protocol::<M>(usize::MAX)
-    }
-
-    fn add_readonly_bounded_protocol<M: Payload>(&mut self, bound: usize) -> &mut Self {
+    fn add_server_ro_protocol<M: Protocol>(&mut self, bound: usize) -> &mut Self {
         if self.world.contains_resource::<IncomingMessages<M>>() {
             panic!("server already contains resource: {}", M::reflect_name());
         }
@@ -71,13 +66,13 @@ impl AddProtocolExt for App {
         self
     }
 
-    fn add_unbounded_protocol<M: Payload>(&mut self) -> &mut Self {
-        self.add_bounded_protocol::<M>(usize::MAX)
+    fn add_server_ro_unbounded_protocol<M: Protocol>(&mut self) -> &mut Self {
+        self.add_server_ro_protocol::<M>(usize::MAX)
     }
 
-    fn add_bounded_protocol<M: Payload>(&mut self, bound: usize) -> &mut Self
+    fn add_server_rw_protocol<M: Protocol>(&mut self, bound: usize) -> &mut Self
     where
-        M: Payload,
+        M: Protocol,
     {
         if self.world.contains_resource::<IncomingMessages<M>>()
             || self.world.contains_resource::<OutgoingMessages<M>>()
@@ -108,5 +103,9 @@ impl AddProtocolExt for App {
         );
 
         self
+    }
+
+    fn add_server_rw_unbounded_protocol<M: Protocol>(&mut self) -> &mut Self {
+        self.add_server_rw_protocol::<M>(usize::MAX)
     }
 }

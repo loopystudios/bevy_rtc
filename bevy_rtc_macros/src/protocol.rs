@@ -8,7 +8,7 @@ use std::{
 };
 use syn::{parse_macro_input, DeriveInput};
 
-#[proc_macro_derive(Payload)]
+#[proc_macro_derive(Protocol)]
 pub fn derive_payload_fn(item: TokenStream) -> TokenStream {
     let DeriveInput { ident, .. } = parse_macro_input!(item);
     let mut s = DefaultHasher::new();
@@ -16,7 +16,7 @@ pub fn derive_payload_fn(item: TokenStream) -> TokenStream {
     let id = s.finish() as u16;
     let reflect_name = ident.to_string();
     quote! {
-        impl bevy_rtc::protocol::Payload for #ident {
+        impl bevy_rtc::protocol::Protocol for #ident {
             fn id() -> u16 {
                 #id
             }

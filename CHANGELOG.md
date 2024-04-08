@@ -6,6 +6,27 @@ Subheadings to categorize changes are `added, changed, deprecated, removed, fixe
 
 ## Unreleased
 
+## 0.3.0
+
+### added
+
+- A `prelude` module.
+
+### changed
+
+- To fix name conflicts with `AddProtocolExt`, the respective types have changed names.
+  - The `client` feature trait has changed to `AddClientProtocolExt`
+  - The `server` feature trait has changed to `AddServerProtocolExt`
+- Method names have changed:
+  - `add_sendonly_protocol` has changed to `add_client_wo_protocol` and `add_server_wo_protocol`
+  - `add_readonly_bounded_protocol` has changed to `add_client_ro_protocol` and `add_server_ro_protocol`
+  - `add_readonly_unbounded_protocol` has changed to `add_client_ro_unbounded_protocol` and `add_server_ro_unbounded_protocol`
+  - `add_bounded_protocol` has changed to `add_client_rw_protocol` and `add_server_rw_protocol`
+  - `add_unbounded_protocol` has changed to `add_client_rw_unbounded_protocol` and `add_server_rw_unbounded_protocol`
+- The `ConnectionRequest` event under the `client` feature has been renamed to `RtcClientRequestEvent`
+- The `Payload` derive was renamed to `Protocol`
+- Fields on `RtcClientState` and `RtcServerState` are now private, with accessor methods, e.g. `.id()` instead of `.id`
+
 ## 0.2.0
 
 ### added

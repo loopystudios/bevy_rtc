@@ -12,8 +12,8 @@ readme.workspace = true
 
 [lib]
 proc-macro = true
-name = "proc_macro_payload"
-path = "src/payload.rs"
+name = "proc_macro_protocol"
+path = "src/protocol.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]

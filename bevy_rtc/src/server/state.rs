@@ -20,10 +20,10 @@ pub enum RtcServerStatus {
 #[derive(Resource)]
 pub struct RtcServerState {
     /// The socket address bound
-    pub addr: SocketAddr,
+    pub(crate) addr: SocketAddr,
 
-    /// The ID the host (server)
-    pub id: Option<PeerId>,
+    /// The Peer ID of the host (server)
+    pub(crate) peer_id: Option<PeerId>,
 
     /// A list of connected peers
     pub(crate) peers: HashSet<PeerId>,
@@ -36,14 +36,24 @@ pub struct RtcServerState {
 }
 
 impl RtcServerState {
-    pub fn new(addr: SocketAddr) -> Self {
+    pub(crate) fn new(addr: SocketAddr) -> Self {
         Self {
             addr,
-            id: None,
+            peer_id: None,
             peers: HashSet::new(),
             latencies: HashMap::new(),
             smoothed_latencies: HashMap::new(),
         }
+    }
+
+    /// Returns the address bound by the server/host.
+    pub fn addr(&self) -> SocketAddr {
+        self.addr
+    }
+
+    /// Returns the peer ID of the server/host. Will be None prior until the host is ready.
+    pub fn peer_id(&self) -> Option<PeerId> {
+        self.peer_id
     }
 
     /// Return the currently connected peers

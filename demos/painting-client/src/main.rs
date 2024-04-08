@@ -10,10 +10,7 @@ use bevy_egui::{
     egui::{self, Pos2},
     EguiContexts, EguiPlugin,
 };
-use bevy_rtc::client::{
-    AddProtocolExt, ConnectionRequest, RtcClient, RtcClientEvent, RtcClientPlugin, RtcClientState,
-    RtcClientStatus,
-};
+use bevy_rtc::prelude::*;
 use chat::ChatState;
 use painting::PaintingState;
 use protocol::{ChatPayload, DrawLinePayload};
@@ -32,8 +29,8 @@ fn main() {
         }))
         .add_plugins(EguiPlugin)
         .add_plugins(RtcClientPlugin)
-        .add_unbounded_protocol::<ChatPayload>()
-        .add_unbounded_protocol::<DrawLinePayload>()
+        .add_client_rw_unbounded_protocol::<ChatPayload>()
+        .add_client_rw_unbounded_protocol::<DrawLinePayload>()
         .insert_resource(ChatState::default())
         .insert_resource(PaintingState::default())
         .add_systems(Startup, |mut commands: Commands| {
@@ -103,7 +100,7 @@ fn send_chats(
 ) {
     if let Some(message) = chat_state.out.take() {
         let payload = ChatPayload {
-            from: rtc_state.id.unwrap().to_string(),
+            from: rtc_state.peer_id().unwrap().to_string(),
             message,
         };
         client.reliable_to_host(payload);
@@ -136,7 +133,7 @@ fn app_ui(
     connection_status: Res<State<RtcClientStatus>>,
     mut contexts: EguiContexts,
     mut painting_state: ResMut<PaintingState>,
-    mut connection_requests: EventWriter<ConnectionRequest>,
+    mut connection_requests: EventWriter<RtcClientRequestEvent>,
     mut chat_state: ResMut<ChatState>,
     mut room_url: Local<String>,
     mut chat_line: Local<String>,
@@ -163,7 +160,7 @@ fn app_ui(
                     );
                 });
                 if ui.button("Connect").clicked() {
-                    connection_requests.send(ConnectionRequest::Connect {
+                    connection_requests.send(RtcClientRequestEvent::Connect {
                         addr: if room_url.is_empty() {
                             "ws://127.0.0.1:3536".to_string()
                         } else {
@@ -174,13 +171,13 @@ fn app_ui(
             }
             RtcClientStatus::Connected => {
                 if ui.button("Disconnect").clicked() {
-                    connection_requests.send(ConnectionRequest::Disconnect);
+                    connection_requests.send(RtcClientRequestEvent::Disconnect);
                 }
-                ui.label(format!("Connected as {}", state.id.unwrap()));
+                ui.label(format!("Connected as {}", state.peer_id().unwrap()));
                 ui.label(format!(
                     "Latency: {:.0?} (smoothed = {:.0?})",
-                    state.latency.unwrap_or_default(),
-                    state.smoothed_latency.unwrap_or_default()
+                    state.latency().unwrap_or_default(),
+                    state.smoothed_latency().unwrap_or_default()
                 ));
 
                 ui.separator();

@@ -12,8 +12,9 @@ pub enum RtcClientEvent {
     DisconnectedFromHost { reason: Option<String> },
 }
 
+// TODO: This should be a command, e.g. Commands.connect_rtc(addr), Commands.disconnect_rtc
 #[derive(Debug, Clone, Event)]
-pub enum ConnectionRequest {
+pub enum RtcClientRequestEvent {
     /// A request to connect to the server through the signaling server.
     /// The format of the addr should be ws://host:port or wss://host:port
     Connect { addr: String },

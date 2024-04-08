@@ -1,17 +1,17 @@
 use crate::{
     client::state::RtcClientState,
-    protocol::Payload,
+    protocol::Protocol,
     socket::{RtcSocket, RELIABLE_CHANNEL_INDEX, UNRELIABLE_CHANNEL_INDEX},
 };
 use bevy::prelude::*;
 
 #[derive(Default, Debug, Resource)]
-pub struct OutgoingMessages<M: Payload> {
+pub struct OutgoingMessages<M: Protocol> {
     pub reliable_to_host: Vec<M>,
     pub unreliable_to_host: Vec<M>,
 }
 
-impl<M: Payload> OutgoingMessages<M> {
+impl<M: Protocol> OutgoingMessages<M> {
     /// Swaps the event buffers and clears the oldest event buffer. In general,
     /// this should be called once per frame/update.
     pub fn flush(&mut self) {
@@ -24,7 +24,7 @@ impl<M: Payload> OutgoingMessages<M> {
         mut socket: ResMut<RtcSocket>,
         state: Res<RtcClientState>,
     ) {
-        if let Some(host) = state.host_id {
+        if let Some(host) = state.host_peer_id {
             // Client is sending
             for message in queue.reliable_to_host.iter() {
                 if socket

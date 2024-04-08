@@ -9,7 +9,7 @@ mod bevy_rtc {
 }
 
 /// A packet containing information to track a peer's latency
-#[derive(proc_macro_payload::Payload, Serialize, Deserialize, Debug, Clone)]
+#[derive(proc_macro_protocol::Protocol, Serialize, Deserialize, Debug, Clone)]
 pub struct LatencyTracerPayload {
     pub from: PeerId,
     pub sent: f64,
