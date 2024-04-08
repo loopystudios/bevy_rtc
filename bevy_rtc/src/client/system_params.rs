@@ -9,7 +9,7 @@ pub struct RtcClient<'w, M: Payload> {
 }
 
 impl<'w, M: Payload> RtcClient<'w, M> {
-    /// Returns the capacity of this network reader.
+    /// Returns the capacity of incoming messages.
     pub fn capacity(&self) -> usize {
         self.incoming.bound
     }
@@ -24,19 +24,14 @@ impl<'w, M: Payload> RtcClient<'w, M> {
         self.incoming.messages.is_empty()
     }
 
-    /// Iterate over all messages in the buffer without consuming them.
-    pub fn iter(&mut self) -> impl Iterator<Item = &M> {
-        self.incoming.messages.iter()
-    }
-
     /// Clear all messages waiting in the buffer.
     pub fn clear(&mut self) {
         self.incoming.messages.clear()
     }
 
     /// Consumes all messages in the buffer and iterate on them.
-    pub fn read(&mut self) -> std::collections::vec_deque::Drain<'_, M> {
-        self.incoming.messages.drain(..)
+    pub fn read(&mut self) -> Vec<M> {
+        self.incoming.messages.drain(..).collect()
     }
 
     /// Send a payload to the host with reliability. The payload is created with

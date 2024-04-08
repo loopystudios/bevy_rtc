@@ -3,7 +3,7 @@ use crate::{
     latency::{LatencyTracer, LatencyTracerPayload},
     socket::RtcSocket,
 };
-use bevy::{prelude::*, utils::hashbrown::HashMap};
+use bevy::prelude::*;
 use bevy_matchbox::{
     matchbox_signaling::{
         topologies::client_server::{ClientServer, ClientServerState},
@@ -144,7 +144,6 @@ pub fn read_latency_tracers(
     let host_id = state.id.expect("expected host id");
 
     // Handle payloads
-    let mut client_tracers = HashMap::new();
     for (from, payload) in server.read() {
         // 2 cases:
         // 1) We sent a tracer to the client, and are receiving it
@@ -156,14 +155,10 @@ pub fn read_latency_tracers(
             }
         } else if payload.from == from {
             // Case 2
-            client_tracers.insert(from, payload);
+            server.unreliable_to_peer(from, payload);
         } else {
             warn!("Invalid latency tracer from {from}: {payload:?}, ignoring");
         }
-    }
-
-    for (client, payload) in client_tracers.into_iter() {
-        server.unreliable_to_peer(client, payload);
     }
 }
 

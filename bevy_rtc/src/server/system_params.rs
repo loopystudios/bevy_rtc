@@ -37,18 +37,6 @@ impl<'w, M: Payload> RtcServer<'w, M> {
             })
     }
 
-    /// Iterate over all messages in the buffer without consuming them.
-    pub fn iter(&mut self) -> impl Iterator<Item = (&PeerId, &M)> {
-        self.incoming
-            .messages
-            .iter()
-            .fold(vec![], |mut v, (peer, payloads)| {
-                v.extend(payloads.iter().map(|p| (peer, p)));
-                v
-            })
-            .into_iter()
-    }
-
     /// Clear all messages waiting in the buffer.
     pub fn clear(&mut self) {
         self.incoming.messages.clear()

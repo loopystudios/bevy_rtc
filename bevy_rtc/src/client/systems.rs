@@ -157,13 +157,12 @@ pub fn read_latency_tracers(
     let peer_id = state.id.expect("expected peer id");
     let mut tracer = trace_query.single_mut();
 
-    let mut server_tracer = None;
     for payload in client.read() {
         if payload.from == peer_id {
             tracer.process(payload);
         } else if payload.from == host_id {
             // Server time payloads get sent right back to the server
-            server_tracer.replace(payload);
+            client.unreliable_to_host(payload);
         }
         // Process payloads we sent out
         else {
@@ -172,9 +171,6 @@ pub fn read_latency_tracers(
                 payload.from
             );
         }
-    }
-    if let Some(payload) = server_tracer.take() {
-        client.unreliable_to_host(payload);
     }
 }
 

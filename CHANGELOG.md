@@ -12,7 +12,6 @@ Subheadings to categorize changes are `added, changed, deprecated, removed, fixe
 
 - The `RtcClient` and `RtcServer` system parameters (prev. `NetworkReader`/`NetworkWriter`) have new methods:
   - `clear()` to clear all incoming messages in the buffer.
-  - `iter()` to read all messages without consuming them.
 
 ### changed
 
@@ -20,6 +19,7 @@ Subheadings to categorize changes are `added, changed, deprecated, removed, fixe
   - `RtcState` has changed to `RtcClientState` or `RtcServerState`, depending on the feature.
   - `RtcStatus` has changed to `RtcClientStatus` or `RtcServerStatus`, depending on the feature.
   - `NetworkReader`/`NetworkWriter` have been both merged and changed to `RtcClient` or `RtcServer` respectively.
+  - `RtcClient.read()` (previously `NetworkReader`) now returns a `Vec<_>` rather than a `Drain<'_, _>`.
 
 ## 0.1.1
 
