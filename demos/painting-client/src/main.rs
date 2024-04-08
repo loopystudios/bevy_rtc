@@ -11,8 +11,8 @@ use bevy_egui::{
     EguiContexts, EguiPlugin,
 };
 use bevy_rtc::client::{
-    AddProtocolExt, ConnectionRequest, NetworkReader, NetworkWriter, RtcClientEvent,
-    RtcClientPlugin, RtcClientStatus, RtcState,
+    AddProtocolExt, ConnectionRequest, RtcClient, RtcClientEvent, RtcClientPlugin, RtcClientState,
+    RtcClientStatus,
 };
 use chat::ChatState;
 use painting::PaintingState;
@@ -90,7 +90,7 @@ fn print_events(mut events: EventReader<RtcClientEvent>) {
     }
 }
 
-fn read_chats(mut chat_state: ResMut<ChatState>, mut chat_read: NetworkReader<ChatPayload>) {
+fn read_chats(mut chat_state: ResMut<ChatState>, mut chat_read: RtcClient<ChatPayload>) {
     for chat in chat_read.read() {
         chat_state.messages.insert(0, chat);
     }
@@ -98,21 +98,21 @@ fn read_chats(mut chat_state: ResMut<ChatState>, mut chat_read: NetworkReader<Ch
 
 fn send_chats(
     mut chat_state: ResMut<ChatState>,
-    mut chat_send: NetworkWriter<ChatPayload>,
-    rtc_state: Res<RtcState>,
+    mut client: RtcClient<ChatPayload>,
+    rtc_state: Res<RtcClientState>,
 ) {
     if let Some(message) = chat_state.out.take() {
         let payload = ChatPayload {
             from: rtc_state.id.unwrap().to_string(),
             message,
         };
-        chat_send.reliable_to_host(payload);
+        client.reliable_to_host(payload);
     }
 }
 
 fn read_lines(
     mut painting_state: ResMut<PaintingState>,
-    mut painting_read: NetworkReader<DrawLinePayload>,
+    mut painting_read: RtcClient<DrawLinePayload>,
 ) {
     for draw in painting_read.read() {
         let DrawLinePayload { x1, y1, x2, y2 } = draw;
@@ -122,20 +122,17 @@ fn read_lines(
     }
 }
 
-fn send_lines(
-    mut painting_state: ResMut<PaintingState>,
-    mut painting_send: NetworkWriter<DrawLinePayload>,
-) {
+fn send_lines(mut painting_state: ResMut<PaintingState>, mut client: RtcClient<DrawLinePayload>) {
     let draws = painting_state.out.drain(..);
     for (x1, y1, x2, y2) in draws {
         let draw = DrawLinePayload { x1, y1, x2, y2 };
-        painting_send.unreliable_to_host(draw)
+        client.unreliable_to_host(draw)
     }
 }
 
 #[allow(clippy::too_many_arguments)]
 fn app_ui(
-    state: Res<RtcState>,
+    state: Res<RtcClientState>,
     connection_status: Res<State<RtcClientStatus>>,
     mut contexts: EguiContexts,
     mut painting_state: ResMut<PaintingState>,

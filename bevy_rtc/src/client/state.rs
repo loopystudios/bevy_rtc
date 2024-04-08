@@ -15,7 +15,7 @@ pub enum RtcClientStatus {
 }
 
 #[derive(Resource, Default)]
-pub struct RtcState {
+pub struct RtcClientState {
     /// The socket address, used for connecting/reconnecting
     pub addr: Option<String>,
     /// The ID of the host

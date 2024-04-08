@@ -3,12 +3,13 @@ use crate::protocol::Payload;
 use bevy::{ecs::system::SystemParam, prelude::*};
 
 #[derive(SystemParam, Debug)]
-pub struct NetworkReader<'w, M: Payload> {
-    incoming: ResMut<'w, IncomingMessages<M>>,
+pub struct RtcClient<'w, M: Payload> {
+    pub(crate) incoming: ResMut<'w, IncomingMessages<M>>,
+    pub(crate) outgoing: ResMut<'w, OutgoingMessages<M>>,
 }
 
-impl<'w, M: Payload> NetworkReader<'w, M> {
-    /// Returns the capacity of this network reader.
+impl<'w, M: Payload> RtcClient<'w, M> {
+    /// Returns the capacity of incoming messages.
     pub fn capacity(&self) -> usize {
         self.incoming.bound
     }
@@ -23,18 +24,16 @@ impl<'w, M: Payload> NetworkReader<'w, M> {
         self.incoming.messages.is_empty()
     }
 
-    /// Consumes all messages in the buffer and iterate on them.
-    pub fn read(&mut self) -> std::collections::vec_deque::Drain<'_, M> {
-        self.incoming.messages.drain(..)
+    /// Clear all messages waiting in the buffer.
+    pub fn clear(&mut self) {
+        self.incoming.messages.clear()
     }
-}
 
-#[derive(SystemParam, Debug)]
-pub struct NetworkWriter<'w, M: Payload> {
-    pub(crate) outgoing: ResMut<'w, OutgoingMessages<M>>,
-}
+    /// Consumes all messages in the buffer and iterate on them.
+    pub fn read(&mut self) -> Vec<M> {
+        self.incoming.messages.drain(..).collect()
+    }
 
-impl<'w, M: Payload> NetworkWriter<'w, M> {
     /// Send a payload to the host with reliability. The payload is created with
     /// lazy behavior, only when the send rate allows.
     pub fn reliable_to_host_with(&mut self, message_fn: impl Fn() -> M) {

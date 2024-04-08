@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use bevy::{log::LogPlugin, prelude::*, time::common_conditions::on_timer};
 use bevy_rtc::server::{
-    AddProtocolExt, NetworkReader, NetworkWriter, RtcServerEvent, RtcServerPlugin, RtcState,
+    AddProtocolExt, RtcServer, RtcServerEvent, RtcServerPlugin, RtcServerState,
 };
 use protocol::{ChatPayload, DrawLinePayload};
 
@@ -26,22 +26,16 @@ fn main() {
 }
 
 // redirect draw points from clients to other clients
-fn send_draw_points(
-    mut draw_read: NetworkReader<DrawLinePayload>,
-    mut draw_send: NetworkWriter<DrawLinePayload>,
-) {
-    for (peer, draw) in draw_read.read() {
-        draw_send.unreliable_to_all_except(peer, draw);
+fn send_draw_points(mut server: RtcServer<DrawLinePayload>) {
+    for (peer, draw) in server.read() {
+        server.unreliable_to_all_except(peer, draw);
     }
 }
 
 // redirect chat from clients to other clients
-fn send_chats(
-    mut chat_read: NetworkReader<ChatPayload>,
-    mut chat_send: NetworkWriter<ChatPayload>,
-) {
-    for (peer, chat) in chat_read.read() {
-        chat_send.reliable_to_all_except(peer, chat);
+fn send_chats(mut server: RtcServer<ChatPayload>) {
+    for (peer, chat) in server.read() {
+        server.reliable_to_all_except(peer, chat);
     }
 }
 
@@ -61,7 +55,7 @@ fn print_events(mut event_rdr: EventReader<RtcServerEvent>) {
     }
 }
 
-fn print_latencies(state: Res<RtcState>) {
+fn print_latencies(state: Res<RtcServerState>) {
     for ((peer, latency), (_peer, smoothed)) in
         state.iter_latencies().zip(state.iter_smoothed_latencies())
     {

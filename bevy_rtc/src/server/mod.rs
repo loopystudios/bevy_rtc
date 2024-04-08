@@ -8,5 +8,5 @@ mod systems;
 pub use events::RtcServerEvent;
 pub use plugin::RtcServerPlugin;
 pub use router::AddProtocolExt;
-pub use state::{RtcServerStatus, RtcState};
-pub use system_params::{NetworkReader, NetworkWriter};
+pub use state::{RtcServerState, RtcServerStatus};
+pub use system_params::RtcServer;

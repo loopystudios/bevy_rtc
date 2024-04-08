@@ -5,12 +5,13 @@ use bevy_matchbox::prelude::PeerId;
 
 /// A [`SystemParam`] for reading payloads of a particular type.
 #[derive(SystemParam, Debug)]
-pub struct NetworkReader<'w, M: Payload> {
-    incoming: ResMut<'w, IncomingMessages<M>>,
+pub struct RtcServer<'w, M: Payload> {
+    pub(crate) incoming: ResMut<'w, IncomingMessages<M>>,
+    pub(crate) outgoing: ResMut<'w, OutgoingMessages<M>>,
 }
 
-impl<'w, M: Payload> NetworkReader<'w, M> {
-    /// Returns the capacity of this network reader.
+impl<'w, M: Payload> RtcServer<'w, M> {
+    /// Returns the capacity of incoming messages.
     pub fn capacity(&self) -> usize {
         self.incoming.bound
     }
@@ -35,14 +36,12 @@ impl<'w, M: Payload> NetworkReader<'w, M> {
                 v
             })
     }
-}
 
-#[derive(SystemParam, Debug)]
-pub struct NetworkWriter<'w, M: Payload> {
-    pub(crate) outgoing: ResMut<'w, OutgoingMessages<M>>,
-}
+    /// Clear all messages waiting in the buffer.
+    pub fn clear(&mut self) {
+        self.incoming.messages.clear()
+    }
 
-impl<'w, M: Payload> NetworkWriter<'w, M> {
     /// Send a payload to all connected peers with reliability.
     pub fn reliable_to_all(&mut self, message: M) {
         self.outgoing.reliable_to_all.push(message);
