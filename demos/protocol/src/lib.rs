@@ -20,7 +20,7 @@ pub struct ChatPayload {
 // Used by ping demo
 
 #[derive(Protocol, Serialize, Deserialize, Debug, Clone)]
-pub enum PingPayload {
-    Ping,
-    Pong,
-}
+pub struct PingPayload;
+
+#[derive(Protocol, Serialize, Deserialize, Debug, Clone)]
+pub struct PongPayload;

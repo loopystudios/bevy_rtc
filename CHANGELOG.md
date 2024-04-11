@@ -6,6 +6,12 @@ Subheadings to categorize changes are `added, changed, deprecated, removed, fixe
 
 ## Unreleased
 
+## 0.3.1
+
+### fixed
+
+- A panic that would occur for ro/wo protocols.
+
 ## 0.3.0
 
 ### added
