@@ -1,5 +1,5 @@
 [package]
-name = "ping-client"
+name = "painting_client"
 version.workspace = true
 license.workspace = true
 edition.workspace = true
@@ -9,4 +9,8 @@ publish = false
 bevy = { workspace = true, default-features = true }
 bevy_rtc = { path = "../../bevy_rtc", features = ["client"] }
 protocol = { path = "../protocol" }
+bevy_egui = "0.25"
 log = { version = "0.4", default-features = false }
+
+## FIXME: Remove this after https://github.com/bevyengine/bevy/issues/11052
+instant = { version = "0.1", features = ["wasm-bindgen"] }

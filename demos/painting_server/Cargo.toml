@@ -1,5 +1,5 @@
 [package]
-name = "ping-server"
+name = "painting_server"
 version.workspace = true
 license.workspace = true
 edition.workspace = true

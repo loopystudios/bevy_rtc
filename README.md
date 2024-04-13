@@ -59,20 +59,20 @@ Run one demo server, and any number of respective clients.
 - Server (Native only)
 
 ```bash
-cargo run -p painting-server
+cargo run -p painting_server
 ```
 
 - Client (Native)
 
 ```bash
-cargo run -p painting-client
+cargo run -p painting_client
 ```
 
 - Client (Web)
 
 ```bash
 cargo install wasm-server-runner
-cd demos/painting-client
+cd demos/painting_client
 cargo run --target wasm32-unknown-unknown
 ```
 
@@ -133,7 +133,7 @@ pub enum MyPacket {
         })
     ```
 
-  **Need help?** See the [ping-server](demos/ping-server/) or [painting-server](demos/painting-server/) source or [open an issue](/issues).
+  **Need help?** See the [ping_server](demos/ping_server/) or [painting_server](demos/painting_server/) source or [open an issue](/issues).
 
 ### Client
 
@@ -188,7 +188,7 @@ pub enum MyPacket {
     })
     ```
 
-  **Need help?** See the [ping-client](demos/ping-client/) or [ping-server](demos/ping-server/) source or [open an issue](/issues).
+  **Need help?** See the [ping_client](demos/ping_client/) or [ping_server](demos/ping_server/) source or [open an issue](/issues).
 
 ## Community
 
