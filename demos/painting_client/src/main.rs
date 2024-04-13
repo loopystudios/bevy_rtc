@@ -28,7 +28,10 @@ fn main() {
             ..default()
         }))
         .add_plugins(EguiPlugin)
-        .add_plugins(RtcClientPlugin)
+        .add_plugins(RtcClientPlugin {
+            // CAREFUL: This encoding MUST match the server encoding!
+            encoding: TransportEncoding::Json,
+        })
         .add_client_rw_unbounded_protocol::<ChatPayload>()
         .add_client_rw_unbounded_protocol::<DrawLinePayload>()
         .insert_resource(ChatState::default())

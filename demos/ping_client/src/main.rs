@@ -7,7 +7,10 @@ fn main() {
     App::new()
         .add_plugins(MinimalPlugins)
         .add_plugins(LogPlugin::default())
-        .add_plugins(RtcClientPlugin)
+        .add_plugins(RtcClientPlugin {
+            // CAREFUL: This encoding MUST match the server encoding!
+            encoding: TransportEncoding::Json,
+        })
         .add_client_wo_protocol::<PingPayload>()
         .add_client_ro_protocol::<PongPayload>(1)
         .add_systems(

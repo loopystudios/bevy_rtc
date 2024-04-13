@@ -6,7 +6,11 @@ fn main() {
     App::new()
         .add_plugins(MinimalPlugins)
         .add_plugins(LogPlugin::default())
-        .add_plugins(RtcServerPlugin { port: 3536 })
+        .add_plugins(RtcServerPlugin {
+            port: 3536,
+            // CAREFUL: This encoding MUST match the client encoding!
+            encoding: TransportEncoding::Json,
+        })
         .add_server_ro_protocol::<PingPayload>(1)
         .add_server_wo_protocol::<PongPayload>()
         .add_systems(

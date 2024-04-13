@@ -7,7 +7,11 @@ fn main() {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins)
         .add_plugins(LogPlugin::default())
-        .add_plugins(RtcServerPlugin { port: 3536 })
+        .add_plugins(RtcServerPlugin {
+            port: 3536,
+            // CAREFUL: This encoding MUST match the client encoding!
+            encoding: TransportEncoding::Json,
+        })
         .add_server_rw_protocol::<ChatPayload>(2)
         .add_server_rw_protocol::<DrawLinePayload>(2)
         .add_systems(

@@ -1,4 +1,4 @@
-use crate::{events::SocketRecvEvent, protocol::Protocol};
+use crate::{events::SocketRecvEvent, protocol::Protocol, transport_encoding::TransportEncoding};
 use bevy::{prelude::*, utils::hashbrown::HashMap};
 use bevy_matchbox::prelude::PeerId;
 use std::collections::VecDeque;
@@ -10,7 +10,11 @@ pub struct IncomingMessages<M: Protocol> {
 }
 
 impl<M: Protocol> IncomingMessages<M> {
-    pub fn receive_payloads(mut incoming: ResMut<Self>, mut events: EventReader<SocketRecvEvent>) {
+    pub fn receive_payloads(
+        mut incoming: ResMut<Self>,
+        mut events: EventReader<SocketRecvEvent>,
+        encoding: Res<TransportEncoding>,
+    ) {
         let bound = incoming.bound;
         let packets: HashMap<PeerId, Vec<M>> = events.read().fold(
             HashMap::new(),
@@ -19,7 +23,7 @@ impl<M: Protocol> IncomingMessages<M> {
                 if buf.len() >= bound {
                     return acc;
                 }
-                if let Some(packet) = M::from_packet(packet) {
+                if let Some(packet) = M::from_packet(packet, &encoding) {
                     buf.push(packet);
                 }
                 acc

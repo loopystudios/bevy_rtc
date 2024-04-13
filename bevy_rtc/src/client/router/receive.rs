@@ -1,4 +1,4 @@
-use crate::{events::SocketRecvEvent, protocol::Protocol};
+use crate::{events::SocketRecvEvent, protocol::Protocol, transport_encoding::TransportEncoding};
 use bevy::prelude::*;
 use std::collections::VecDeque;
 
@@ -9,12 +9,16 @@ pub struct IncomingMessages<M: Protocol> {
 }
 
 impl<M: Protocol> IncomingMessages<M> {
-    pub fn receive_payloads(mut incoming: ResMut<Self>, mut events: EventReader<SocketRecvEvent>) {
+    pub fn receive_payloads(
+        mut incoming: ResMut<Self>,
+        mut events: EventReader<SocketRecvEvent>,
+        encoding: Res<TransportEncoding>,
+    ) {
         let bound = incoming.bound;
         let packets: Vec<_> = events
             .read()
             .map(|&SocketRecvEvent((_peer_id, ref packet))| packet)
-            .filter_map(M::from_packet)
+            .filter_map(|p| M::from_packet(p, &encoding))
             .enumerate()
             .take_while(|(read, _)| *read <= bound)
             .map(|(_, packet)| packet)

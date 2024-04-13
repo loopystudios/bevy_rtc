@@ -2,6 +2,7 @@ use crate::{
     client::state::RtcClientState,
     protocol::Protocol,
     socket::{RtcSocket, RELIABLE_CHANNEL_INDEX, UNRELIABLE_CHANNEL_INDEX},
+    transport_encoding::TransportEncoding,
 };
 use bevy::prelude::*;
 
@@ -23,13 +24,14 @@ impl<M: Protocol> OutgoingMessages<M> {
         mut queue: ResMut<Self>,
         mut socket: ResMut<RtcSocket>,
         state: Res<RtcClientState>,
+        encoding: Res<TransportEncoding>,
     ) {
         if let Some(host) = state.host_peer_id {
             // Client is sending
             for message in queue.reliable_to_host.iter() {
                 if socket
                     .channel_mut(RELIABLE_CHANNEL_INDEX)
-                    .try_send(message.to_packet(), host)
+                    .try_send(message.to_packet(&encoding), host)
                     .is_err()
                 {
                     error!("failed to send reliable packet to {host}: {message:?}");
@@ -45,7 +47,7 @@ impl<M: Protocol> OutgoingMessages<M> {
             for message in queue.unreliable_to_host.iter() {
                 if socket
                     .channel_mut(UNRELIABLE_CHANNEL_INDEX)
-                    .try_send(message.to_packet(), host)
+                    .try_send(message.to_packet(&encoding), host)
                     .is_err()
                 {
                     error!("failed to send unreliable packet to {host}: {message:?}");

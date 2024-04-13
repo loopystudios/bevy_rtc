@@ -6,6 +6,10 @@ Subheadings to categorize changes are `added, changed, deprecated, removed, fixe
 
 ## Unreleased
 
+### changed
+
+- Client and server plugins now require an encoding. By default, JSON is available, but you may opt-in to a compressed binary format with the cargo feature `binary`. This encoding affects how all packets will be transported. Json is typically useful for debugging, while binary is compact and obfuscated for production.
+
 ## 0.3.1
 
 ### fixed

@@ -8,15 +8,19 @@ pub(crate) mod latency;
 pub mod protocol;
 pub(crate) mod socket;
 
+mod transport_encoding;
+pub use transport_encoding::TransportEncoding;
+
 // Re-exports
 pub use bevy_matchbox;
 
 pub mod prelude {
     #[cfg(feature = "client")]
     pub use crate::client::*;
-    pub use crate::protocol::Protocol;
     #[cfg(feature = "server")]
     pub use crate::server::*;
+
+    pub use crate::{protocol::Protocol, TransportEncoding};
 }
 
 #[cfg(feature = "server")]

@@ -42,7 +42,7 @@ All features are opt-in.
 
 - `server` - Provides necessary networking for server applications
 - `client` - Provides necessary networking for client applications
-- `binary` - Sends networking packets as binary instead of JSON (the default)
+- `binary` - Add support for a binary, compressed transport encoding
 
 > [!IMPORTANT]
 >

@@ -6,16 +6,25 @@ use crate::{
     events::SocketRecvEvent,
     latency::LatencyTracerPayload,
     socket::{common_socket_reader, RtcSocket},
+    transport_encoding::TransportEncoding,
 };
 use bevy::{prelude::*, time::common_conditions::on_timer};
 use instant::Duration;
 
 /// A plugin to connect to a WebRTC server.
-pub struct RtcClientPlugin;
+pub struct RtcClientPlugin {
+    /// The primary transport encoding for all packets. These are activated by cargo features.
+    ///
+    /// # Available encodings:
+    /// - JSON: with the `json` cargo feature
+    /// - Binary: with the `binary` cargo feature
+    pub encoding: TransportEncoding,
+}
 
 impl Plugin for RtcClientPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<SocketRecvEvent>()
+        app.insert_resource(self.encoding)
+            .add_event::<SocketRecvEvent>()
             .insert_resource(RtcClientState::default())
             .add_client_rw_protocol::<LatencyTracerPayload>(2)
             .init_state::<RtcClientStatus>()

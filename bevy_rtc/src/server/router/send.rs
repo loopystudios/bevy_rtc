@@ -1,6 +1,7 @@
 use crate::{
     protocol::Protocol,
     socket::{RtcSocket, RELIABLE_CHANNEL_INDEX, UNRELIABLE_CHANNEL_INDEX},
+    transport_encoding::TransportEncoding,
 };
 use bevy::prelude::*;
 use bevy_matchbox::prelude::PeerId;
@@ -27,14 +28,18 @@ impl<M: Protocol> OutgoingMessages<M> {
         self.unreliable_to_peer.clear();
     }
 
-    pub(crate) fn send_payloads(mut queue: ResMut<Self>, mut socket: ResMut<RtcSocket>) {
+    pub(crate) fn send_payloads(
+        mut queue: ResMut<Self>,
+        mut socket: ResMut<RtcSocket>,
+        encoding: Res<TransportEncoding>,
+    ) {
         // Server is sending
         for message in queue.reliable_to_all.iter() {
             let peers: Vec<PeerId> = socket.connected_peers().collect();
             peers.into_iter().for_each(|peer| {
                 if socket
                     .channel_mut(RELIABLE_CHANNEL_INDEX)
-                    .try_send(message.to_packet(), peer)
+                    .try_send(message.to_packet(&encoding), peer)
                     .is_err()
                 {
                     error!("failed to send reliable packet to {peer}: {message:?}");
@@ -53,7 +58,7 @@ impl<M: Protocol> OutgoingMessages<M> {
             peers.into_iter().for_each(|peer| {
                 if socket
                     .channel_mut(UNRELIABLE_CHANNEL_INDEX)
-                    .try_send(message.to_packet(), peer)
+                    .try_send(message.to_packet(&encoding), peer)
                     .is_err()
                 {
                     error!("failed to send unreliable packet to {peer}: {message:?}");
@@ -72,7 +77,7 @@ impl<M: Protocol> OutgoingMessages<M> {
             peers.into_iter().for_each(|peer| {
                 if socket
                     .channel_mut(RELIABLE_CHANNEL_INDEX)
-                    .try_send(message.to_packet(), peer)
+                    .try_send(message.to_packet(&encoding), peer)
                     .is_err()
                 {
                     error!("failed to send reliable packet to {peer}: {message:?}");
@@ -91,7 +96,7 @@ impl<M: Protocol> OutgoingMessages<M> {
             peers.into_iter().for_each(|peer| {
                 if socket
                     .channel_mut(UNRELIABLE_CHANNEL_INDEX)
-                    .try_send(message.to_packet(), peer)
+                    .try_send(message.to_packet(&encoding), peer)
                     .is_err()
                 {
                     error!("failed to send unreliable packet to {peer}: {message:?}");
@@ -108,7 +113,7 @@ impl<M: Protocol> OutgoingMessages<M> {
         for (peer, message) in queue.reliable_to_peer.iter() {
             if socket
                 .channel_mut(RELIABLE_CHANNEL_INDEX)
-                .try_send(message.to_packet(), *peer)
+                .try_send(message.to_packet(&encoding), *peer)
                 .is_err()
             {
                 error!("failed to send reliable packet to {peer}: {message:?}");
@@ -124,7 +129,7 @@ impl<M: Protocol> OutgoingMessages<M> {
         for (peer, message) in queue.unreliable_to_peer.iter() {
             if socket
                 .channel_mut(UNRELIABLE_CHANNEL_INDEX)
-                .try_send(message.to_packet(), *peer)
+                .try_send(message.to_packet(&encoding), *peer)
                 .is_err()
             {
                 error!("failed to send unreliable packet to {peer}: {message:?}");
